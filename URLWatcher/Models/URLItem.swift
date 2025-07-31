@@ -95,8 +95,9 @@ struct URLItem: Identifiable, Codable, Equatable {
         }
     }
     
-    let id: UUID
+    var id: UUID
     var urlString: String
+    var title: String? // Optionaler Titel für die Anzeige
     var interval: Double
     var isPaused: Bool
     var isCollapsed: Bool
@@ -118,9 +119,10 @@ struct URLItem: Identifiable, Codable, Equatable {
     // Notification-Einstellungen
     var enabledNotifications: Set<NotificationType> = [.error, .change]
     
-    init(id: UUID = UUID(), urlString: String = "", interval: Double = 5, isPaused: Bool = false, isCollapsed: Bool = true, isEditing: Bool = false, pendingRequests: Int = 0, remainingTime: Double = 0, history: [HistoryEntry] = [], currentStatus: Status? = nil, urlError: String? = nil, intervalError: String? = nil, isModalEditing: Bool = false, enabledNotifications: Set<NotificationType> = [.error, .change]) {
+    init(id: UUID = UUID(), urlString: String = "", title: String? = nil, interval: Double = 5, isPaused: Bool = false, isCollapsed: Bool = true, isEditing: Bool = false, pendingRequests: Int = 0, remainingTime: Double = 0, history: [HistoryEntry] = [], currentStatus: Status? = nil, urlError: String? = nil, intervalError: String? = nil, isModalEditing: Bool = false, enabledNotifications: Set<NotificationType> = [.error, .change]) {
         self.id = id
         self.urlString = urlString
+        self.title = title
         self.interval = interval
         self.isPaused = isPaused
         self.isCollapsed = isCollapsed

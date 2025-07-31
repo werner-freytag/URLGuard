@@ -8,6 +8,7 @@ struct ModalEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var hasValidationErrors: Bool = false
     @State private var currentUrlString: String
+    @State private var currentTitle: String?
     @State private var currentInterval: Double
     @State private var currentEnabledNotifications: Set<URLItem.NotificationType>
     
@@ -17,6 +18,7 @@ struct ModalEditorView: View {
         self.isNewItem = isNewItem
         self.onSave = onSave
         self._currentUrlString = State(initialValue: item.urlString)
+        self._currentTitle = State(initialValue: item.title)
         self._currentInterval = State(initialValue: item.interval)
         self._currentEnabledNotifications = State(initialValue: item.enabledNotifications)
     }
@@ -43,14 +45,15 @@ struct ModalEditorView: View {
                     URLItemInputForm(
                         item: item, 
                         monitor: monitor,
-                        onSave: { urlString, interval, enabledNotifications in
-                            if saveChanges(urlString: urlString, interval: interval, enabledNotifications: enabledNotifications) {
+                        onSave: { urlString, title, interval, enabledNotifications in
+                            if saveChanges(urlString: urlString, title: title, interval: interval, enabledNotifications: enabledNotifications) {
                                 dismiss()
                             }
                         },
-                        onValuesChanged: { urlString, interval, enabledNotifications in
+                        onValuesChanged: { urlString, title, interval, enabledNotifications in
                             // Aktualisiere die aktuellen Werte bei jeder Änderung
                             currentUrlString = urlString
+                            currentTitle = title
                             currentInterval = interval
                             currentEnabledNotifications = enabledNotifications
                         },
@@ -85,7 +88,7 @@ struct ModalEditorView: View {
                 
                 Button("Fertig") {
                     // Verwende die aktuellen Werte aus den State-Variablen
-                    if saveChanges(urlString: currentUrlString, interval: currentInterval, enabledNotifications: currentEnabledNotifications) {
+                    if saveChanges(urlString: currentUrlString, title: currentTitle, interval: currentInterval, enabledNotifications: currentEnabledNotifications) {
                         dismiss()
                     }
                 }
@@ -100,7 +103,7 @@ struct ModalEditorView: View {
         .preferredColorScheme(.light)
     }
     
-    private func saveChanges(urlString: String, interval: Double, enabledNotifications: Set<URLItem.NotificationType>) -> Bool {
+    private func saveChanges(urlString: String, title: String?, interval: Double, enabledNotifications: Set<URLItem.NotificationType>) -> Bool {
         // URL korrigieren
         let correctedURL = monitor.correctURL(urlString)
         
@@ -108,6 +111,7 @@ struct ModalEditorView: View {
             // Neues Item erstellen und über Callback zurückgeben
             var newItem = item
             newItem.urlString = correctedURL
+            newItem.title = title
             newItem.interval = interval
             newItem.enabledNotifications = enabledNotifications
             
@@ -121,7 +125,7 @@ struct ModalEditorView: View {
             }
         } else {
             // Existierendes Item bearbeiten
-            monitor.confirmEditingWithValues(for: item, urlString: correctedURL, interval: interval, enabledNotifications: enabledNotifications)
+            monitor.confirmEditingWithValues(for: item, urlString: correctedURL, title: title, interval: interval, enabledNotifications: enabledNotifications)
             return true
         }
     }

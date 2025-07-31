@@ -8,41 +8,45 @@ struct URLItemHeader: View {
     
     var body: some View {
         HStack {
-            // Titel: URL - Dauer
-            HStack(spacing: 4) {
-                Text(item.urlString.isEmpty ? "Keine URL" : item.urlString)
+            VStack(alignment: .leading, spacing: 4) {
+                // Haupttitel
+                Text(displayTitle)
                     .font(.headline)
                     .fontWeight(.bold)
                     .lineLimit(1)
                     .truncationMode(.middle)
-                Text("–")
-                    .font(.headline)
-                Text("\(Int(item.interval))s")
-                    .font(.headline)
-                    .fontWeight(.regular)
+                    .foregroundColor(item.isPaused ? .secondary : .primary)
+                
+                // URL und Intervall als Untertitel
+                HStack(spacing: 4) {
+                    if item.title != nil && !item.urlString.isEmpty {
+                        Text(item.urlString)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    } else if !item.urlString.isEmpty {
+                        Text(item.urlString)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                    
+                    if !item.urlString.isEmpty {
+                        Text("•")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text("Intervall: \(Int(item.interval))s")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
             }
-            .foregroundColor(item.isPaused ? .secondary : .primary)
-            
-            // Bearbeiten-Button
-            Button(action: {
+            .onTapGesture(count: 2) {
+                // Doppelklick zum Bearbeiten
                 onEdit()
-            }) {
-                Text("Bearbeiten")
-                    .font(.caption)
-                    .foregroundColor(.blue)
             }
-            .buttonStyle(.bordered)
-            
-            // Löschen-Button neben dem Bearbeiten-Button
-            Button(action: {
-                guard monitor.items.contains(where: { $0.id == item.id }) else { return }
-                monitor.remove(item: item)
-            }) {
-                Text("Löschen")
-                    .font(.caption)
-                    .foregroundColor(.red)
-            }
-            .buttonStyle(.bordered)
             
             Spacer()
             
@@ -80,7 +84,40 @@ struct URLItemHeader: View {
             }
             .buttonStyle(PlainButtonStyle())
             .help(item.isPaused ? "Start" : "Pause")
-            // Pause-Button ist immer aktiv, da keine isNewItem mehr
+            
+            
+            // Bearbeiten-Button
+            Button(action: {
+                onEdit()
+            }) {
+                Text("Bearbeiten")
+                    .font(.caption)
+                    .foregroundColor(.blue)
+            }
+            .buttonStyle(.bordered)
+            
+            // Duplizieren-Button
+            Button(action: {
+                guard monitor.items.contains(where: { $0.id == item.id }) else { return }
+                monitor.duplicate(item: item)
+            }) {
+                Text("Duplizieren")
+                    .font(.caption)
+                    .foregroundColor(.green)
+            }
+            .buttonStyle(.bordered)
+            
+            // Löschen-Button
+            Button(action: {
+                guard monitor.items.contains(where: { $0.id == item.id }) else { return }
+                monitor.remove(item: item)
+            }) {
+                Text("Löschen")
+                    .font(.caption)
+                    .foregroundColor(.red)
+            }
+            .buttonStyle(.bordered)
+            
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -90,9 +127,19 @@ struct URLItemHeader: View {
         }
         .onChange(of: item.isCollapsed) { oldValue, newValue in
             // Rotation bei Änderung animieren
-            withAnimation(.easeInOut(duration: 0.2)) {
+            withAnimation(.easeInOut(duration: 0.3)) {
                 rotationAngle = newValue ? 0 : 90
             }
+        }
+    }
+    
+    private var displayTitle: String {
+        if let title = item.title, !title.isEmpty {
+            return title
+        } else if !item.urlString.isEmpty {
+            return item.urlString
+        } else {
+            return "Keine URL"
         }
     }
     

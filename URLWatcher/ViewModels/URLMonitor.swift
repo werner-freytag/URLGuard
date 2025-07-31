@@ -118,6 +118,38 @@ class URLMonitor: ObservableObject {
         save()
     }
     
+    func duplicate(item: URLItem) {
+        // Finde den Index des Original-Items
+        guard let originalIndex = items.firstIndex(where: { $0.id == item.id }) else {
+            print("❌ Original-Item nicht gefunden für Duplikation")
+            return
+        }
+        
+        // Erstelle eine Kopie des Items mit neuer ID
+        var duplicatedItem = item
+        duplicatedItem.id = UUID() // Neue ID für das duplizierte Item
+        
+        // Historie und Status zurücksetzen
+        duplicatedItem.history.removeAll()
+        duplicatedItem.currentStatus = nil
+        duplicatedItem.isCollapsed = true
+        duplicatedItem.isPaused = true // Pausiert starten
+        
+        // Titel anpassen falls vorhanden
+        if let title = duplicatedItem.title {
+            duplicatedItem.title = "\(title) (Kopie)"
+        }
+        
+        // Item direkt unterhalb des Originals einfügen
+        let insertIndex = originalIndex + 1
+        items.insert(duplicatedItem, at: insertIndex)
+        
+        // Speichern und Timer starten
+        save()
+        
+        print("✅ Item dupliziert: \(item.id) -> \(duplicatedItem.id) an Position \(insertIndex)")
+    }
+    
     func createNewItem() -> URLItem {
         print("createNewItem() aufgerufen")
         // Erstelle ein temporäres Item für die EditView
@@ -279,7 +311,7 @@ class URLMonitor: ObservableObject {
     
     // confirmNewItemWithValues wurde entfernt - neue Items werden über addItem() hinzugefügt
     
-    func confirmEditingWithValues(for item: URLItem, urlString: String, interval: Double, enabledNotifications: Set<URLItem.NotificationType>? = nil) {
+    func confirmEditingWithValues(for item: URLItem, urlString: String, title: String?, interval: Double, enabledNotifications: Set<URLItem.NotificationType>? = nil) {
         if let index = items.firstIndex(where: { $0.id == item.id }) {
             // URL automatisch korrigieren
             let correctedURL = correctURL(urlString)
@@ -289,6 +321,7 @@ class URLMonitor: ObservableObject {
             
             // Lokale Werte übernehmen
             items[index].urlString = correctedURL
+            items[index].title = title
             items[index].interval = interval
             
             // Benachrichtigungseinstellungen übernehmen falls angegeben
