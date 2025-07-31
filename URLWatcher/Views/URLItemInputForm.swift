@@ -27,6 +27,30 @@ struct URLItemInputForm: View {
         self._localItem = State(initialValue: initialItem)
     }
     
+    private var titlePlaceholder: String {
+        if !localItem.urlString.isEmpty && localItem.urlString != "https://" {
+            // Host + letzte Pfadkomponente als Platzhalter verwenden
+            let correctedURL = localItem.urlString.hasPrefix("http") ? localItem.urlString : "https://" + localItem.urlString
+            
+            if let url = URL(string: correctedURL), let host = url.host {
+                let path = url.path
+                if !path.isEmpty && path != "/" {
+                    let pathComponents = path.components(separatedBy: "/").filter { !$0.isEmpty }
+                    if let lastComponent = pathComponents.last {
+                        return "\(host) - \(lastComponent)"
+                    }
+                }
+                // Nur Host falls kein Pfad
+                return host
+            }
+            
+            // Fallback: URL verwenden
+            return localItem.urlString
+        } else {
+            return "Titel eingeben..."
+        }
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // URL, Intervall und Benachrichtigungen nebeneinander
@@ -40,10 +64,13 @@ struct URLItemInputForm: View {
                         Text("Titel (optional)")
                             .font(.caption)
                             .foregroundColor(.secondary)
-                        TextField("Titel", text: Binding(
+                        TextField(titlePlaceholder, text: Binding(
                             get: { localItem.title ?? "" },
                             set: { localItem.title = $0.isEmpty ? nil : $0 }
                         ))
+                        .onChange(of: localItem.urlString) { oldValue, newValue in
+                            // Platzhalter wird automatisch aktualisiert durch titlePlaceholder
+                        }
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .onChange(of: localItem.title) { oldValue, newValue in
                             // Benachrichtige über Wertänderung
@@ -72,12 +99,21 @@ struct URLItemInputForm: View {
                             }
                             .onSubmit {
                                 // Validiere vor dem Speichern
+                                hasBeenEdited = true
                                 validateLocalURL()
                                 validateLocalInterval()
                                 
                                 // Nur speichern wenn keine Fehler vorhanden
                                 if localItem.urlError == nil && localItem.intervalError == nil {
                                     onSave(localItem.urlString, localItem.title, localItem.interval, localItem.enabledNotifications)
+                                } else {
+                                    print("❌ Validierungsfehler verhindern Speicherung:")
+                                    if let urlError = localItem.urlError {
+                                        print("  URL-Fehler: \(urlError)")
+                                    }
+                                    if let intervalError = localItem.intervalError {
+                                        print("  Intervall-Fehler: \(intervalError)")
+                                    }
                                 }
                             }
                         

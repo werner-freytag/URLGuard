@@ -124,9 +124,14 @@ struct ModalEditorView: View {
                 return false
             }
         } else {
-            // Existierendes Item bearbeiten
-            monitor.confirmEditingWithValues(for: item, urlString: correctedURL, title: title, interval: interval, enabledNotifications: enabledNotifications)
-            return true
+            // Existierendes Item bearbeiten - finde das aktuelle Item im Monitor
+            if let currentItem = monitor.items.first(where: { $0.id == item.id }) {
+                monitor.confirmEditingWithValues(for: currentItem, urlString: correctedURL, title: title, interval: interval, enabledNotifications: enabledNotifications)
+                return true
+            } else {
+                print("❌ Item nicht im Monitor gefunden: \(item.id)")
+                return false
+            }
         }
     }
 }

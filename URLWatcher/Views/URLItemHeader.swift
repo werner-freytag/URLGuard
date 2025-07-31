@@ -10,12 +10,45 @@ struct URLItemHeader: View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 // Haupttitel
-                Text(displayTitle)
-                    .font(.headline)
-                    .fontWeight(.bold)
+                if let title = item.title, !title.isEmpty {
+                    // Benutzerdefinierter Titel
+                    Text(title)
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .foregroundColor(item.isPaused ? .secondary : .primary)
+                } else if let components = urlComponents {
+                    // URL-Komponenten anzeigen
+                    HStack(spacing: 4) {
+                        Text(components.host)
+                            .font(.headline)
+                            .fontWeight(.bold)
+                            .foregroundColor(item.isPaused ? .secondary : .primary)
+                        
+                        if let lastPathComponent = components.lastPathComponent {
+                            Text(" – ")
+                                .font(.headline)
+                                .fontWeight(.regular)
+                                .foregroundColor(item.isPaused ? .secondary.opacity(0.6) : .primary.opacity(0.6))
+                            
+                            Text(lastPathComponent)
+                                .font(.headline)
+                                .fontWeight(.regular)
+                                .foregroundColor(item.isPaused ? .secondary.opacity(0.6) : .primary.opacity(0.6))
+                        }
+                    }
                     .lineLimit(1)
                     .truncationMode(.middle)
-                    .foregroundColor(item.isPaused ? .secondary : .primary)
+                } else {
+                    // Fallback
+                    Text(displayTitle)
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .foregroundColor(item.isPaused ? .secondary : .primary)
+                }
                 
                 // URL und Intervall als Untertitel
                 HStack(spacing: 4) {
@@ -141,6 +174,29 @@ struct URLItemHeader: View {
         } else {
             return "Keine URL"
         }
+    }
+    
+    private var urlComponents: (host: String, path: String, lastPathComponent: String?)? {
+        guard !item.urlString.isEmpty else { return nil }
+        
+        // URL korrigieren falls nötig
+        let correctedURL = item.urlString.hasPrefix("http") ? item.urlString : "https://" + item.urlString
+        
+        guard let url = URL(string: correctedURL),
+              let host = url.host else { return nil }
+        
+        let path = url.path.isEmpty ? "" : url.path
+        
+        // Letzte Pfadkomponente extrahieren
+        let lastPathComponent: String?
+        if !path.isEmpty && path != "/" {
+            let pathComponents = path.components(separatedBy: "/").filter { !$0.isEmpty }
+            lastPathComponent = pathComponents.last
+        } else {
+            lastPathComponent = nil
+        }
+        
+        return (host: host, path: path, lastPathComponent: lastPathComponent)
     }
     
     func statusColor(for item: URLItem) -> Color {

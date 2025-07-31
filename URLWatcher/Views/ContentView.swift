@@ -40,7 +40,12 @@ struct ContentView: View {
                 List {
                     ForEach(filteredItems) { item in
                         URLItemCard(item: item, monitor: monitor, onEdit: {
-                            editingItem = item
+                            // Verwende das aktuelle Item aus dem Monitor
+                            if let currentItem = monitor.items.first(where: { $0.id == item.id }) {
+                                editingItem = currentItem
+                            } else {
+                                print("❌ Item nicht im Monitor gefunden für Bearbeitung: \(item.id)")
+                            }
                         })
                         .listRowInsets(EdgeInsets())
                         .listRowSeparator(.hidden)
