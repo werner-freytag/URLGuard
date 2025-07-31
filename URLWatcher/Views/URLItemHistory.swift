@@ -86,7 +86,7 @@ struct URLItemHistory: View {
     private func tooltipText(for entry: URLItem.HistoryEntry) -> String {
         let statusText = entry.status.rawValue
         let dateString = entry.date.formatted()
-        var tooltip = "\(statusText) - \(dateString)"
+        var tooltip = "Datum: \(dateString)\nStatus: \(statusText)"
         
         if let httpCode = entry.httpStatusCode {
             tooltip += "\nHTTP \(httpCode)"
@@ -119,6 +119,8 @@ struct URLItemHistory: View {
             if diffInfo.totalChangedLines > 20 {
                 tooltip += "\n..."
             }
+        } else {
+            tooltip += "\n\nInhalt nicht geändert."
         }
         
         return tooltip

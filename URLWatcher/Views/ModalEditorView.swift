@@ -6,12 +6,13 @@ struct ModalEditorView: View {
     let isNewItem: Bool
     let onSave: ((URLItem) -> Void)?
     @Environment(\.dismiss) private var dismiss
-    @State private var hasValidationErrors: Bool = false
     @State private var urlString: String
     @State private var title: String?
     @State private var interval: Double
     @State private var isEnabled: Bool
     @State private var enabledNotifications: Set<URLItem.NotificationType>
+    @State private var urlError: String?
+    @State private var intervalError: String?
     
     init(item: URLItem, monitor: URLMonitor, isNewItem: Bool = false, onSave: ((URLItem) -> Void)? = nil) {
         self.item = item
@@ -23,6 +24,10 @@ struct ModalEditorView: View {
         self._interval = State(initialValue: item.interval)
         self._isEnabled = State(initialValue: item.isEnabled)
         self._enabledNotifications = State(initialValue: item.enabledNotifications)
+    }
+    
+    private var isFormValid: Bool {
+        return urlError == nil && intervalError == nil && !urlString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
     
     var body: some View {
@@ -45,34 +50,24 @@ struct ModalEditorView: View {
                 VStack(spacing: 20) {
                     // Editor Content
                     URLItemInputForm(
-                        item: item, 
-                        monitor: monitor,
-                        onSave: { urlString, title, interval, isEnabled, enabledNotifications in
-                            if saveChanges(urlString: urlString, title: title, interval: interval, isEnabled: isEnabled, enabledNotifications: enabledNotifications) {
-                                dismiss()
+                        urlString: $urlString,
+                        interval: $interval,
+                        title: $title,
+                        isEnabled: $isEnabled,
+                        enabledNotifications: $enabledNotifications,
+                        urlError: urlError,
+                        intervalError: intervalError,
+                        onSave: {
+                            // Bei Return-Taste: Validieren und speichern
+                            validateForm()
+                            if isFormValid {
+                                if saveChanges() {
+                                    dismiss()
+                                }
                             }
-                        },
-                        onValuesChanged: { urlString, title, interval, isEnabled, enabledNotifications in
-                            // Aktualisiere die aktuellen Werte bei jeder Änderung
-                            self.urlString = urlString
-                            self.title = title
-                            self.interval = interval
-                            self.isEnabled = isEnabled
-                            self.enabledNotifications = enabledNotifications
-                        },
-                        onValidationRequested: { urlString, interval in
-                            // Validiere die Werte und gib Fehler zurück
-                            var tempItem = item
-                            tempItem.url = URL(string: urlString)!
-                            tempItem.interval = interval
-                            let validation = monitor.validateItem(tempItem)
-                            return (validation.urlError, validation.intervalError)
                         }
                     )
                     .padding()
-                    .onAppear {
-                        // Initialisierung erfolgt bereits im init
-                    }
                 }
                 .padding(.vertical)
             }
@@ -90,8 +85,9 @@ struct ModalEditorView: View {
                 .buttonStyle(.bordered)
                 
                 Button("Fertig") {
-                    // Verwende die aktuellen Werte aus den State-Variablen
-                    if saveChanges(urlString: urlString, title: title, interval: interval, isEnabled: isEnabled, enabledNotifications: enabledNotifications) {
+                    // Validiere und speichere
+                    validateForm()
+                    if saveChanges() {
                         dismiss()
                     }
                 }
@@ -106,7 +102,52 @@ struct ModalEditorView: View {
         .preferredColorScheme(.light)
     }
     
-    private func saveChanges(urlString: String, title: String?, interval: Double, isEnabled: Bool, enabledNotifications: Set<URLItem.NotificationType>) -> Bool {
+    private func validateForm() {
+        let trimmedURL = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // URL-Validierung
+        if trimmedURL.isEmpty {
+            urlError = "URL darf nicht leer sein"
+        } else if let url = URL(string: trimmedURL) {
+            // URL-Validierung mit Helper
+            if !url.isValidForMonitoring {
+                urlError = "Ungültige URL-Struktur"
+            } else {
+                urlError = nil
+            }
+            
+            // Interval-Validierung
+            if interval < 1 {
+                intervalError = "Intervall muss mindestens 1 Sekunde betragen"
+            } else {
+                intervalError = nil
+            }
+        } else {
+            urlError = "Ungültige URL-Struktur"
+            // Interval-Validierung auch bei ungültiger URL
+            if interval < 1 {
+                intervalError = "Intervall muss mindestens 1 Sekunde betragen"
+            } else {
+                intervalError = nil
+            }
+        }
+    }
+    
+    private func saveChanges() -> Bool {
+        // Validiere vor dem Speichern
+        validateForm()
+        
+        if !isFormValid {
+            print("❌ Validierungsfehler verhindern Speicherung:")
+            if let urlError = urlError {
+                print("  URL-Fehler: \(urlError)")
+            }
+            if let intervalError = intervalError {
+                print("  Intervall-Fehler: \(intervalError)")
+            }
+            return false
+        }
+        
         // URL validieren
         let trimmedURL = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
         
@@ -119,14 +160,8 @@ struct ModalEditorView: View {
             newItem.isEnabled = isEnabled
             newItem.enabledNotifications = enabledNotifications
             
-            // Validiere das Item
-            let validation = monitor.validateItem(newItem)
-            if validation.isValid {
-                onSave?(newItem)
-                return true
-            } else {
-                return false
-            }
+            onSave?(newItem)
+            return true
         } else {
             // Existierendes Item bearbeiten - finde das aktuelle Item im Monitor
             if let currentItem = monitor.items.first(where: { $0.id == item.id }) {

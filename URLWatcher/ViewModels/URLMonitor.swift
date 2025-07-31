@@ -149,44 +149,10 @@ class URLMonitor: ObservableObject {
         
         // Intelligente Titel-Generierung für Duplikate
         let baseTitle = item.title ?? "URL"
-        let copyPattern = #"^(.+?)(?:\s*\(Kopie(?:\s*(\d+))?\))?$"#
-        
-        if let regex = try? NSRegularExpression(pattern: copyPattern, options: []),
-           let match = regex.firstMatch(in: baseTitle, options: [], range: NSRange(baseTitle.startIndex..., in: baseTitle)) {
-            
-            let baseTitleRange = Range(match.range(at: 1), in: baseTitle)!
-            let actualBaseTitle = String(baseTitle[baseTitleRange])
-            
-            // Finde alle existierenden Items mit ähnlichen Titeln
-            let existingTitles = items.compactMap { $0.title }
-            let copyNumbers = existingTitles.compactMap { title -> Int? in
-                let copyPattern = #"^\(Kopie(?:\s*(\d+))?\)$"#
-                if let regex = try? NSRegularExpression(pattern: copyPattern, options: []),
-                   let match = regex.firstMatch(in: title, options: [], range: NSRange(title.startIndex..., in: title)) {
-                    if match.range(at: 1).location != NSNotFound {
-                        let numberRange = Range(match.range(at: 1), in: title)!
-                        return Int(title[numberRange])
-                    } else {
-                        return 1 // "Kopie" ohne Nummer = 1
-                    }
-                }
-                return nil
-            }
-            
-            let nextNumber = (copyNumbers.max() ?? 0) + 1
-            duplicatedItem.title = "\(actualBaseTitle) (Kopie \(nextNumber))"
-        } else {
-            duplicatedItem.title = "\(baseTitle) (Kopie)"
-        }
+        let existingTitles = items.compactMap { $0.title }
+        duplicatedItem.title = baseTitle.generateUniqueCopyName(existingTitles: existingTitles)
         
         print("📝 Generierter Titel: \(duplicatedItem.title ?? "Kein Titel")")
-        
-        // Validiere das duplizierte Item
-        let validation = validateItem(duplicatedItem)
-        if !validation.isValid {
-            print("❌ Dupliziertes Item ist ungültig: \(validation.urlError ?? ""), \(validation.intervalError ?? "")")
-            return
-        }
         
         // Füge das duplizierte Item hinzu
         items.append(duplicatedItem)
@@ -219,40 +185,15 @@ class URLMonitor: ObservableObject {
     
     func addItem(_ item: URLItem) {
         print("addItem() aufgerufen für Item: \(item.id)")
-        // Validiere das Item vor dem Hinzufügen
-        let validation = validateItem(item)
         
-        if validation.isValid {
-            // Item ist gültig - hinzufügen und starten
-            var validItem = item
-            validItem.isEnabled = true
-            
-            items.insert(validItem, at: 0)
-            schedule(item: validItem)
-            save()
-            print("Item erfolgreich hinzugefügt und gestartet")
-        } else {
-            print("Item ist ungültig - nicht hinzugefügt")
-        }
-    }
-    
-    func validateItem(_ item: URLItem) -> (isValid: Bool, urlError: String?, intervalError: String?) {
-        var urlError: String? = nil
-        var intervalError: String? = nil
+        // Item ist bereits validiert - direkt hinzufügen und starten
+        var validItem = item
+        validItem.isEnabled = true
         
-        // URL-Validierung
-        // URL ist bereits validiert, da es ein URL-Objekt ist
-        if !isValidURL(item.url) {
-            urlError = "Ungültige URL-Struktur"
-        }
-        
-        // Interval-Validierung
-        if item.interval < 1 {
-            intervalError = "Intervall muss mindestens 1 Sekunde betragen"
-        }
-        
-        let isValid = urlError == nil && intervalError == nil
-        return (isValid, urlError, intervalError)
+        items.insert(validItem, at: 0)
+        schedule(item: validItem)
+        save()
+        print("Item erfolgreich hinzugefügt und gestartet")
     }
     
     func testURL(_ urlString: String, completion: @escaping (Bool, String?) -> Void) {
@@ -283,40 +224,6 @@ class URLMonitor: ObservableObject {
         task.resume()
     }
     
-    func isValidURL(_ url: URL) -> Bool {
-        // Prüfe, ob die URL gültige Komponenten hat
-        guard let scheme = url.scheme?.lowercased() else { return false }
-        guard let host = url.host, !host.isEmpty else { return false }
-        
-        // Erlaubte Protokolle mit Regex (http oder https)
-        let schemePattern = #"^https?$"#
-        guard scheme.range(of: schemePattern, options: .regularExpression) != nil else { return false }
-        
-        // Port-Validierung (falls vorhanden)
-        if let port = url.port {
-            guard port > 0 && port <= 65535 else { return false }
-        }
-        
-        // Pfad- und Query-Validierung (optional)
-        let invalidCharacters = CharacterSet(charactersIn: "<>\"|")
-        
-        // Pfad-Validierung
-        if !url.path.isEmpty {
-            if url.path.rangeOfCharacter(from: invalidCharacters) != nil {
-                return false
-            }
-        }
-        
-        // Query-Parameter-Validierung
-        if let query = url.query, !query.isEmpty {
-            if query.rangeOfCharacter(from: invalidCharacters) != nil {
-                return false
-            }
-        }
-        
-        return true
-    }
-    
 
     
     // confirmNewItemWithValues wurde entfernt - neue Items werden über addItem() hinzugefügt
@@ -331,19 +238,8 @@ class URLMonitor: ObservableObject {
                 return
             }
             
-            // Erstelle ein temporäres Item für die Validierung
-            var validItem = item
-            validItem.url = url
-            validItem.title = title
-            validItem.interval = interval
-            validItem.isEnabled = isEnabled
-            
-            // Validiere das Item
-            let validation = validateItem(validItem)
-            if !validation.isValid {
-                print("❌ Item ist ungültig: \(validation.urlError ?? ""), \(validation.intervalError ?? "")")
-                return
-            }
+            // Prüfe, ob sich die URL geändert hat
+            let urlChanged = items[index].url.absoluteString != url.absoluteString
             
             // Prüfe, ob sich isEnabled geändert hat
             let wasEnabled = items[index].isEnabled
@@ -357,6 +253,12 @@ class URLMonitor: ObservableObject {
             
             if let enabledNotifications = enabledNotifications {
                 items[index].enabledNotifications = enabledNotifications
+            }
+            
+            // History zurücksetzen, wenn sich die URL geändert hat
+            if urlChanged {
+                print("🔄 URL geändert - History wird zurückgesetzt")
+                resetHistory(for: items[index])
             }
             
             // Timer-Management basierend auf isEnabled Änderung

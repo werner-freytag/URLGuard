@@ -1,31 +1,29 @@
 import SwiftUI
 
 struct URLItemInputForm: View {
-    let item: URLItem
-    let monitor: URLMonitor
-    let onSave: (String, String?, Double, Bool, Set<URLItem.NotificationType>) -> Void // Callback mit aktuellen Werten
-    let onValuesChanged: (String, String?, Double, Bool, Set<URLItem.NotificationType>) -> Void // Callback für Wertänderungen
-    let onValidationRequested: (String, Double) -> (urlError: String?, intervalError: String?) // Callback für Validierung
-    @FocusState private var focusedItemID: UUID?
+    @Binding var urlString: String
+    @Binding var interval: Double
+    @Binding var title: String?
+    @Binding var isEnabled: Bool
+    @Binding var enabledNotifications: Set<URLItem.NotificationType>
+    let urlError: String?
+    let intervalError: String?
+    let onSave: () -> Void // Callback für Return-Taste
+    @FocusState private var focusedField: FocusField?
     
-    // Kopie des kompletten Items für lokale Bearbeitung
-    @State private var localItem: URLItem
-    @State private var urlString: String
-    @State private var hasBeenEdited: Bool = false
+    enum FocusField {
+        case url
+    }
     
-    // Lokale Fehlermeldungen
-    @State private var urlError: String?
-    @State private var intervalError: String?
-    
-    init(item: URLItem, monitor: URLMonitor, onSave: @escaping (String, String?, Double, Bool, Set<URLItem.NotificationType>) -> Void, onValuesChanged: @escaping (String, String?, Double, Bool, Set<URLItem.NotificationType>) -> Void, onValidationRequested: @escaping (String, Double) -> (urlError: String?, intervalError: String?)) {
-        self.item = item
-        self.monitor = monitor
+    init(urlString: Binding<String>, interval: Binding<Double>, title: Binding<String?>, isEnabled: Binding<Bool>, enabledNotifications: Binding<Set<URLItem.NotificationType>>, urlError: String?, intervalError: String?, onSave: @escaping () -> Void) {
+        self._urlString = urlString
+        self._interval = interval
+        self._title = title
+        self._isEnabled = isEnabled
+        self._enabledNotifications = enabledNotifications
+        self.urlError = urlError
+        self.intervalError = intervalError
         self.onSave = onSave
-        self.onValuesChanged = onValuesChanged
-        self.onValidationRequested = onValidationRequested
-        // Erstelle eine Kopie des Items für lokale Bearbeitung
-        self._localItem = State(initialValue: item)
-        self._urlString = State(initialValue: item.url.absoluteString)
     }
     
     private var titlePlaceholder: String {
@@ -66,17 +64,10 @@ struct URLItemInputForm: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                         TextField(titlePlaceholder, text: Binding(
-                            get: { localItem.title ?? "" },
-                            set: { localItem.title = $0.isEmpty ? nil : $0 }
+                            get: { title ?? "" },
+                            set: { title = $0.isEmpty ? nil : $0 }
                         ))
-                        .onChange(of: urlString) { oldValue, newValue in
-                            // Platzhalter wird automatisch aktualisiert durch titlePlaceholder
-                        }
                         .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .onChange(of: localItem.title) { oldValue, newValue in
-                            // Benachrichtige über Wertänderung
-                            onValuesChanged(urlString, localItem.title, localItem.interval, localItem.isEnabled, localItem.enabledNotifications)
-                        }
                     }
                     
                     // URL Input
@@ -86,40 +77,14 @@ struct URLItemInputForm: View {
                             .foregroundColor(.secondary)
                         TextField("https://example.com", text: $urlString)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .focused($focusedItemID, equals: item.id)
-                            .onChange(of: urlString) { oldValue, newValue in
-                                // Benachrichtige über Wertänderung
-                                onValuesChanged(newValue, localItem.title, localItem.interval, localItem.isEnabled, localItem.enabledNotifications)
-                            }
-                            .onChange(of: focusedItemID) { oldValue, newValue in
-                                // Validierung nur bei onBlur (wenn Fokus verloren geht)
-                                if oldValue == item.id && newValue != item.id {
-                                    hasBeenEdited = true
-                                    validateLocalURL()
-                                }
-                            }
+                            .focused($focusedField, equals: .url)
                             .onSubmit {
                                 // Validiere vor dem Speichern
-                                hasBeenEdited = true
-                                validateLocalURL()
-                                validateLocalInterval()
-                                
-                                // Nur speichern wenn keine Fehler vorhanden
-                                if urlError == nil && intervalError == nil {
-                                    onSave(urlString, localItem.title, localItem.interval, localItem.isEnabled, localItem.enabledNotifications)
-                                } else {
-                                    print("❌ Validierungsfehler verhindern Speicherung:")
-                                    if let urlError = urlError {
-                                        print("  URL-Fehler: \(urlError)")
-                                    }
-                                    if let intervalError = intervalError {
-                                        print("  Intervall-Fehler: \(intervalError)")
-                                    }
-                                }
+                                onSave()
                             }
                         
                         // URL-Fehlermeldung mit fester Höhe
-                        if hasBeenEdited, let urlError = urlError {
+                        if let urlError = urlError {
                             Text(urlError)
                                 .font(.caption)
                                 .foregroundColor(.red)
@@ -137,31 +102,16 @@ struct URLItemInputForm: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                         HStack {
-                            TextField("5", value: $localItem.interval, formatter: NumberFormatter())
+                            TextField("5", value: $interval, formatter: NumberFormatter())
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .frame(width: 60)
-                                .onChange(of: localItem.interval) { oldValue, newValue in
-                                    // Benachrichtige über Wertänderung
-                                    onValuesChanged(urlString, localItem.title, newValue, localItem.isEnabled, localItem.enabledNotifications)
-                                }
-                                .onChange(of: focusedItemID) { oldValue, newValue in
-                                    // Validierung nur bei onBlur (wenn Fokus verloren geht)
-                                    if oldValue == item.id && newValue != item.id {
-                                        hasBeenEdited = true
-                                        validateLocalInterval()
-                                    }
-                                }
                             
-                            Stepper("", value: $localItem.interval, in: 1...3600, step: 1)
+                            Stepper("", value: $interval, in: 1...3600, step: 1)
                                 .labelsHidden()
-                                .onChange(of: localItem.interval) { oldValue, newValue in
-                                    // Benachrichtige über Wertänderung
-                                    onValuesChanged(urlString, localItem.title, newValue, localItem.isEnabled, localItem.enabledNotifications)
-                                }
                         }
                         
                         // Interval-Fehlermeldung mit fester Höhe
-                        if hasBeenEdited, let intervalError = intervalError {
+                        if let intervalError = intervalError {
                             Text(intervalError)
                                 .font(.caption)
                                 .foregroundColor(.red)
@@ -179,11 +129,7 @@ struct URLItemInputForm: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                         HStack {
-                            Toggle("URL-Überwachung aktiviert", isOn: $localItem.isEnabled)
-                                .onChange(of: localItem.isEnabled) { oldValue, newValue in
-                                    // Benachrichtige über Wertänderung
-                                    onValuesChanged(urlString, localItem.title, localItem.interval, newValue, localItem.enabledNotifications)
-                                }
+                            Toggle("URL-Überwachung aktiviert", isOn: $isEnabled)
                             Spacer()
                         }
                         .padding(.vertical, 4)
@@ -199,44 +145,42 @@ struct URLItemInputForm: View {
                         .padding(.horizontal, 16)
                     
                     NotificationSettingsView(
-                        item: localItem, 
-                        monitor: monitor,
-                        enabledNotifications: $localItem.enabledNotifications
+                        enabledNotifications: $enabledNotifications
                     )
-                    .onChange(of: localItem.enabledNotifications) { oldValue, newValue in
-                        // Benachrichtige über Wertänderung
-                        onValuesChanged(urlString, localItem.title, localItem.interval, localItem.isEnabled, newValue)
-                    }
                 }
             }
         }
         .onAppear {
-            // Fokussiere automatisch beim App-Start
-            focusedItemID = item.id
+            // Fokussiere automatisch auf das URL-Feld beim Öffnen
+            focusedField = .url
         }
-    }
-    
-    private func validateLocalURL() {
-        let validation = onValidationRequested(urlString, localItem.interval)
-        urlError = validation.urlError
-    }
-    
-    private func validateLocalInterval() {
-        let validation = onValidationRequested(urlString, localItem.interval)
-        intervalError = validation.intervalError
     }
 }
 
 #Preview {
-    let monitor = URLMonitor()
-            let item = URLItem(url: URL(string: "https://example.com")!, interval: 10)
-    return URLItemInputForm(item: item, monitor: monitor, onSave: { _, _, _, _, _ in }, onValuesChanged: { _, _, _, _, _ in }, onValidationRequested: { _, _ in (nil, nil) })
-        .frame(width: 600)
+    return URLItemInputForm(
+        urlString: .constant("https://example.com"),
+        interval: .constant(10),
+        title: .constant("Test"),
+        isEnabled: .constant(true),
+        enabledNotifications: .constant([]),
+        urlError: nil,
+        intervalError: nil,
+        onSave: {}
+    )
+    .frame(width: 600)
 }
 
 #Preview("Invalid URL") {
-    let monitor = URLMonitor()
-            let item = URLItem(url: URL(string: "http://example.com")!, interval: 10)
-    return URLItemInputForm(item: item, monitor: monitor, onSave: { _, _, _, _, _ in }, onValuesChanged: { _, _, _, _, _ in }, onValidationRequested: { _, _ in (nil, nil) })
-        .frame(width: 600)
+    return URLItemInputForm(
+        urlString: .constant("invalid-url"),
+        interval: .constant(10),
+        title: .constant("Test"),
+        isEnabled: .constant(true),
+        enabledNotifications: .constant([]),
+        urlError: "Ungültige URL-Struktur",
+        intervalError: nil,
+        onSave: {}
+    )
+    .frame(width: 600)
 } 

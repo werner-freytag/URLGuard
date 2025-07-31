@@ -1,8 +1,6 @@
 import SwiftUI
 
 struct NotificationSettingsView: View {
-    let item: URLItem
-    let monitor: URLMonitor
     @Binding var enabledNotifications: Set<URLItem.NotificationType>
     
     // Häufige HTTP-Codes für den Picker
@@ -13,9 +11,7 @@ struct NotificationSettingsView: View {
     // Speichere den letzten verwendeten HTTP-Code
     @State private var lastUsedHttpCode: Int
     
-    init(item: URLItem, monitor: URLMonitor, enabledNotifications: Binding<Set<URLItem.NotificationType>>) {
-        self.item = item
-        self.monitor = monitor
+    init(enabledNotifications: Binding<Set<URLItem.NotificationType>>) {
         self._enabledNotifications = enabledNotifications
         
         // Initialisiere lastUsedHttpCode mit dem aktuellen HTTP-Code oder 404
@@ -123,15 +119,7 @@ struct NotificationSettingsView: View {
 }
 
 #Preview {
-    let monitor = URLMonitor()
-    let item = URLItem(
-        url: URL(string: "https://example.com")!, 
-        interval: 10,
-        enabledNotifications: [.error, .change, .httpCode(404)]
-    )
     NotificationSettingsView(
-        item: item, 
-        monitor: monitor,
         enabledNotifications: .constant([.error, .change, .httpCode(404)])
     )
     .frame(width: 300)
