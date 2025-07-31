@@ -89,19 +89,36 @@ struct URLItemHistory: View {
         var tooltip = "\(statusText) - \(dateString)"
         
         if let httpCode = entry.httpStatusCode {
-            tooltip += " (HTTP \(httpCode))"
+            tooltip += "\nHTTP \(httpCode)"
         }
         
         if let responseSize = entry.responseSize {
-            tooltip += "\nGröße: \(responseSize) Bytes"
+            let formatter = NumberFormatter()
+            formatter.numberStyle = .decimal
+            formatter.groupingSeparator = "."
+            let formattedSize = formatter.string(from: NSNumber(value: responseSize)) ?? "\(responseSize)"
+            tooltip += "\nGröße: \(formattedSize) Bytes"
         }
         
         if let responseTime = entry.responseTime {
-            tooltip += "\nZeit: \(String(format: "%.2f", responseTime))s"
+            let formatter = NumberFormatter()
+            formatter.numberStyle = .decimal
+            formatter.minimumFractionDigits = 2
+            formatter.maximumFractionDigits = 2
+            let formattedTime = formatter.string(from: NSNumber(value: responseTime)) ?? String(format: "%.2f", responseTime)
+            tooltip += "\nÜbertragungsdauer: \(formattedTime)s"
         }
         
-        if let diff = entry.diff {
-            tooltip += "\n\nDiff verfügbar"
+        if let diffInfo = entry.diffInfo {
+            tooltip += "\n\n\(diffInfo.totalChangedLines) Zeilen geändert:"
+            
+            for line in diffInfo.previewLines {
+                tooltip += "\n\(line)"
+            }
+            
+            if diffInfo.totalChangedLines > 20 {
+                tooltip += "\n..."
+            }
         }
         
         return tooltip
@@ -119,7 +136,10 @@ struct URLItemHistory: View {
                 date: Date().addingTimeInterval(-Double(i * 60)), 
                 status: status, 
                 httpStatusCode: status == .error ? 404 : 200,
-                diff: status == .changed ? "Zeile 1: - Alter Text\nZeile 1: + Neuer Text" : nil,
+                diffInfo: status == .changed ? URLItem.DiffInfo(
+                    totalChangedLines: 2,
+                    previewLines: ["- Zeile 1: Alter Text", "+ Zeile 1: Neuer Text"]
+                ) : nil,
                 responseSize: 1024,
                 responseTime: 0.5
             )

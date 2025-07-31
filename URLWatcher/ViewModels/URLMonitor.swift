@@ -137,88 +137,50 @@ class URLMonitor: ObservableObject {
     }
     
     func duplicate(item: URLItem) {
-        print("🔄 Duplicate-Funktion aufgerufen für Item: \(item.id)")
-        print("📊 Aktuelle Anzahl Items vor Duplikation: \(items.count)")
+        print("🔄 Dupliziere Item: \(item.title ?? item.urlString)")
         
-        // Finde den Index des Original-Items
-        guard let originalIndex = items.firstIndex(where: { $0.id == item.id }) else {
-            print("❌ Original-Item nicht gefunden für Duplikation")
-            return
-        }
-        
-        print("✅ Original-Item gefunden an Index: \(originalIndex)")
-        
-        // Erstelle eine Kopie des Items mit neuer ID
+        // Erstelle eine Kopie des Items
         var duplicatedItem = item
-        duplicatedItem.id = UUID() // Neue ID für das duplizierte Item
+        duplicatedItem.id = UUID() // Neue eindeutige ID
+        duplicatedItem.isEnabled = false // Startet pausiert
+        duplicatedItem.pendingRequests = 0
+        duplicatedItem.remainingTime = 0
+        duplicatedItem.history = [] // Keine Historie für Duplikate
+        // currentStatus wird automatisch aus history abgeleitet
         
-        // Sicherheitscheck: Stelle sicher, dass die ID wirklich eindeutig ist
-        while items.contains(where: { $0.id == duplicatedItem.id }) {
-            print("⚠️ ID-Kollision erkannt, generiere neue ID")
-            duplicatedItem.id = UUID()
-        }
+        // Intelligente Titel-Generierung für Duplikate
+        let baseTitle = item.title ?? "URL"
+        let copyPattern = #"^(.+?)(?:\s*\(Kopie(?:\s*(\d+))?\))?$"#
         
-        print("🆔 Neue ID für Duplikat: \(duplicatedItem.id)")
-        
-        // Historie und Status zurücksetzen
-        duplicatedItem.history.removeAll()
-        duplicatedItem.currentStatus = nil
-
-        duplicatedItem.isEnabled = false // Deaktiviert starten
-        duplicatedItem.isEditing = false // Nicht im Edit-Modus
-        duplicatedItem.isModalEditing = false // Nicht im Modal-Edit-Modus
-        duplicatedItem.pendingRequests = 0 // Keine wartenden Requests
-        duplicatedItem.remainingTime = 0 // Countdown auf 0 setzen da pausiert
-        
-        // Intelligenten Titel generieren
-        if let originalTitle = duplicatedItem.title {
-            let baseTitle = originalTitle.replacingOccurrences(of: #" \(Kopie\s*\d*\)$"#, with: "", options: .regularExpression)
+        if let regex = try? NSRegularExpression(pattern: copyPattern, options: []),
+           let match = regex.firstMatch(in: baseTitle, options: [], range: NSRange(baseTitle.startIndex..., in: baseTitle)) {
             
-            print("🔍 Titel-Generierung Debug:")
-            print("  - Original-Titel: '\(originalTitle)'")
-            print("  - Basistitel: '\(baseTitle)'")
+            let baseTitleRange = Range(match.range(at: 1), in: baseTitle)!
+            let actualBaseTitle = String(baseTitle[baseTitleRange])
             
-            // Finde alle existierenden Titel mit dem gleichen Basistitel
+            // Finde alle existierenden Items mit ähnlichen Titeln
             let existingTitles = items.compactMap { $0.title }
-            print("  - Alle existierenden Titel: \(existingTitles)")
-            
-            // Suche nach allen Kopien des Basistitels
-            var copyNumbers: [Int] = []
-            
-            // Prüfe auf "(Kopie)" ohne Nummer
-            if existingTitles.contains("\(baseTitle) (Kopie)") {
-                copyNumbers.append(1)
-                print("  - Gefunden: '\(baseTitle) (Kopie)' -> Nummer 1")
-            }
-            
-            // Prüfe auf "(Kopie X)" mit Nummer
-            for title in existingTitles {
-                if let range = title.range(of: #"\(Kopie\s*(\d+)\)$"#, options: .regularExpression) {
-                    let copyPart = String(title[range])
-                    if let numberRange = copyPart.range(of: #"\d+"#, options: .regularExpression) {
-                        let number = Int(copyPart[numberRange]) ?? 0
-                        copyNumbers.append(number)
-                        print("  - Gefunden: '\(title)' -> Nummer \(number)")
+            let copyNumbers = existingTitles.compactMap { title -> Int? in
+                let copyPattern = #"^\(Kopie(?:\s*(\d+))?\)$"#
+                if let regex = try? NSRegularExpression(pattern: copyPattern, options: []),
+                   let match = regex.firstMatch(in: title, options: [], range: NSRange(title.startIndex..., in: title)) {
+                    if match.range(at: 1).location != NSNotFound {
+                        let numberRange = Range(match.range(at: 1), in: title)!
+                        return Int(title[numberRange])
+                    } else {
+                        return 1 // "Kopie" ohne Nummer = 1
                     }
                 }
+                return nil
             }
             
-            // Bestimme die nächste Kopien-Nummer
-            let nextCopyNumber = copyNumbers.isEmpty ? 1 : (copyNumbers.max() ?? 0) + 1
-            print("  - Nächste Kopien-Nummer: \(nextCopyNumber)")
-            
-            // Generiere den neuen Titel
-            if nextCopyNumber == 1 {
-                duplicatedItem.title = "\(baseTitle) (Kopie)"
-            } else {
-                duplicatedItem.title = "\(baseTitle) (Kopie \(nextCopyNumber))"
-            }
-            
-            print("  - Generierter Titel: '\(duplicatedItem.title ?? "Kein Titel")'")
+            let nextNumber = (copyNumbers.max() ?? 0) + 1
+            duplicatedItem.title = "\(actualBaseTitle) (Kopie \(nextNumber))"
+        } else {
+            duplicatedItem.title = "\(baseTitle) (Kopie)"
         }
         
-        print("📝 Dupliziertes Item Titel: \(duplicatedItem.title ?? "Kein Titel")")
-        print("📝 Titel-Generierung: Original='\(item.title ?? "Kein Titel")' -> Neuer Titel='\(duplicatedItem.title ?? "Kein Titel")'")
+        print("📝 Generierter Titel: \(duplicatedItem.title ?? "Kein Titel")")
         
         // Validiere das duplizierte Item
         let validation = validateItem(duplicatedItem)
@@ -227,78 +189,33 @@ class URLMonitor: ObservableObject {
             return
         }
         
-        print("✅ Dupliziertes Item ist gültig")
+        // Füge das duplizierte Item hinzu
+        items.append(duplicatedItem)
         
-        // Item direkt unterhalb des Originals einfügen
-        let insertIndex = originalIndex + 1
-        items.insert(duplicatedItem, at: insertIndex)
-        
-        // Force UI-Update durch explizite Benachrichtigung
+        // Force UI Update
         objectWillChange.send()
         
-        print("📌 Duplikat eingefügt an Index: \(insertIndex)")
-        print("📊 Anzahl Items nach Duplikation: \(items.count)")
-        
-        // Sofort speichern, bevor Timer gestartet wird
+        // Speichere die Änderungen
         save()
-        print("💾 Items gespeichert vor Timer-Start")
         
-        // Timer nur starten wenn aktiviert
-        if duplicatedItem.isEnabled {
-            schedule(item: duplicatedItem)
-            print("⏰ Timer für Duplikat gestartet")
-        } else {
-            print("⏸️ Duplikat ist deaktiviert - kein Timer gestartet")
-        }
-        
-        // Nochmal speichern nach Timer-Start
-        save()
-        print("💾 Items gespeichert nach Timer-Start")
-        
-        print("✅ Item dupliziert: \(item.id) -> \(duplicatedItem.id) an Position \(insertIndex)")
-        
-        // Debug: Alle Items auflisten
-        print("📋 Alle Items nach Duplikation:")
-        for (index, item) in items.enumerated() {
-            print("  \(index): \(item.id) - \(item.title ?? item.urlString)")
-        }
-        
-        // Zusätzliche Validierung: Prüfe ob das Duplikat wirklich in der Liste ist
-        if let foundIndex = items.firstIndex(where: { $0.id == duplicatedItem.id }) {
-            print("✅ Duplikat erfolgreich in Liste gefunden an Index: \(foundIndex)")
-            
-            // Zusätzliche Validierung: Prüfe ob das Item korrekt initialisiert ist
-            let foundItem = items[foundIndex]
-            print("🔍 Duplikat-Validierung:")
-            print("  - ID: \(foundItem.id)")
-            print("  - URL: \(foundItem.urlString)")
-            print("  - Titel: \(foundItem.title ?? "Kein Titel")")
-            print("  - Intervall: \(foundItem.interval)")
-            print("  - Aktiviert: \(foundItem.isEnabled)")
-            print("  - Edit-Modus: \(foundItem.isEditing)")
-            print("  - Modal-Edit: \(foundItem.isModalEditing)")
-            print("  - Pending Requests: \(foundItem.pendingRequests)")
-            print("  - Remaining Time: \(foundItem.remainingTime)")
-            print("  - Historie: \(foundItem.history.count) Einträge")
-            
-        } else {
-            print("❌ Duplikat nicht in Liste gefunden!")
-            print("🔍 Debug-Info:")
-            print("  - Gesuchte ID: \(duplicatedItem.id)")
-            print("  - Anzahl Items in Liste: \(items.count)")
-            print("  - Alle IDs in Liste:")
-            for (index, item) in items.enumerated() {
-                print("    \(index): \(item.id)")
-            }
-        }
+        print("✅ Item erfolgreich dupliziert")
     }
     
-    func createNewItem() -> URLItem {
-        print("createNewItem() aufgerufen")
-        // Erstelle ein temporäres Item für die EditView
-        let newItem = URLItem(urlString: "https://", interval: 10, isEnabled: false, isEditing: true)
-        print("Temporäres Item erstellt, ID: \(newItem.id)")
-        return newItem
+    func createNewItem() {
+        print("➕ Erstelle neues Item")
+        
+        let newItem = URLItem(urlString: "https://", interval: 10, isEnabled: false)
+        
+        // Füge das neue Item hinzu
+        items.append(newItem)
+        
+        // Force UI Update
+        objectWillChange.send()
+        
+        // Speichere die Änderungen
+        save()
+        
+        print("✅ Neues Item erstellt")
     }
     
     func addItem(_ item: URLItem) {
@@ -309,10 +226,7 @@ class URLMonitor: ObservableObject {
         if validation.isValid {
             // Item ist gültig - hinzufügen und starten
             var validItem = item
-            validItem.isEditing = false
             validItem.isEnabled = true
-            validItem.urlError = nil
-            validItem.intervalError = nil
             
             items.insert(validItem, at: 0)
             schedule(item: validItem)
@@ -456,45 +370,56 @@ class URLMonitor: ObservableObject {
     
     func confirmEditingWithValues(for item: URLItem, urlString: String, title: String?, interval: Double, isEnabled: Bool, enabledNotifications: Set<URLItem.NotificationType>? = nil) {
         if let index = items.firstIndex(where: { $0.id == item.id }) {
-            // URL automatisch korrigieren
-            let correctedURL = correctURL(urlString)
+            print("💾 Bestätige Bearbeitung für Item: \(item.title ?? item.urlString)")
             
-            // Prüfen, ob sich die URL geändert hat
-            let urlChanged = items[index].urlString != correctedURL
+            // Erstelle ein temporäres Item für die Validierung
+            var validItem = item
+            validItem.urlString = urlString
+            validItem.title = title
+            validItem.interval = interval
+            validItem.isEnabled = isEnabled
             
-            // Lokale Werte übernehmen
-            items[index].urlString = correctedURL
+            // Validiere das Item
+            let validation = validateItem(validItem)
+            if !validation.isValid {
+                print("❌ Item ist ungültig: \(validation.urlError ?? ""), \(validation.intervalError ?? "")")
+                return
+            }
+            
+            // Prüfe, ob sich isEnabled geändert hat
+            let wasEnabled = items[index].isEnabled
+            let isEnabledChanged = wasEnabled != isEnabled
+            
+            // Aktualisiere das Item
+            items[index].urlString = urlString
             items[index].title = title
             items[index].interval = interval
             items[index].isEnabled = isEnabled
             
-            // Benachrichtigungseinstellungen übernehmen falls angegeben
             if let enabledNotifications = enabledNotifications {
                 items[index].enabledNotifications = enabledNotifications
             }
             
-            // Beim Beenden des Edit-Modus validieren
-            let validation = validateItem(items[index])
-            
-            // Fehler setzen
-            items[index].urlError = validation.urlError
-            items[index].intervalError = validation.intervalError
-            
-            if validation.isValid {
-                // Historie löschen, wenn sich die URL geändert hat
-                if urlChanged {
-                    print("🔄 URL changed from '\(item.urlString)' to '\(correctedURL)' - clearing history and status")
-                    items[index].history.removeAll()
-                    items[index].currentStatus = nil
-                    lastResponses.removeValue(forKey: item.id)
+            // Timer-Management basierend auf isEnabled Änderung
+            if isEnabledChanged {
+                if isEnabled {
+                    // Item wurde aktiviert - Timer starten
+                    print("▶️ Timer für Item starten: \(items[index].title ?? items[index].urlString)")
+                    schedule(item: items[index])
+                } else {
+                    // Item wurde deaktiviert - Timer stoppen
+                    print("⏸️ Timer für Item stoppen: \(items[index].title ?? items[index].urlString)")
+                    cancel(item: items[index])
                 }
-                
-                // Nur beenden wenn gültig
-                items[index].isEditing = false
-                items[index].urlError = nil
-                items[index].intervalError = nil
             }
+            
+            // Force UI Update
+            objectWillChange.send()
+            
+            // Speichere die Änderungen
             save()
+            
+            print("✅ Bearbeitung bestätigt")
         }
     }
     
@@ -515,11 +440,6 @@ class URLMonitor: ObservableObject {
     
     func resetHistory(for item: URLItem) {
         if let index = items.firstIndex(where: { $0.id == item.id }) {
-            // Aktuellen Status speichern, bevor Historie geleert wird
-            if let lastEntry = items[index].history.first {
-                items[index].currentStatus = lastEntry.status
-            }
-            
             // Historie komplett löschen
             items[index].history.removeAll()
             
@@ -546,11 +466,6 @@ class URLMonitor: ObservableObject {
     
     func resetAllHistories() {
         for index in items.indices {
-            // Aktuellen Status speichern, bevor Historie geleert wird
-            if let lastEntry = items[index].history.first {
-                items[index].currentStatus = lastEntry.status
-            }
-            
             // Historie komplett löschen
             items[index].history.removeAll()
         }
@@ -562,47 +477,13 @@ class URLMonitor: ObservableObject {
 
     
     func toggleEditing(for item: URLItem) {
-        if let index = items.firstIndex(where: { $0.id == item.id }) {
-            if items[index].isEditing {
-                // Beim Beenden des Edit-Modus validieren
-                let validation = validateItem(items[index])
-                
-                // Fehler setzen
-                items[index].urlError = validation.urlError
-                items[index].intervalError = validation.intervalError
-                
-                if validation.isValid {
-                    // URL automatisch korrigieren und speichern
-                    let correctedURL = correctURL(items[index].urlString)
-                    items[index].urlString = correctedURL
-                    
-                    // Nur beenden wenn gültig
-                    items[index].isEditing = false
-                    items[index].isModalEditing = false
-                    items[index].urlError = nil
-                    items[index].intervalError = nil
-                }
-            } else {
-                // Beim Starten des Edit-Modus Fehler löschen
-                items[index].urlError = nil
-                items[index].intervalError = nil
-                items[index].isEditing = true
-                items[index].isModalEditing = true
-            }
-            save()
-        }
+        // Diese Funktion ist nicht mehr benötigt, da nur noch Modal-Editor verwendet wird
+        print("⚠️ toggleEditing() ist veraltet - Modal-Editor wird verwendet")
     }
     
     func cancelEditing(for item: URLItem) {
-        if let index = items.firstIndex(where: { $0.id == item.id }) {
-            // Edit-Modus beenden ohne Änderungen zu speichern
-            items[index].isEditing = false
-            items[index].isModalEditing = false
-            // Fehler löschen
-            items[index].urlError = nil
-            items[index].intervalError = nil
-            save()
-        }
+        // Diese Funktion ist nicht mehr benötigt, da nur noch Modal-Editor verwendet wird
+        print("⚠️ cancelEditing() ist veraltet - Modal-Editor wird verwendet")
     }
     
     func removeEmptyItems() {
@@ -735,11 +616,24 @@ class URLMonitor: ObservableObject {
                     print("❌ Error: \(error?.localizedDescription ?? "Unknown error")")
                 }
                 
+                // DiffInfo erstellen falls Diff vorhanden
+                var diffInfo: URLItem.DiffInfo? = nil
+                if let diff = diff {
+                    let changedLines = diff.components(separatedBy: .newlines).filter { line in
+                        line.hasPrefix("+") || line.hasPrefix("-")
+                    }
+                    let previewLines = Array(changedLines.prefix(20))
+                    diffInfo = URLItem.DiffInfo(
+                        totalChangedLines: changedLines.count,
+                        previewLines: previewLines
+                    )
+                }
+                
                 self.items[currentIndex].history.insert(URLItem.HistoryEntry(
                     date: Date(), 
                     status: status, 
                     httpStatusCode: httpStatusCode,
-                    diff: diff,
+                    diffInfo: diffInfo,
                     responseSize: responseSize,
                     responseTime: responseTime
                 ), at: 0)
@@ -748,8 +642,7 @@ class URLMonitor: ObservableObject {
                     self.items[currentIndex].history.removeLast() 
                 }
                 
-                // Aktuellen Status aktualisieren
-                self.items[currentIndex].currentStatus = status
+                // currentStatus wird automatisch aus history abgeleitet
                 
                 // Notification senden, falls konfiguriert
                 NotificationManager.shared.notifyIfNeeded(for: self.items[currentIndex], status: status, httpStatusCode: httpStatusCode)
@@ -827,7 +720,7 @@ class URLMonitor: ObservableObject {
             // Debug: Versuche herauszufinden, welches Item das Problem verursacht
             for (index, persistableItem) in persistableItems.enumerated() {
                 do {
-                    let itemData = try JSONEncoder().encode(persistableItem)
+                    _ = try JSONEncoder().encode(persistableItem)
                     print("✅ Item \(index) (\(persistableItem.id)) kann encodiert werden")
                 } catch {
                     print("❌ Item \(index) (\(persistableItem.id)) kann NICHT encodiert werden: \(error)")

@@ -2,20 +2,20 @@ import Foundation
 
 // Struktur für die Persistierung ohne Historie
 struct PersistableURLItem: Codable {
-    var id: UUID
-    var urlString: String
-    var title: String?
-    var interval: Double
-    var isEnabled: Bool
-    var enabledNotifications: Set<URLItem.NotificationType>
+    let id: UUID
+    let urlString: String
+    let title: String?
+    let interval: Double
+    let isEnabled: Bool
+    let enabledNotifications: Set<URLItem.NotificationType>
     
-    init(from urlItem: URLItem) {
-        self.id = urlItem.id
-        self.urlString = urlItem.urlString
-        self.title = urlItem.title
-        self.interval = urlItem.interval
-        self.isEnabled = urlItem.isEnabled
-        self.enabledNotifications = urlItem.enabledNotifications
+    init(from item: URLItem) {
+        self.id = item.id
+        self.urlString = item.urlString
+        self.title = item.title
+        self.interval = item.interval
+        self.isEnabled = item.isEnabled
+        self.enabledNotifications = item.enabledNotifications
     }
     
     func toURLItem() -> URLItem {
@@ -113,19 +113,29 @@ struct URLItem: Identifiable, Codable, Equatable {
         }
     }
     
+    struct DiffInfo: Codable, Equatable {
+        let totalChangedLines: Int
+        let previewLines: [String] // Erste 20 Zeilen
+        
+        init(totalChangedLines: Int, previewLines: [String]) {
+            self.totalChangedLines = totalChangedLines
+            self.previewLines = previewLines
+        }
+    }
+    
     struct HistoryEntry: Codable, Equatable {
         let date: Date
         let status: Status
         let httpStatusCode: Int?
-        let diff: String? // Diff bei Veränderungen
+        let diffInfo: DiffInfo? // Optimierte Diff-Informationen
         let responseSize: Int? // Größe der Response in Bytes
         let responseTime: Double? // Response-Zeit in Sekunden
         
-        init(date: Date, status: Status, httpStatusCode: Int? = nil, diff: String? = nil, responseSize: Int? = nil, responseTime: Double? = nil) {
+        init(date: Date, status: Status, httpStatusCode: Int? = nil, diffInfo: DiffInfo? = nil, responseSize: Int? = nil, responseTime: Double? = nil) {
             self.date = date
             self.status = status
             self.httpStatusCode = httpStatusCode
-            self.diff = diff
+            self.diffInfo = diffInfo
             self.responseSize = responseSize
             self.responseTime = responseTime
         }
@@ -136,8 +146,6 @@ struct URLItem: Identifiable, Codable, Equatable {
     var title: String? // Optionaler Titel für die Anzeige
     var interval: Double
     var isEnabled: Bool
-
-    var isEditing: Bool
     var pendingRequests: Int // Anzahl der wartenden Requests
     var remainingTime: Double
     
@@ -145,30 +153,24 @@ struct URLItem: Identifiable, Codable, Equatable {
     var isWaiting: Bool {
         return pendingRequests > 0
     }
-    var history: [HistoryEntry]
-    var currentStatus: Status? // Aktueller Status unabhängig von Historie
-    // isNewItem wurde entfernt - neue Items werden nicht mehr gespeichert
-    var urlError: String?
-    var intervalError: String?
-    var isModalEditing: Bool = false
     
-    // Notification-Einstellungen
+    // Computed property für currentStatus
+    var currentStatus: Status? {
+        return history.first?.status
+    }
+    
+    var history: [HistoryEntry]
     var enabledNotifications: Set<NotificationType> = [.error, .change]
     
-    init(id: UUID = UUID(), urlString: String = "", title: String? = nil, interval: Double = 5, isEnabled: Bool = true, isEditing: Bool = false, pendingRequests: Int = 0, remainingTime: Double = 0, history: [HistoryEntry] = [], currentStatus: Status? = nil, urlError: String? = nil, intervalError: String? = nil, isModalEditing: Bool = false, enabledNotifications: Set<NotificationType> = [.error, .change]) {
+    init(id: UUID = UUID(), urlString: String = "", title: String? = nil, interval: Double = 5, isEnabled: Bool = true, pendingRequests: Int = 0, remainingTime: Double = 0, history: [HistoryEntry] = [], enabledNotifications: Set<NotificationType> = [.error, .change]) {
         self.id = id
         self.urlString = urlString
         self.title = title
         self.interval = interval
         self.isEnabled = isEnabled
-        self.isEditing = isEditing
         self.pendingRequests = pendingRequests
         self.remainingTime = remainingTime
         self.history = history
-        self.currentStatus = currentStatus
-        self.urlError = urlError
-        self.intervalError = intervalError
-        self.isModalEditing = isModalEditing
         self.enabledNotifications = enabledNotifications
     }
 }

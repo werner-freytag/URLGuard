@@ -12,6 +12,10 @@ struct URLItemInputForm: View {
     @State private var localItem: URLItem
     @State private var hasBeenEdited: Bool = false
     
+    // Lokale Fehlermeldungen
+    @State private var urlError: String?
+    @State private var intervalError: String?
+    
     init(item: URLItem, monitor: URLMonitor, onSave: @escaping (String, String?, Double, Bool, Set<URLItem.NotificationType>) -> Void, onValuesChanged: @escaping (String, String?, Double, Bool, Set<URLItem.NotificationType>) -> Void, onValidationRequested: @escaping (String, Double) -> (urlError: String?, intervalError: String?)) {
         self.item = item
         self.monitor = monitor
@@ -104,21 +108,21 @@ struct URLItemInputForm: View {
                                 validateLocalInterval()
                                 
                                 // Nur speichern wenn keine Fehler vorhanden
-                                if localItem.urlError == nil && localItem.intervalError == nil {
+                                if urlError == nil && intervalError == nil {
                                     onSave(localItem.urlString, localItem.title, localItem.interval, localItem.isEnabled, localItem.enabledNotifications)
                                 } else {
                                     print("❌ Validierungsfehler verhindern Speicherung:")
-                                    if let urlError = localItem.urlError {
+                                    if let urlError = urlError {
                                         print("  URL-Fehler: \(urlError)")
                                     }
-                                    if let intervalError = localItem.intervalError {
+                                    if let intervalError = intervalError {
                                         print("  Intervall-Fehler: \(intervalError)")
                                     }
                                 }
                             }
                         
                         // URL-Fehlermeldung mit fester Höhe
-                        if hasBeenEdited, let urlError = localItem.urlError {
+                        if hasBeenEdited, let urlError = urlError {
                             Text(urlError)
                                 .font(.caption)
                                 .foregroundColor(.red)
@@ -160,7 +164,7 @@ struct URLItemInputForm: View {
                         }
                         
                         // Interval-Fehlermeldung mit fester Höhe
-                        if hasBeenEdited, let intervalError = localItem.intervalError {
+                        if hasBeenEdited, let intervalError = intervalError {
                             Text(intervalError)
                                 .font(.caption)
                                 .foregroundColor(.red)
@@ -216,47 +220,26 @@ struct URLItemInputForm: View {
     }
     
     private func validateLocalURL() {
-        let trimmedURL = localItem.urlString.trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        if trimmedURL.isEmpty {
-            localItem.urlError = "URL darf nicht leer sein"
-        } else {
-            let correctedURL = monitor.correctURL(trimmedURL)
-            if let url = URL(string: correctedURL) {
-                if !monitor.isValidURL(url) {
-                    localItem.urlError = "Ungültige URL-Struktur"
-                } else {
-                    localItem.urlError = nil
-                }
-            } else {
-                localItem.urlError = "Ungültige URL"
-            }
-        }
+        let validation = onValidationRequested(localItem.urlString, localItem.interval)
+        urlError = validation.urlError
     }
     
     private func validateLocalInterval() {
-        let interval = localItem.interval
-        
-        if interval < 1 {
-            localItem.intervalError = "Intervall muss mindestens 1 Sekunde betragen"
-        } else if interval > 3600 {
-            localItem.intervalError = "Intervall darf maximal 3600 Sekunden (1 Stunde) betragen"
-        } else {
-            localItem.intervalError = nil
-        }
+        let validation = onValidationRequested(localItem.urlString, localItem.interval)
+        intervalError = validation.intervalError
     }
 }
 
 #Preview {
     let monitor = URLMonitor()
-    let item = URLItem(urlString: "https://example.com", interval: 10, isEditing: true)
+            let item = URLItem(urlString: "https://example.com", interval: 10)
     return URLItemInputForm(item: item, monitor: monitor, onSave: { _, _, _, _, _ in }, onValuesChanged: { _, _, _, _, _ in }, onValidationRequested: { _, _ in (nil, nil) })
         .frame(width: 600)
 }
 
 #Preview("Invalid URL") {
     let monitor = URLMonitor()
-    let item = URLItem(urlString: "invalid-url", interval: 10, isEditing: true, urlError: "Ungültige URL-Struktur")
+            let item = URLItem(urlString: "invalid-url", interval: 10)
     return URLItemInputForm(item: item, monitor: monitor, onSave: { _, _, _, _, _ in }, onValuesChanged: { _, _, _, _, _ in }, onValidationRequested: { _, _ in (nil, nil) })
         .frame(width: 600)
 } 

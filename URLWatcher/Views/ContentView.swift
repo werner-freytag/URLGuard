@@ -6,13 +6,12 @@ struct ContentView: View {
     @State private var editingItem: URLItem? = nil
     
     var filteredItems: [URLItem] {
-        // Alle Items sind jetzt "echte" Items - keine isNewItem Filterung mehr nötig
         if searchText.isEmpty {
             return monitor.items
-        } else {
-            return monitor.items.filter { item in
-                item.urlString.localizedCaseInsensitiveContains(searchText)
-            }
+        }
+        
+        return monitor.items.filter { item in
+            item.urlString.localizedCaseInsensitiveContains(searchText)
         }
     }
     
@@ -32,8 +31,11 @@ struct ContentView: View {
                     // Keine Einträge vorhanden
                     EmptyStateView(monitor: monitor, onNewItem: {
                         // Neuen Eintrag erstellen und sofort bearbeiten
-                        let newItem = monitor.createNewItem()
-                        editingItem = newItem
+                        monitor.createNewItem()
+                        // Das neu erstellte Item ist das letzte in der Liste
+                        if let newItem = monitor.items.last {
+                            editingItem = newItem
+                        }
                     })
                 }
             } else {

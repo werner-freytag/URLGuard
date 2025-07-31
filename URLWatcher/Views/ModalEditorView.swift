@@ -7,22 +7,22 @@ struct ModalEditorView: View {
     let onSave: ((URLItem) -> Void)?
     @Environment(\.dismiss) private var dismiss
     @State private var hasValidationErrors: Bool = false
-    @State private var currentUrlString: String
-    @State private var currentTitle: String?
-    @State private var currentInterval: Double
-    @State private var currentIsEnabled: Bool
-    @State private var currentEnabledNotifications: Set<URLItem.NotificationType>
+    @State private var urlString: String
+    @State private var title: String?
+    @State private var interval: Double
+    @State private var isEnabled: Bool
+    @State private var enabledNotifications: Set<URLItem.NotificationType>
     
     init(item: URLItem, monitor: URLMonitor, isNewItem: Bool = false, onSave: ((URLItem) -> Void)? = nil) {
         self.item = item
         self.monitor = monitor
         self.isNewItem = isNewItem
         self.onSave = onSave
-        self._currentUrlString = State(initialValue: item.urlString)
-        self._currentTitle = State(initialValue: item.title)
-        self._currentInterval = State(initialValue: item.interval)
-        self._currentIsEnabled = State(initialValue: item.isEnabled)
-        self._currentEnabledNotifications = State(initialValue: item.enabledNotifications)
+        self._urlString = State(initialValue: item.urlString)
+        self._title = State(initialValue: item.title)
+        self._interval = State(initialValue: item.interval)
+        self._isEnabled = State(initialValue: item.isEnabled)
+        self._enabledNotifications = State(initialValue: item.enabledNotifications)
     }
     
     var body: some View {
@@ -54,11 +54,11 @@ struct ModalEditorView: View {
                         },
                         onValuesChanged: { urlString, title, interval, isEnabled, enabledNotifications in
                             // Aktualisiere die aktuellen Werte bei jeder Änderung
-                            currentUrlString = urlString
-                            currentTitle = title
-                            currentInterval = interval
-                            currentIsEnabled = isEnabled
-                            currentEnabledNotifications = enabledNotifications
+                            self.urlString = urlString
+                            self.title = title
+                            self.interval = interval
+                            self.isEnabled = isEnabled
+                            self.enabledNotifications = enabledNotifications
                         },
                         onValidationRequested: { urlString, interval in
                             // Validiere die Werte und gib Fehler zurück
@@ -91,7 +91,7 @@ struct ModalEditorView: View {
                 
                 Button("Fertig") {
                     // Verwende die aktuellen Werte aus den State-Variablen
-                    if saveChanges(urlString: currentUrlString, title: currentTitle, interval: currentInterval, isEnabled: currentIsEnabled, enabledNotifications: currentEnabledNotifications) {
+                    if saveChanges(urlString: urlString, title: title, interval: interval, isEnabled: isEnabled, enabledNotifications: enabledNotifications) {
                         dismiss()
                     }
                 }
@@ -142,7 +142,7 @@ struct ModalEditorView: View {
 
 #Preview {
     let monitor = URLMonitor()
-    let item = URLItem(urlString: "https://example.com", interval: 10, isEditing: true, isModalEditing: true)
+            let item = URLItem(urlString: "https://example.com", interval: 10)
     return ModalEditorView(
         item: item, 
         monitor: monitor, 
