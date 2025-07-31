@@ -3,15 +3,19 @@ import SwiftUI
 struct ModalEditorView: View {
     let item: URLItem
     let monitor: URLMonitor
+    let isNewItem: Bool
+    let onSave: ((URLItem) -> Void)?
     @Environment(\.dismiss) private var dismiss
     @State private var hasValidationErrors: Bool = false
     @State private var currentUrlString: String
     @State private var currentInterval: Double
     @State private var currentEnabledNotifications: Set<URLItem.NotificationType>
     
-    init(item: URLItem, monitor: URLMonitor) {
+    init(item: URLItem, monitor: URLMonitor, isNewItem: Bool = false, onSave: ((URLItem) -> Void)? = nil) {
         self.item = item
         self.monitor = monitor
+        self.isNewItem = isNewItem
+        self.onSave = onSave
         self._currentUrlString = State(initialValue: item.urlString)
         self._currentInterval = State(initialValue: item.interval)
         self._currentEnabledNotifications = State(initialValue: item.enabledNotifications)
@@ -21,7 +25,7 @@ struct ModalEditorView: View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Text(item.isNewItem ? "Neuen URL-Eintrag erstellen" : "URL-Eintrag bearbeiten")
+                Text(isNewItem ? "Neuen URL-Eintrag erstellen" : "URL-Eintrag bearbeiten")
                     .font(.headline)
                     .fontWeight(.medium)
                 
@@ -74,10 +78,7 @@ struct ModalEditorView: View {
                 Spacer()
                 
                 Button("Abbrechen") {
-                    // Wenn es ein neuer Eintrag ist, diesen löschen
-                    if item.isNewItem {
-                        monitor.remove(item: item)
-                    }
+                    // Bei neuen Items wird nichts gelöscht, da sie nicht gespeichert sind
                     dismiss()
                 }
                 .buttonStyle(.bordered)
@@ -100,37 +101,39 @@ struct ModalEditorView: View {
     }
     
     private func saveChanges(urlString: String, interval: Double, enabledNotifications: Set<URLItem.NotificationType>) -> Bool {
-        // Speichern (Validierung erfolgt bereits in URLItemInputForm)
-        if item.isNewItem {
-            monitor.confirmNewItemWithValues(for: item, urlString: urlString, interval: interval, enabledNotifications: enabledNotifications)
-        } else if item.isEditing {
-            monitor.confirmEditingWithValues(for: item, urlString: urlString, interval: interval, enabledNotifications: enabledNotifications)
-        } else {
-            // Fallback: Direkt speichern mit URL-Änderungsprüfung
-            if let index = monitor.items.firstIndex(where: { $0.id == item.id }) {
-                let correctedURL = monitor.correctURL(urlString)
-                let urlChanged = monitor.items[index].urlString != correctedURL
-                
-                // Historie löschen, wenn sich die URL geändert hat
-                if urlChanged {
-                    print("🔄 URL changed from '\(monitor.items[index].urlString)' to '\(correctedURL)' - clearing history and status")
-                    monitor.items[index].history.removeAll()
-                    monitor.items[index].currentStatus = nil
-                    // lastResponses ist private, daher können wir es hier nicht direkt löschen
-                }
-                
-                monitor.items[index].urlString = correctedURL
-                monitor.items[index].interval = interval
-                monitor.items[index].enabledNotifications = enabledNotifications
-                monitor.save()
+        // URL korrigieren
+        let correctedURL = monitor.correctURL(urlString)
+        
+        if isNewItem {
+            // Neues Item erstellen und über Callback zurückgeben
+            var newItem = item
+            newItem.urlString = correctedURL
+            newItem.interval = interval
+            newItem.enabledNotifications = enabledNotifications
+            
+            // Validiere das Item
+            let validation = monitor.validateItem(newItem)
+            if validation.isValid {
+                onSave?(newItem)
+                return true
+            } else {
+                return false
             }
+        } else {
+            // Existierendes Item bearbeiten
+            monitor.confirmEditingWithValues(for: item, urlString: correctedURL, interval: interval, enabledNotifications: enabledNotifications)
+            return true
         }
-        return true
     }
 }
 
 #Preview {
     let monitor = URLMonitor()
     let item = URLItem(urlString: "https://example.com", interval: 10, isEditing: true, isModalEditing: true)
-    return ModalEditorView(item: item, monitor: monitor)
+    return ModalEditorView(
+        item: item, 
+        monitor: monitor, 
+        isNewItem: false,
+        onSave: { _ in }
+    )
 } 

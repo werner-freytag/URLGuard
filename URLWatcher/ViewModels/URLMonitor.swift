@@ -25,67 +25,78 @@ class URLMonitor: ObservableObject {
     func schedule(item: URLItem) {
         cancel(item: item)
         guard !item.isPaused, !item.urlString.isEmpty else { return }
-        let timer = Timer.scheduledTimer(withTimeInterval: item.interval, repeats: true) { [weak self] _ in
-            self?.check(itemID: item.id)
-        }
-        timers[item.id] = timer
-        // Sofort ersten Check auslösen
-        check(itemID: item.id)
-        // Countdown starten
-        startCountdown(for: item)
-    }
-    
-    func startCountdown(for item: URLItem) {
-        guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
-        
-        // Countdown stoppen falls bereits läuft
-        countdownTimers[item.id]?.invalidate()
         
         // Verbleibende Zeit auf Intervall setzen
-        items[index].remainingTime = item.interval
+        if let index = items.firstIndex(where: { $0.id == item.id }) {
+            items[index].remainingTime = item.interval
+        }
         
-        // Countdown-Timer starten
-        let countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+        // Einziger Timer für Countdown und Checks (jede Sekunde)
+        let timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             guard let self = self else { return }
-            guard let currentIndex = self.items.firstIndex(where: { $0.id == item.id }) else { return }
             
-            if self.items[currentIndex].remainingTime > 0 {
-                self.items[currentIndex].remainingTime -= 1.0
-            } else {
-                // Countdown beendet, auf Intervall zurücksetzen
-                self.items[currentIndex].remainingTime = self.items[currentIndex].interval
+            DispatchQueue.main.async {
+                guard let currentIndex = self.items.firstIndex(where: { $0.id == item.id }) else { return }
+                
+                // Countdown aktualisieren
+                if self.items[currentIndex].remainingTime > 0 {
+                    self.items[currentIndex].remainingTime -= 1.0
+                }
+                
+                // Check auslösen wenn Countdown bei 0 ist
+                if self.items[currentIndex].remainingTime <= 0 {
+                    self.check(itemID: item.id)
+                    // Countdown auf Intervall zurücksetzen
+                    self.items[currentIndex].remainingTime = self.items[currentIndex].interval
+                }
             }
         }
-        countdownTimers[item.id] = countdownTimer
+        timers[item.id] = timer
     }
     
-    func stopCountdown(for item: URLItem) {
-        countdownTimers[item.id]?.invalidate()
-        countdownTimers.removeValue(forKey: item.id)
-        
-        if let index = items.firstIndex(where: { $0.id == item.id }) {
-            items[index].remainingTime = 0
-        }
-    }
+    // startCountdown und stopCountdown wurden entfernt - Countdown wird jetzt vom Haupt-Timer gehandhabt
     
     func rescheduleTimer(for item: URLItem) {
         cancel(item: item)
         guard !item.isPaused, !item.urlString.isEmpty else { return }
-        let timer = Timer.scheduledTimer(withTimeInterval: item.interval, repeats: true) { [weak self] _ in
-            self?.check(itemID: item.id)
+        
+        // Verbleibende Zeit auf Intervall setzen
+        if let index = items.firstIndex(where: { $0.id == item.id }) {
+            items[index].remainingTime = item.interval
+        }
+        
+        // Einziger Timer für Countdown und Checks (jede Sekunde)
+        let timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            
+            DispatchQueue.main.async {
+                guard let currentIndex = self.items.firstIndex(where: { $0.id == item.id }) else { return }
+                
+                // Countdown aktualisieren
+                if self.items[currentIndex].remainingTime > 0 {
+                    self.items[currentIndex].remainingTime -= 1.0
+                }
+                
+                // Check auslösen wenn Countdown bei 0 ist
+                if self.items[currentIndex].remainingTime <= 0 {
+                    self.check(itemID: item.id)
+                    // Countdown auf Intervall zurücksetzen
+                    self.items[currentIndex].remainingTime = self.items[currentIndex].interval
+                }
+            }
         }
         timers[item.id] = timer
-        // Sofortigen Check auslösen bei Timer-Reschedule
-        check(itemID: item.id)
-        // Countdown neu starten
-        startCountdown(for: item)
     }
     
     func cancel(item: URLItem) {
         timers[item.id]?.invalidate()
         timers.removeValue(forKey: item.id)
         lastResponses.removeValue(forKey: item.id)
-        stopCountdown(for: item)
+        
+        // Countdown zurücksetzen
+        if let index = items.firstIndex(where: { $0.id == item.id }) {
+            items[index].remainingTime = 0
+        }
     }
     
     func togglePause(for item: URLItem) {
@@ -107,15 +118,34 @@ class URLMonitor: ObservableObject {
         save()
     }
     
-    func addNewItem() {
-        print("addNewItem() aufgerufen")
-        // Immer einen neuen Eintrag erstellen
-        let newItem = URLItem(isPaused: true, isEditing: true, isNewItem: true)
-        items.insert(newItem, at: 0) // Am Anfang hinzufügen statt am Ende
-        print("Neuer Eintrag hinzugefügt, ID: \(newItem.id)")
-        print("Aktuelle Items Anzahl: \(items.count)")
-        save()
-        print("Items gespeichert")
+    func createNewItem() -> URLItem {
+        print("createNewItem() aufgerufen")
+        // Erstelle ein temporäres Item für die EditView
+        let newItem = URLItem(urlString: "https://", interval: 10, isPaused: true, isEditing: true)
+        print("Temporäres Item erstellt, ID: \(newItem.id)")
+        return newItem
+    }
+    
+    func addItem(_ item: URLItem) {
+        print("addItem() aufgerufen für Item: \(item.id)")
+        // Validiere das Item vor dem Hinzufügen
+        let validation = validateItem(item)
+        
+        if validation.isValid {
+            // Item ist gültig - hinzufügen und starten
+            var validItem = item
+            validItem.isEditing = false
+            validItem.isPaused = false
+            validItem.urlError = nil
+            validItem.intervalError = nil
+            
+            items.insert(validItem, at: 0)
+            schedule(item: validItem)
+            save()
+            print("Item erfolgreich hinzugefügt und gestartet")
+        } else {
+            print("Item ist ungültig - nicht hinzugefügt")
+        }
     }
     
     func validateItem(_ item: URLItem) -> (isValid: Bool, urlError: String?, intervalError: String?) {
@@ -247,52 +277,7 @@ class URLMonitor: ObservableObject {
         return components.url?.absoluteString ?? correctedURL
     }
     
-    func confirmNewItemWithValues(for item: URLItem, urlString: String, interval: Double, enabledNotifications: Set<URLItem.NotificationType>? = nil) {
-        if let index = items.firstIndex(where: { $0.id == item.id }) {
-            // URL automatisch korrigieren
-            let correctedURL = correctURL(urlString)
-            
-            // Prüfen, ob sich die URL geändert hat
-            let urlChanged = items[index].urlString != correctedURL
-            
-            // Lokale Werte übernehmen
-            items[index].urlString = correctedURL
-            items[index].interval = interval
-            
-            // Benachrichtigungseinstellungen übernehmen falls angegeben
-            if let enabledNotifications = enabledNotifications {
-                items[index].enabledNotifications = enabledNotifications
-            }
-            
-            let validation = validateItem(items[index])
-            
-            // Fehler setzen
-            items[index].urlError = validation.urlError
-            items[index].intervalError = validation.intervalError
-            
-            if validation.isValid {
-                // Historie löschen, wenn sich die URL geändert hat
-                if urlChanged {
-                    print("🔄 URL changed from '\(item.urlString)' to '\(correctedURL)' - clearing history and status")
-                    items[index].history.removeAll()
-                    items[index].currentStatus = nil
-                    lastResponses.removeValue(forKey: item.id)
-                }
-                
-                // Nur bestätigen wenn gültig
-                items[index].isNewItem = false
-                items[index].isEditing = false
-                items[index].urlError = nil
-                items[index].intervalError = nil
-                // Wenn URL nicht leer ist, starten
-                if !items[index].urlString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    items[index].isPaused = false
-                    schedule(item: items[index])
-                }
-            }
-            save()
-        }
-    }
+    // confirmNewItemWithValues wurde entfernt - neue Items werden über addItem() hinzugefügt
     
     func confirmEditingWithValues(for item: URLItem, urlString: String, interval: Double, enabledNotifications: Set<URLItem.NotificationType>? = nil) {
         if let index = items.firstIndex(where: { $0.id == item.id }) {
@@ -338,41 +323,7 @@ class URLMonitor: ObservableObject {
         }
     }
     
-    func confirmNewItem(for item: URLItem) {
-        if let index = items.firstIndex(where: { $0.id == item.id }) {
-            let validation = validateItem(item)
-            
-            // Fehler setzen
-            items[index].urlError = validation.urlError
-            items[index].intervalError = validation.intervalError
-            
-            if validation.isValid {
-                // URL automatisch korrigieren und speichern
-                let correctedURL = correctURL(items[index].urlString)
-                items[index].urlString = correctedURL
-                
-                // Nur bestätigen wenn gültig
-                items[index].isNewItem = false
-                items[index].isEditing = false
-                items[index].urlError = nil
-                items[index].intervalError = nil
-                // Backup-Werte löschen
-                // Wenn URL nicht leer ist, starten
-                if !items[index].urlString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    items[index].isPaused = false
-                    schedule(item: items[index])
-                }
-            }
-            save()
-        }
-    }
-    
-    func cancelNewItem(for item: URLItem) {
-        if let index = items.firstIndex(where: { $0.id == item.id }) {
-            items.remove(at: index)
-            save()
-        }
-    }
+    // confirmNewItem und cancelNewItem wurden entfernt - neue Items werden über addItem() hinzugefügt
     
     func removeAllItems() {
         // Alle Timer stoppen
@@ -501,12 +452,8 @@ class URLMonitor: ObservableObject {
     }
     
     func ensureMinimumOneItem() {
-        // Stelle sicher, dass immer mindestens ein Eintrag existiert
-        if items.isEmpty {
-            // Erstelle einen neuen Eintrag im Edit-Modus
-            let newItem = URLItem(isPaused: true, isEditing: true, isNewItem: true)
-            items.append(newItem)
-        }
+        // Diese Funktion ist nicht mehr nötig, da neue Items nicht mehr automatisch erstellt werden
+        // Neue Items werden nur über createNewItem() erstellt
     }
     
     func cleanupAndSave() {
@@ -519,14 +466,14 @@ class URLMonitor: ObservableObject {
         let item = items[index]
         guard !item.urlString.isEmpty else { return }
         
-        // Wartezustand setzen
-        items[index].isWaiting = true
+        // Pending Requests Counter erhöhen
+        items[index].pendingRequests += 1
         save()
         
         let correctedURLString = correctURL(item.urlString)
         guard let url = URL(string: correctedURLString) else { 
-            // Wartezustand löschen bei ungültiger URL
-            items[index].isWaiting = false
+            // Counter zurücksetzen bei ungültiger URL
+            items[index].pendingRequests = max(0, items[index].pendingRequests - 1)
             save()
             return 
         }
@@ -537,8 +484,8 @@ class URLMonitor: ObservableObject {
                 // Prüfen, ob das Item noch existiert
                 guard let currentIndex = self.items.firstIndex(where: { $0.id == itemID }) else { return }
                 
-                // Wartezustand löschen
-                self.items[currentIndex].isWaiting = false
+                // Pending Requests Counter verringern
+                self.items[currentIndex].pendingRequests = max(0, self.items[currentIndex].pendingRequests - 1)
                 
                 var status: URLItem.Status = .error
                 var httpStatusCode: Int? = nil

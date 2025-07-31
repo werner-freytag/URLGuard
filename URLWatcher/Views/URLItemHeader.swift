@@ -4,61 +4,60 @@ struct URLItemHeader: View {
     let item: URLItem
     let monitor: URLMonitor
     let onEdit: () -> Void
+    @State private var rotationAngle: Double = 0
     
     var body: some View {
-        Button(action: {
-            guard monitor.items.contains(where: { $0.id == item.id }) else { return }
-            monitor.toggleCollapse(for: item)
-        }) {
-            HStack {
-                // Titel: URL - Dauer
+        HStack {
+            // Titel: URL - Dauer
+            HStack(spacing: 4) {
+                Text(item.urlString.isEmpty ? "Keine URL" : item.urlString)
+                    .font(.headline)
+                    .fontWeight(.bold)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Text("–")
+                    .font(.headline)
+                Text("\(Int(item.interval))s")
+                    .font(.headline)
+                    .fontWeight(.regular)
+            }
+            .foregroundColor(item.isPaused ? .secondary : .primary)
+            
+            // Bearbeiten-Button
+            Button(action: {
+                onEdit()
+            }) {
+                Text("Bearbeiten")
+                    .font(.caption)
+                    .foregroundColor(.blue)
+            }
+            .buttonStyle(.bordered)
+            
+            // Löschen-Button neben dem Bearbeiten-Button
+            Button(action: {
+                guard monitor.items.contains(where: { $0.id == item.id }) else { return }
+                monitor.remove(item: item)
+            }) {
+                Text("Löschen")
+                    .font(.caption)
+                    .foregroundColor(.red)
+            }
+            .buttonStyle(.bordered)
+            
+            Spacer()
+            
+            // Disclosure-Pfeil + Status (klickbar für Historie ein-/ausblenden)
+            Button(action: {
+                guard monitor.items.contains(where: { $0.id == item.id }) else { return }
+                monitor.toggleCollapse(for: item)
+            }) {
                 HStack(spacing: 4) {
-                    Text(item.urlString.isEmpty ? "Keine URL" : item.urlString)
-                        .font(.headline)
-                        .fontWeight(.bold)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                    Text("–")
-                        .font(.headline)
-                    Text("\(Int(item.interval))s")
-                        .font(.headline)
-                        .fontWeight(.regular)
-                }
-                .foregroundColor(item.isPaused ? .secondary : .primary)
-                
-                // Bearbeiten-Button
-                Button(action: {
-                    onEdit()
-                }) {
-                    Text("Bearbeiten")
-                        .font(.caption)
-                        .foregroundColor(.blue)
-                }
-                .buttonStyle(.bordered)
-                
-                // Löschen-Button neben dem Bearbeiten-Button
-                Button(action: {
-                    guard monitor.items.contains(where: { $0.id == item.id }) else { return }
-                    monitor.remove(item: item)
-                }) {
-                    Text("Löschen")
-                        .font(.caption)
-                        .foregroundColor(.red)
-                }
-                .buttonStyle(.bordered)
-                
-                Spacer()
-                
-                // Countdown links vom Status (nur wenn nicht pausiert)
-                if item.isWaiting && !item.isPaused {
-                    Text("\(Int(item.remainingTime))s")
+                    Image(systemName: "chevron.right")
                         .font(.caption)
                         .foregroundColor(.secondary)
-                        .padding(.trailing, 4)
-                }
-                
-                // Klickbare Status-Anzeige (Historie ein-/ausblenden)
-                HStack(spacing: 4) {
+                        .frame(width: 16, height: 16, alignment: .center)
+                        .rotationEffect(.degrees(rotationAngle))
+                    
                     Circle()
                         .fill(statusColor(for: item))
                         .frame(width: 8, height: 8)
@@ -66,25 +65,35 @@ struct URLItemHeader: View {
                         .font(.caption)
                         .foregroundColor(statusColor(for: item).opacity(item.isPaused ? 0.6 : 1.0))
                 }
-                
-                // Pause-Button hinter dem Status (nur Icon)
-                Button(action: {
-                    guard monitor.items.contains(where: { $0.id == item.id }) else { return }
-                    monitor.togglePause(for: item)
-                }) {
-                    Image(systemName: item.isPaused ? "play.circle.fill" : "pause.circle.fill")
-                        .font(.title3)
-                        .foregroundColor(item.isPaused ? .green : .orange)
-                }
-                .buttonStyle(PlainButtonStyle())
-                .help(item.isPaused ? "Start" : "Pause")
-                .disabled(item.isNewItem)
             }
+            .buttonStyle(PlainButtonStyle())
+            .help(item.isCollapsed ? "Historie anzeigen" : "Historie ausblenden")
+            
+            // Pause-Button hinter dem Status (nur Icon)
+            Button(action: {
+                guard monitor.items.contains(where: { $0.id == item.id }) else { return }
+                monitor.togglePause(for: item)
+            }) {
+                Image(systemName: item.isPaused ? "play.circle.fill" : "pause.circle.fill")
+                    .font(.title3)
+                    .foregroundColor(item.isPaused ? .green : .orange)
+            }
+            .buttonStyle(PlainButtonStyle())
+            .help(item.isPaused ? "Start" : "Pause")
+            // Pause-Button ist immer aktiv, da keine isNewItem mehr
         }
-        .buttonStyle(PlainButtonStyle())
-        .help(item.isCollapsed ? "Historie anzeigen" : "Historie ausblenden")
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
+        .onAppear {
+            // Initiale Rotation setzen
+            rotationAngle = item.isCollapsed ? 0 : 90
+        }
+        .onChange(of: item.isCollapsed) { oldValue, newValue in
+            // Rotation bei Änderung animieren
+            withAnimation(.easeInOut(duration: 0.2)) {
+                rotationAngle = newValue ? 0 : 90
+            }
+        }
     }
     
     func statusColor(for item: URLItem) -> Color {

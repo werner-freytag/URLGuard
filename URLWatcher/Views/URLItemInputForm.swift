@@ -20,10 +20,10 @@ struct URLItemInputForm: View {
         self.onValidationRequested = onValidationRequested
         // Erstelle eine Kopie des Items für lokale Bearbeitung
         var initialItem = item
-        // Wenn es ein neuer Eintrag ist und die URL leer ist, "https://" voreintragen
-        if item.isNewItem && item.urlString.isEmpty {
-            initialItem.urlString = "https://"
-        }
+                    // Wenn die URL leer ist, "https://" voreintragen
+            if item.urlString.isEmpty {
+                initialItem.urlString = "https://"
+            }
         self._localItem = State(initialValue: initialItem)
     }
     
@@ -135,10 +135,8 @@ struct URLItemInputForm: View {
             }
         }
         .onAppear {
-            // Fokussiere automatisch bei neuen Einträgen beim App-Start
-            if item.isNewItem {
-                focusedItemID = item.id
-            }
+            // Fokussiere automatisch beim App-Start
+            focusedItemID = item.id
         }
     }
     

@@ -101,11 +101,16 @@ struct URLItem: Identifiable, Codable, Equatable {
     var isPaused: Bool
     var isCollapsed: Bool
     var isEditing: Bool
-    var isWaiting: Bool
+    var pendingRequests: Int // Anzahl der wartenden Requests
     var remainingTime: Double
+    
+    // Computed property für isWaiting
+    var isWaiting: Bool {
+        return pendingRequests > 0
+    }
     var history: [HistoryEntry]
     var currentStatus: Status? // Aktueller Status unabhängig von Historie
-    var isNewItem: Bool
+    // isNewItem wurde entfernt - neue Items werden nicht mehr gespeichert
     var urlError: String?
     var intervalError: String?
     var isModalEditing: Bool = false
@@ -113,18 +118,17 @@ struct URLItem: Identifiable, Codable, Equatable {
     // Notification-Einstellungen
     var enabledNotifications: Set<NotificationType> = [.error, .change]
     
-    init(id: UUID = UUID(), urlString: String = "", interval: Double = 5, isPaused: Bool = false, isCollapsed: Bool = true, isEditing: Bool = false, isWaiting: Bool = false, remainingTime: Double = 0, history: [HistoryEntry] = [], currentStatus: Status? = nil, isNewItem: Bool = false, urlError: String? = nil, intervalError: String? = nil, isModalEditing: Bool = false, enabledNotifications: Set<NotificationType> = [.error, .change]) {
+    init(id: UUID = UUID(), urlString: String = "", interval: Double = 5, isPaused: Bool = false, isCollapsed: Bool = true, isEditing: Bool = false, pendingRequests: Int = 0, remainingTime: Double = 0, history: [HistoryEntry] = [], currentStatus: Status? = nil, urlError: String? = nil, intervalError: String? = nil, isModalEditing: Bool = false, enabledNotifications: Set<NotificationType> = [.error, .change]) {
         self.id = id
         self.urlString = urlString
         self.interval = interval
         self.isPaused = isPaused
         self.isCollapsed = isCollapsed
         self.isEditing = isEditing
-        self.isWaiting = isWaiting
+        self.pendingRequests = pendingRequests
         self.remainingTime = remainingTime
         self.history = history
         self.currentStatus = currentStatus
-        self.isNewItem = isNewItem
         self.urlError = urlError
         self.intervalError = intervalError
         self.isModalEditing = isModalEditing

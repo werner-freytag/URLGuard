@@ -3,61 +3,69 @@ import SwiftUI
 struct URLItemHistory: View {
     let item: URLItem
     let monitor: URLMonitor
+    @State private var scrollToEnd = false
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Abstand vor der Trennlinie
-            Spacer()
-                .frame(height: 16)
-            
-            // Trennlinie zwischen Header und Historie
-            Rectangle()
-                .fill(Color.secondary.opacity(0.2))
-                .frame(height: 1)
-            
-            // Abstand nach der Trennlinie
-            Spacer()
-                .frame(height: 16)
-            
             // Historie-Container mit Padding
             HStack(alignment: .top, spacing: 12) {
                 // Historie-Visualisierung (einzeilig mit Scroll)
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 1) {
-                        ForEach(Array(item.history.prefix(300).reversed()), id: \.date) { entry in
-                            RoundedRectangle(cornerRadius: 2)
-                                .fill(color(for: entry.status))
-                                .frame(width: 10, height: 10)
-                                .help(tooltipText(for: entry))
+                ScrollViewReader { proxy in
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 1) {
+                            ForEach(Array(item.history.reversed()), id: \.date) { entry in
+                                RoundedRectangle(cornerRadius: 2)
+                                    .fill(color(for: entry.status))
+                                    .frame(width: 10, height: 10)
+                                    .help(tooltipText(for: entry))
+                                    .id(entry.date) // ID für ScrollViewReader
+                            }
+                            
+                            // Countdown oder Progress (nur wenn nicht pausiert)
+                            if !item.isPaused {
+                                if item.isWaiting {
+                                    // ProgressView während Request
+                                    ProgressView()
+                                        .scaleEffect(0.3)
+                                        .frame(width: 10, height: 10)
+                                        .padding(.horizontal, 2)
+                                } else if item.remainingTime > 0 {
+                                    // Countdown zwischen Requests
+                                    Text("\(Int(item.remainingTime))")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                        .padding(.horizontal, 4)
+                                }
+                            }
+                        }
+                        .padding(.trailing, 8) // Abstand am Ende für bessere Optik
+                    }
+                    .frame(height: 12) // Feste Höhe für einzeilige Anzeige
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .onChange(of: item.history.count) { oldCount, newCount in
+                        // Bei neuen Einträgen zum Ende scrollen
+                        if newCount > oldCount, let firstEntry = item.history.first {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                proxy.scrollTo(firstEntry.date, anchor: .trailing)
+                            }
                         }
                     }
-                    .padding(.trailing, 8) // Abstand am Ende für bessere Optik
                 }
-                .frame(height: 12) // Feste Höhe für einzeilige Anzeige
-                .frame(maxWidth: .infinity, alignment: .leading)
                 
                 Spacer()
                 
-                // Reset-Button für Historie (rechtsbündig)
+                // Reset-Button für Historie (nur Icon)
                 Button(action: {
                     guard monitor.items.contains(where: { $0.id == item.id }) else { return }
                     monitor.resetHistory(for: item)
                 }) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "trash")
-                            .font(.caption)
-                        Text("Historie leeren")
-                            .font(.caption)
-                    }
-                    .foregroundColor(.secondary)
+                    Image(systemName: "arrow.clockwise")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
                 .buttonStyle(PlainButtonStyle())
                 .help("Historie leeren")
             }
-        }
-        .padding(.horizontal, 16)
-        .padding(.bottom, 16)
-        .background(Color.white)
+        .padding(16)
     }
     
     func color(for status: URLItem.Status) -> Color {

@@ -21,10 +21,8 @@ struct URLWatcherApp: App {
                     // Gruppe 1: Erstellung
                     ToolbarItemGroup(placement: .primaryAction) {
                         Button(action: {
-                            monitor.addNewItem()
-                            if let newItem = monitor.items.first(where: { $0.isNewItem }) {
-                                editingItem = newItem
-                            }
+                            let newItem = monitor.createNewItem()
+                            editingItem = newItem
                         }) {
                             HStack(spacing: 4) {
                                 Image(systemName: "plus.circle")
@@ -38,7 +36,18 @@ struct URLWatcherApp: App {
                 .toolbar(.visible, for: .windowToolbar)
                 .toolbar(.automatic, for: .windowToolbar)
                 .sheet(item: $editingItem) { item in
-                    ModalEditorView(item: item, monitor: monitor)
+                    // Prüfe ob es ein neues Item ist (nicht in der Liste vorhanden)
+                    let isNewItem = !monitor.items.contains { $0.id == item.id }
+                    
+                    ModalEditorView(
+                        item: item, 
+                        monitor: monitor, 
+                        isNewItem: isNewItem,
+                        onSave: { newItem in
+                            // Neues Item hinzufügen
+                            monitor.addItem(newItem)
+                        }
+                    )
                 }
         }
         .windowStyle(.titleBar)

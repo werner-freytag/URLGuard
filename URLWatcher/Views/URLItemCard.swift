@@ -12,6 +12,11 @@ struct URLItemCard: View {
             
             // Historie anzeigen wenn nicht eingeklappt
             if !item.isCollapsed {
+                // Trennlinie zwischen Header und Historie
+                Rectangle()
+                    .fill(Color.secondary.opacity(0.2))
+                    .frame(height: 1)
+
                 URLItemHistory(item: item, monitor: monitor)
             }
         }
