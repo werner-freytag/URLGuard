@@ -4,10 +4,21 @@ struct URLItemHeader: View {
     let item: URLItem
     let monitor: URLMonitor
     let onEdit: () -> Void
-    @State private var rotationAngle: Double = 0
     
     var body: some View {
         HStack {
+            // Start/Pause Button ganz links und groß
+            Button(action: {
+                guard monitor.items.contains(where: { $0.id == item.id }) else { return }
+                monitor.togglePause(for: item)
+            }) {
+                Image(systemName: item.isPaused ? "play.circle.fill" : "pause.circle.fill")
+                    .font(.title)
+                    .foregroundColor(.blue)
+            }
+            .buttonStyle(PlainButtonStyle())
+            .help(item.isPaused ? "Start" : "Pause")
+            
             VStack(alignment: .leading, spacing: 4) {
                 // Haupttitel
                 if let title = item.title, !title.isEmpty {
@@ -83,41 +94,6 @@ struct URLItemHeader: View {
             
             Spacer()
             
-            // Disclosure-Pfeil + Status (klickbar für Historie ein-/ausblenden)
-            Button(action: {
-                guard monitor.items.contains(where: { $0.id == item.id }) else { return }
-                monitor.toggleCollapse(for: item)
-            }) {
-                HStack(spacing: 4) {
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .frame(width: 16, height: 16, alignment: .center)
-                        .rotationEffect(.degrees(rotationAngle))
-                    
-                    Circle()
-                        .fill(statusColor(for: item))
-                        .frame(width: 8, height: 8)
-                    Text(statusText(for: item))
-                        .font(.caption)
-                        .foregroundColor(statusColor(for: item).opacity(item.isPaused ? 0.6 : 1.0))
-                }
-            }
-            .buttonStyle(PlainButtonStyle())
-            .help(item.isCollapsed ? "Historie anzeigen" : "Historie ausblenden")
-            
-            // Pause-Button hinter dem Status (nur Icon)
-            Button(action: {
-                guard monitor.items.contains(where: { $0.id == item.id }) else { return }
-                monitor.togglePause(for: item)
-            }) {
-                Image(systemName: item.isPaused ? "play.circle.fill" : "pause.circle.fill")
-                    .font(.title3)
-                    .foregroundColor(item.isPaused ? .green : .orange)
-            }
-            .buttonStyle(PlainButtonStyle())
-            .help(item.isPaused ? "Start" : "Pause")
-            
             
             // Bearbeiten-Button
             Button(action: {
@@ -154,16 +130,6 @@ struct URLItemHeader: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        .onAppear {
-            // Initiale Rotation setzen
-            rotationAngle = item.isCollapsed ? 0 : 90
-        }
-        .onChange(of: item.isCollapsed) { oldValue, newValue in
-            // Rotation bei Änderung animieren
-            withAnimation(.easeInOut(duration: 0.3)) {
-                rotationAngle = newValue ? 0 : 90
-            }
-        }
     }
     
     private var displayTitle: String {
@@ -199,31 +165,7 @@ struct URLItemHeader: View {
         return (host: host, path: path, lastPathComponent: lastPathComponent)
     }
     
-    func statusColor(for item: URLItem) -> Color {
-        if let lastEntry = item.history.first {
-            return color(for: lastEntry.status)
-        } else if let currentStatus = item.currentStatus {
-            return color(for: currentStatus)
-        }
-        return .gray
-    }
-    
-    func statusText(for item: URLItem) -> String {
-        if let lastEntry = item.history.first {
-            return lastEntry.status.rawValue.capitalized
-        } else if let currentStatus = item.currentStatus {
-            return currentStatus.rawValue.capitalized
-        }
-        return "Unbekannt"
-    }
-    
-    func color(for status: URLItem.Status) -> Color {
-        switch status {
-        case .success: return .green
-        case .changed: return .yellow
-        case .error: return .red
-        }
-    }
+
 }
 
 #Preview {

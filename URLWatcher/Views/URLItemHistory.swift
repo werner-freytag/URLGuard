@@ -16,6 +16,7 @@ struct URLItemHistory: View {
                                 RoundedRectangle(cornerRadius: 2)
                                     .fill(color(for: entry.status))
                                     .frame(width: 10, height: 10)
+                                    .opacity(item.isPaused ? 0.6 : 1.0) // Kräftiger wenn pausiert
                                     .help(tooltipText(for: entry))
                                     .id(entry.date) // ID für ScrollViewReader
                             }
@@ -35,6 +36,12 @@ struct URLItemHistory: View {
                                         .foregroundColor(.secondary)
                                         .padding(.horizontal, 4)
                                 }
+                            } else {
+                                // Pausiert-Indikator
+                                Text("Angehalten")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary.opacity(0.5))
+                                    .padding(.horizontal, 4)
                             }
                         }
                         .padding(.trailing, 8) // Abstand am Ende für bessere Optik
@@ -60,7 +67,7 @@ struct URLItemHistory: View {
                 }) {
                     Image(systemName: "arrow.clockwise")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.secondary.opacity(item.isPaused ? 0.5 : 1.0))
                 }
                 .buttonStyle(PlainButtonStyle())
                 .help("Historie leeren")

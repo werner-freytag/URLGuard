@@ -163,7 +163,7 @@ class URLMonitor: ObservableObject {
         // Historie und Status zurücksetzen
         duplicatedItem.history.removeAll()
         duplicatedItem.currentStatus = nil
-        duplicatedItem.isCollapsed = true
+
         duplicatedItem.isPaused = true // Pausiert starten
         duplicatedItem.isEditing = false // Nicht im Edit-Modus
         duplicatedItem.isModalEditing = false // Nicht im Modal-Edit-Modus
@@ -492,8 +492,6 @@ class URLMonitor: ObservableObject {
                 items[index].isEditing = false
                 items[index].urlError = nil
                 items[index].intervalError = nil
-                // Historie ausgeblendet lassen
-                items[index].isCollapsed = true
             }
             save()
         }
@@ -560,12 +558,7 @@ class URLMonitor: ObservableObject {
         save()
     }
     
-    func toggleCollapse(for item: URLItem) {
-        if let index = items.firstIndex(where: { $0.id == item.id }) {
-            items[index].isCollapsed.toggle()
-            save()
-        }
-    }
+
     
     func toggleEditing(for item: URLItem) {
         if let index = items.firstIndex(where: { $0.id == item.id }) {
@@ -589,12 +582,11 @@ class URLMonitor: ObservableObject {
                     items[index].intervalError = nil
                 }
             } else {
-                // Beim Starten des Edit-Modus Fehler löschen und Historie ausblenden
+                // Beim Starten des Edit-Modus Fehler löschen
                 items[index].urlError = nil
                 items[index].intervalError = nil
                 items[index].isEditing = true
                 items[index].isModalEditing = true
-                items[index].isCollapsed = true // Historie ausblenden
             }
             save()
         }
@@ -608,8 +600,6 @@ class URLMonitor: ObservableObject {
             // Fehler löschen
             items[index].urlError = nil
             items[index].intervalError = nil
-            // Historie ausgeblendet lassen
-            items[index].isCollapsed = true
             save()
         }
     }
@@ -758,17 +748,21 @@ class URLMonitor: ObservableObject {
             }
         }
         
-        if let data = try? JSONEncoder().encode(items) {
+        // Konvertiere zu PersistableURLItems (ohne Historie)
+        let persistableItems = items.map { PersistableURLItem(from: $0) }
+        
+        if let data = try? JSONEncoder().encode(persistableItems) {
             UserDefaults.standard.set(data, forKey: saveKey)
             UserDefaults.standard.synchronize() // Sofort synchronisieren
-            print("✅ Items erfolgreich gespeichert")
+            print("✅ Items erfolgreich gespeichert (ohne Historie)")
             
             // Debug: Speichergröße anzeigen
             print("📦 Speichergröße: \(data.count) bytes")
             
             // Validierung: Versuche die Daten sofort wieder zu laden
             if let savedData = UserDefaults.standard.data(forKey: saveKey),
-               let decodedItems = try? JSONDecoder().decode([URLItem].self, from: savedData) {
+               let decodedPersistableItems = try? JSONDecoder().decode([PersistableURLItem].self, from: savedData) {
+                let decodedItems = decodedPersistableItems.map { $0.toURLItem() }
                 print("✅ Validierung erfolgreich: \(decodedItems.count) Items geladen")
                 if decodedItems.count != items.count {
                     print("⚠️ Warnung: Anzahl der gespeicherten Items (\(decodedItems.count)) stimmt nicht mit aktueller Anzahl (\(items.count)) überein")
@@ -793,12 +787,12 @@ class URLMonitor: ObservableObject {
             print("❌ Fehler beim Encodieren der Items")
             
             // Debug: Versuche herauszufinden, welches Item das Problem verursacht
-            for (index, item) in items.enumerated() {
+            for (index, persistableItem) in persistableItems.enumerated() {
                 do {
-                    let itemData = try JSONEncoder().encode(item)
-                    print("✅ Item \(index) (\(item.id)) kann encodiert werden")
+                    let itemData = try JSONEncoder().encode(persistableItem)
+                    print("✅ Item \(index) (\(persistableItem.id)) kann encodiert werden")
                 } catch {
-                    print("❌ Item \(index) (\(item.id)) kann NICHT encodiert werden: \(error)")
+                    print("❌ Item \(index) (\(persistableItem.id)) kann NICHT encodiert werden: \(error)")
                 }
             }
         }
@@ -810,9 +804,10 @@ class URLMonitor: ObservableObject {
         if let data = UserDefaults.standard.data(forKey: saveKey) {
             print("📦 Daten gefunden, Größe: \(data.count) bytes")
             
-            if let decoded = try? JSONDecoder().decode([URLItem].self, from: data) {
-                self.items = decoded
-                print("✅ Items erfolgreich geladen: \(items.count) Items")
+            // Versuche zuerst als PersistableURLItems zu laden (neues Format)
+            if let decodedPersistable = try? JSONDecoder().decode([PersistableURLItem].self, from: data) {
+                self.items = decodedPersistable.map { $0.toURLItem() }
+                print("✅ Items erfolgreich geladen (neues Format ohne Historie): \(items.count) Items")
                 
                 // Debug: Alle geladenen Items auflisten
                 print("📋 Geladene Items:")
@@ -820,7 +815,20 @@ class URLMonitor: ObservableObject {
                     print("  \(index): \(item.id) - \(item.title ?? item.urlString)")
                 }
             } else {
-                print("❌ Fehler beim Decodieren der Items")
+                // Fallback: Versuche als alte URLItems zu laden (mit Historie)
+                print("🔄 Versuche Fallback auf altes Format...")
+                if let decoded = try? JSONDecoder().decode([URLItem].self, from: data) {
+                    self.items = decoded
+                    print("✅ Items erfolgreich geladen (altes Format): \(items.count) Items")
+                    
+                    // Debug: Alle geladenen Items auflisten
+                    print("📋 Geladene Items:")
+                    for (index, item) in items.enumerated() {
+                        print("  \(index): \(item.id) - \(item.title ?? item.urlString)")
+                    }
+                } else {
+                    print("❌ Fehler beim Decodieren der Items (beide Formate)")
+                }
             }
         } else {
             print("📭 Keine gespeicherten Daten gefunden")

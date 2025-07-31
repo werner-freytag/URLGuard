@@ -10,15 +10,13 @@ struct URLItemCard: View {
             // Header immer anzeigen
             URLItemHeader(item: item, monitor: monitor, onEdit: onEdit)
             
-            // Historie anzeigen wenn nicht eingeklappt
-            if !item.isCollapsed {
-                // Trennlinie zwischen Header und Historie
-                Rectangle()
-                    .fill(Color.secondary.opacity(0.2))
-                    .frame(height: 1)
+            // Historie immer anzeigen
+            // Trennlinie zwischen Header und Historie
+            Rectangle()
+                .fill(Color.secondary.opacity(0.2))
+                .frame(height: 1)
 
-                URLItemHistory(item: item, monitor: monitor)
-            }
+            URLItemHistory(item: item, monitor: monitor)
         }
         .background(
             RoundedRectangle(cornerRadius: 12)

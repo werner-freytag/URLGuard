@@ -1,5 +1,44 @@
 import Foundation
 
+// Struktur für die Persistierung ohne Historie
+struct PersistableURLItem: Codable {
+    var id: UUID
+    var urlString: String
+    var title: String?
+    var interval: Double
+    var isPaused: Bool
+    var currentStatus: URLItem.Status?
+    var urlError: String?
+    var intervalError: String?
+    var enabledNotifications: Set<URLItem.NotificationType>
+    
+    init(from urlItem: URLItem) {
+        self.id = urlItem.id
+        self.urlString = urlItem.urlString
+        self.title = urlItem.title
+        self.interval = urlItem.interval
+        self.isPaused = urlItem.isPaused
+        self.currentStatus = urlItem.currentStatus
+        self.urlError = urlItem.urlError
+        self.intervalError = urlItem.intervalError
+        self.enabledNotifications = urlItem.enabledNotifications
+    }
+    
+    func toURLItem() -> URLItem {
+        return URLItem(
+            id: id,
+            urlString: urlString,
+            title: title,
+            interval: interval,
+            isPaused: isPaused,
+            currentStatus: currentStatus,
+            urlError: urlError,
+            intervalError: intervalError,
+            enabledNotifications: enabledNotifications
+        )
+    }
+}
+
 struct URLItem: Identifiable, Codable, Equatable {
     enum Status: String, Codable {
         case success, changed, error
@@ -100,7 +139,7 @@ struct URLItem: Identifiable, Codable, Equatable {
     var title: String? // Optionaler Titel für die Anzeige
     var interval: Double
     var isPaused: Bool
-    var isCollapsed: Bool
+
     var isEditing: Bool
     var pendingRequests: Int // Anzahl der wartenden Requests
     var remainingTime: Double
@@ -119,13 +158,12 @@ struct URLItem: Identifiable, Codable, Equatable {
     // Notification-Einstellungen
     var enabledNotifications: Set<NotificationType> = [.error, .change]
     
-    init(id: UUID = UUID(), urlString: String = "", title: String? = nil, interval: Double = 5, isPaused: Bool = false, isCollapsed: Bool = true, isEditing: Bool = false, pendingRequests: Int = 0, remainingTime: Double = 0, history: [HistoryEntry] = [], currentStatus: Status? = nil, urlError: String? = nil, intervalError: String? = nil, isModalEditing: Bool = false, enabledNotifications: Set<NotificationType> = [.error, .change]) {
+    init(id: UUID = UUID(), urlString: String = "", title: String? = nil, interval: Double = 5, isPaused: Bool = false, isEditing: Bool = false, pendingRequests: Int = 0, remainingTime: Double = 0, history: [HistoryEntry] = [], currentStatus: Status? = nil, urlError: String? = nil, intervalError: String? = nil, isModalEditing: Bool = false, enabledNotifications: Set<NotificationType> = [.error, .change]) {
         self.id = id
         self.urlString = urlString
         self.title = title
         self.interval = interval
         self.isPaused = isPaused
-        self.isCollapsed = isCollapsed
         self.isEditing = isEditing
         self.pendingRequests = pendingRequests
         self.remainingTime = remainingTime
