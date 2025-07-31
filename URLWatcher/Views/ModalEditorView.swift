@@ -18,7 +18,7 @@ struct ModalEditorView: View {
         self.monitor = monitor
         self.isNewItem = isNewItem
         self.onSave = onSave
-        self._urlString = State(initialValue: item.urlString)
+        self._urlString = State(initialValue: item.url.absoluteString)
         self._title = State(initialValue: item.title)
         self._interval = State(initialValue: item.interval)
         self._isEnabled = State(initialValue: item.isEnabled)
@@ -63,7 +63,7 @@ struct ModalEditorView: View {
                         onValidationRequested: { urlString, interval in
                             // Validiere die Werte und gib Fehler zurück
                             var tempItem = item
-                            tempItem.urlString = urlString
+                            tempItem.url = URL(string: urlString)!
                             tempItem.interval = interval
                             let validation = monitor.validateItem(tempItem)
                             return (validation.urlError, validation.intervalError)
@@ -107,13 +107,13 @@ struct ModalEditorView: View {
     }
     
     private func saveChanges(urlString: String, title: String?, interval: Double, isEnabled: Bool, enabledNotifications: Set<URLItem.NotificationType>) -> Bool {
-        // URL korrigieren
-        let correctedURL = monitor.correctURL(urlString)
+        // URL validieren
+        let trimmedURL = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
         
         if isNewItem {
             // Neues Item erstellen und über Callback zurückgeben
             var newItem = item
-            newItem.urlString = correctedURL
+            newItem.url = URL(string: trimmedURL)!
             newItem.title = title
             newItem.interval = interval
             newItem.isEnabled = isEnabled
@@ -130,7 +130,7 @@ struct ModalEditorView: View {
         } else {
             // Existierendes Item bearbeiten - finde das aktuelle Item im Monitor
             if let currentItem = monitor.items.first(where: { $0.id == item.id }) {
-                monitor.confirmEditingWithValues(for: currentItem, urlString: correctedURL, title: title, interval: interval, isEnabled: isEnabled, enabledNotifications: enabledNotifications)
+                monitor.confirmEditingWithValues(for: currentItem, urlString: trimmedURL, title: title, interval: interval, isEnabled: isEnabled, enabledNotifications: enabledNotifications)
                 return true
             } else {
                 print("❌ Item nicht im Monitor gefunden: \(item.id)")
@@ -142,7 +142,7 @@ struct ModalEditorView: View {
 
 #Preview {
     let monitor = URLMonitor()
-            let item = URLItem(urlString: "https://example.com", interval: 10)
+            let item = URLItem(url: URL(string: "https://example.com")!, interval: 10)
     return ModalEditorView(
         item: item, 
         monitor: monitor, 

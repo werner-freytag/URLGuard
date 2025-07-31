@@ -128,7 +128,7 @@ struct URLItemHistory: View {
 #Preview {
     let monitor = URLMonitor()
     let item = URLItem(
-        urlString: "https://example.com", 
+        url: URL(string: "https://example.com")!,
         interval: 10,
         history: Array(0..<50).map { i in
             let status: URLItem.Status = i % 3 == 0 ? .success : (i % 3 == 1 ? .changed : .error)
@@ -145,6 +145,6 @@ struct URLItemHistory: View {
             )
         }
     )
-    return URLItemHistory(item: item, monitor: monitor)
+    URLItemHistory(item: item, monitor: monitor)
         .frame(width: 600, height: 200)
 } 

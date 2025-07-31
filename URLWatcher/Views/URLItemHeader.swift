@@ -63,28 +63,26 @@ struct URLItemHeader: View {
                 
                 // URL und Intervall als Untertitel
                 HStack(spacing: 4) {
-                    if item.title != nil && !item.urlString.isEmpty {
-                        Text(item.urlString)
+                    if item.title != nil {
+                        Text(item.url.absoluteString)
                             .font(.caption)
                             .foregroundColor(.secondary)
                             .lineLimit(1)
                             .truncationMode(.middle)
-                    } else if !item.urlString.isEmpty {
-                        Text(item.urlString)
+                    } else {
+                        Text(item.url.absoluteString)
                             .font(.caption)
                             .foregroundColor(.secondary)
                             .lineLimit(1)
                             .truncationMode(.middle)
                     }
                     
-                    if !item.urlString.isEmpty {
-                        Text("•")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        Text("Intervall: \(Int(item.interval))s")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
+                    Text("•")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Text("Intervall: \(Int(item.interval))s")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
             }
             .onTapGesture(count: 2) {
@@ -135,23 +133,15 @@ struct URLItemHeader: View {
     private var displayTitle: String {
         if let title = item.title, !title.isEmpty {
             return title
-        } else if !item.urlString.isEmpty {
-            return item.urlString
         } else {
-            return "Keine URL"
+            return item.url.absoluteString
         }
     }
     
     private var urlComponents: (host: String, path: String, lastPathComponent: String?)? {
-        guard !item.urlString.isEmpty else { return nil }
+        guard let host = item.url.host else { return nil }
         
-        // URL korrigieren falls nötig
-        let correctedURL = item.urlString.hasPrefix("http") ? item.urlString : "https://" + item.urlString
-        
-        guard let url = URL(string: correctedURL),
-              let host = url.host else { return nil }
-        
-        let path = url.path.isEmpty ? "" : url.path
+        let path = item.url.path.isEmpty ? "" : item.url.path
         
         // Letzte Pfadkomponente extrahieren
         let lastPathComponent: String?
@@ -171,15 +161,15 @@ struct URLItemHeader: View {
 #Preview {
     let monitor = URLMonitor()
     let item = URLItem(
-        urlString: "https://example.com", 
+        url: URL(string: "https://example.com")!, 
         interval: 10, 
-                    isEnabled: true,
+        isEnabled: true,
         history: [
             URLItem.HistoryEntry(date: Date(), status: .success, httpStatusCode: 200),
             URLItem.HistoryEntry(date: Date().addingTimeInterval(-60), status: .changed, httpStatusCode: 200),
             URLItem.HistoryEntry(date: Date().addingTimeInterval(-120), status: .error, httpStatusCode: 404)
         ]
     )
-    return URLItemHeader(item: item, monitor: monitor, onEdit: {})
+    URLItemHeader(item: item, monitor: monitor, onEdit: {})
         .frame(width: 600)
 } 

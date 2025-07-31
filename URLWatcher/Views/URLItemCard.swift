@@ -34,7 +34,7 @@ struct URLItemCard: View {
 
 #Preview {
     let monitor = URLMonitor()
-            let item = URLItem(urlString: "https://example.com", interval: 10, isEnabled: true)
+            let item = URLItem(url: URL(string: "https://example.com")!, interval: 10, isEnabled: true)
     return URLItemCard(item: item, monitor: monitor, onEdit: {})
         .frame(width: 600)
 } 

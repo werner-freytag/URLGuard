@@ -125,11 +125,11 @@ struct NotificationSettingsView: View {
 #Preview {
     let monitor = URLMonitor()
     let item = URLItem(
-        urlString: "https://example.com", 
+        url: URL(string: "https://example.com")!, 
         interval: 10,
         enabledNotifications: [.error, .change, .httpCode(404)]
     )
-    return NotificationSettingsView(
+    NotificationSettingsView(
         item: item, 
         monitor: monitor,
         enabledNotifications: .constant([.error, .change, .httpCode(404)])

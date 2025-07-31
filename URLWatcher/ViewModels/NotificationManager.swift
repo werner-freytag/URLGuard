@@ -69,8 +69,8 @@ class NotificationManager: ObservableObject {
             for notification in item.enabledNotifications {
                 if case .httpCode(let notifyCode) = notification, httpCode == notifyCode {
                     title = "HTTP Code \(httpCode)"
-                    body = "\(item.urlString) - HTTP \(httpCode) empfangen"
-                    sendNotification(title: title, body: body, url: item.urlString)
+                                body = "\(item.url.absoluteString) - HTTP \(httpCode) empfangen"
+            sendNotification(title: title, body: body, url: item.url.absoluteString)
                     return
                 }
             }
@@ -80,15 +80,15 @@ class NotificationManager: ObservableObject {
         switch status {
         case .error:
             title = "URL Fehler"
-            body = "\(item.urlString) ist nicht erreichbar"
+            body = "\(item.url.absoluteString) ist nicht erreichbar"
         case .changed:
             title = "URL Geändert"
-            body = "\(item.urlString) hat sich geändert"
+            body = "\(item.url.absoluteString) hat sich geändert"
         case .success:
             title = "URL Erfolgreich"
-            body = "\(item.urlString) ist erreichbar"
+            body = "\(item.url.absoluteString) ist erreichbar"
         }
         
-        sendNotification(title: title, body: body, url: item.urlString)
+        sendNotification(title: title, body: body, url: item.url.absoluteString)
     }
 } 

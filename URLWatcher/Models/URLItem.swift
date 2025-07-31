@@ -3,7 +3,7 @@ import Foundation
 // Struktur für die Persistierung ohne Historie
 struct PersistableURLItem: Codable {
     let id: UUID
-    let urlString: String
+    let url: URL
     let title: String?
     let interval: Double
     let isEnabled: Bool
@@ -11,7 +11,7 @@ struct PersistableURLItem: Codable {
     
     init(from item: URLItem) {
         self.id = item.id
-        self.urlString = item.urlString
+        self.url = item.url
         self.title = item.title
         self.interval = item.interval
         self.isEnabled = item.isEnabled
@@ -21,7 +21,7 @@ struct PersistableURLItem: Codable {
     func toURLItem() -> URLItem {
         return URLItem(
             id: id,
-            urlString: urlString,
+            url: url,
             title: title,
             interval: interval,
             isEnabled: isEnabled,
@@ -142,7 +142,7 @@ struct URLItem: Identifiable, Codable, Equatable {
     }
     
     var id: UUID
-    var urlString: String
+    var url: URL
     var title: String? // Optionaler Titel für die Anzeige
     var interval: Double
     var isEnabled: Bool
@@ -162,9 +162,9 @@ struct URLItem: Identifiable, Codable, Equatable {
     var history: [HistoryEntry]
     var enabledNotifications: Set<NotificationType> = [.error, .change]
     
-    init(id: UUID = UUID(), urlString: String = "", title: String? = nil, interval: Double = 5, isEnabled: Bool = true, pendingRequests: Int = 0, remainingTime: Double = 0, history: [HistoryEntry] = [], enabledNotifications: Set<NotificationType> = [.error, .change]) {
+    init(id: UUID = UUID(), url: URL = URL(string: "http://example.com")!, title: String? = nil, interval: Double = 5, isEnabled: Bool = true, pendingRequests: Int = 0, remainingTime: Double = 0, history: [HistoryEntry] = [], enabledNotifications: Set<NotificationType> = [.error, .change]) {
         self.id = id
-        self.urlString = urlString
+        self.url = url
         self.title = title
         self.interval = interval
         self.isEnabled = isEnabled

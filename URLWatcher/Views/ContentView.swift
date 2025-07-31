@@ -11,7 +11,7 @@ struct ContentView: View {
         }
         
         return monitor.items.filter { item in
-            item.urlString.localizedCaseInsensitiveContains(searchText)
+            item.url.absoluteString.localizedCaseInsensitiveContains(searchText)
         }
     }
     

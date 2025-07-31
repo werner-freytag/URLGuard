@@ -6,8 +6,7 @@ class URLMonitor: ObservableObject {
     private var timers: [UUID: Timer] = [:]
     private var countdownTimers: [UUID: Timer] = [:]
     private let saveKey = "URLMonitorItems"
-    private var lastResponses: [UUID: Data] = [:]
-    private var lastETags: [UUID: String] = [:]
+    let requestManager = URLRequestManager()
     
     init() {
         print("🚀 URLMonitor init() aufgerufen")
@@ -21,7 +20,7 @@ class URLMonitor: ObservableObject {
     }
     
     func startAll() {
-        for item in items where item.isEnabled && !item.urlString.isEmpty {
+        for item in items where item.isEnabled {
             schedule(item: item)
         }
     }
@@ -30,8 +29,8 @@ class URLMonitor: ObservableObject {
         print("⏰ Schedule-Funktion aufgerufen für Item: \(item.id)")
         
         cancel(item: item)
-        guard item.isEnabled, !item.urlString.isEmpty else { 
-            print("⏰ Item ist deaktiviert oder URL ist leer - Timer nicht gestartet")
+        guard item.isEnabled else { 
+            print("⏰ Item ist deaktiviert - Timer nicht gestartet")
             return 
         }
         
@@ -77,7 +76,7 @@ class URLMonitor: ObservableObject {
     
     func rescheduleTimer(for item: URLItem) {
         cancel(item: item)
-        guard item.isEnabled, !item.urlString.isEmpty else { return }
+        guard item.isEnabled else { return }
         
         // Verbleibende Zeit auf Intervall setzen
         if let index = items.firstIndex(where: { $0.id == item.id }) {
@@ -110,7 +109,6 @@ class URLMonitor: ObservableObject {
     func cancel(item: URLItem) {
         timers[item.id]?.invalidate()
         timers.removeValue(forKey: item.id)
-        lastResponses.removeValue(forKey: item.id)
         
         // Countdown zurücksetzen
         if let index = items.firstIndex(where: { $0.id == item.id }) {
@@ -138,7 +136,7 @@ class URLMonitor: ObservableObject {
     }
     
     func duplicate(item: URLItem) {
-        print("🔄 Dupliziere Item: \(item.title ?? item.urlString)")
+        print("🔄 Dupliziere Item: \(item.title ?? item.url.absoluteString)")
         
         // Erstelle eine Kopie des Items
         var duplicatedItem = item
@@ -205,7 +203,7 @@ class URLMonitor: ObservableObject {
     func createNewItem() {
         print("➕ Erstelle neues Item")
         
-        let newItem = URLItem(urlString: "https://", interval: 10, isEnabled: false)
+        let newItem = URLItem(url: URL(string: "https://")!, interval: 10, isEnabled: false)
         
         // Füge das neue Item hinzu
         items.append(newItem)
@@ -243,19 +241,9 @@ class URLMonitor: ObservableObject {
         var intervalError: String? = nil
         
         // URL-Validierung
-        let trimmedURL = item.urlString.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmedURL.isEmpty {
-            urlError = "URL darf nicht leer sein"
-        } else {
-            let correctedURL = correctURL(trimmedURL)
-            if let url = URL(string: correctedURL) {
-                // Nur formelle URL-Validierung
-                if !isValidURL(url) {
-                    urlError = "Ungültige URL-Struktur"
-                }
-            } else {
-                urlError = "Ungültige URL"
-            }
+        // URL ist bereits validiert, da es ein URL-Objekt ist
+        if !isValidURL(item.url) {
+            urlError = "Ungültige URL-Struktur"
         }
         
         // Interval-Validierung
@@ -268,8 +256,7 @@ class URLMonitor: ObservableObject {
     }
     
     func testURL(_ urlString: String, completion: @escaping (Bool, String?) -> Void) {
-        let correctedURL = correctURL(urlString)
-        guard let url = URL(string: correctedURL) else {
+        guard let url = URL(string: urlString) else {
             completion(false, "Ungültige URL")
             return
         }
@@ -330,52 +317,23 @@ class URLMonitor: ObservableObject {
         return true
     }
     
-    func correctURL(_ urlString: String) -> String {
-        var correctedURL = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        // Protokoll hinzufügen falls fehlend
-        if !correctedURL.lowercased().hasPrefix("http://") && !correctedURL.lowercased().hasPrefix("https://") {
-            correctedURL = "https://" + correctedURL
-        }
-        
-        // URL mit URLComponents parsen und korrigieren
-        guard var components = URLComponents(string: correctedURL) else {
-            return correctedURL // Fallback bei ungültiger URL
-        }
-        
-        // Protokoll normalisieren
-        if let scheme = components.scheme?.lowercased() {
-            components.scheme = scheme == "http" ? "http" : "https"
-        }
-        
-        // Host normalisieren (kleinbuchstaben)
-        if let host = components.host {
-            components.host = host.lowercased()
-        }
-        
-        // Pfad normalisieren (doppelte Slashes entfernen)
-        if let path = components.path.isEmpty ? nil : components.path {
-            let normalizedPath = path.replacingOccurrences(of: "//", with: "/")
-            components.path = normalizedPath
-        }
-        
-        // Stelle sicher, dass ein Pfad vorhanden ist
-        if components.path.isEmpty {
-            components.path = "/"
-        }
-        
-        return components.url?.absoluteString ?? correctedURL
-    }
+
     
     // confirmNewItemWithValues wurde entfernt - neue Items werden über addItem() hinzugefügt
     
     func confirmEditingWithValues(for item: URLItem, urlString: String, title: String?, interval: Double, isEnabled: Bool, enabledNotifications: Set<URLItem.NotificationType>? = nil) {
         if let index = items.firstIndex(where: { $0.id == item.id }) {
-            print("💾 Bestätige Bearbeitung für Item: \(item.title ?? item.urlString)")
+            print("💾 Bestätige Bearbeitung für Item: \(item.title ?? item.url.absoluteString)")
+            
+            // URL validieren und erstellen
+            guard let url = URL(string: urlString) else {
+                print("❌ Ungültige URL: \(urlString)")
+                return
+            }
             
             // Erstelle ein temporäres Item für die Validierung
             var validItem = item
-            validItem.urlString = urlString
+            validItem.url = url
             validItem.title = title
             validItem.interval = interval
             validItem.isEnabled = isEnabled
@@ -392,7 +350,7 @@ class URLMonitor: ObservableObject {
             let isEnabledChanged = wasEnabled != isEnabled
             
             // Aktualisiere das Item
-            items[index].urlString = urlString
+            items[index].url = url
             items[index].title = title
             items[index].interval = interval
             items[index].isEnabled = isEnabled
@@ -405,11 +363,11 @@ class URLMonitor: ObservableObject {
             if isEnabledChanged {
                 if isEnabled {
                     // Item wurde aktiviert - Timer starten
-                    print("▶️ Timer für Item starten: \(items[index].title ?? items[index].urlString)")
+                    print("▶️ Timer für Item starten: \(items[index].title ?? items[index].url.absoluteString)")
                     schedule(item: items[index])
                 } else {
                     // Item wurde deaktiviert - Timer stoppen
-                    print("⏸️ Timer für Item stoppen: \(items[index].title ?? items[index].urlString)")
+                    print("⏸️ Timer für Item stoppen: \(items[index].title ?? items[index].url.absoluteString)")
                     cancel(item: items[index])
                 }
             }
@@ -432,7 +390,6 @@ class URLMonitor: ObservableObject {
             timer.invalidate()
         }
         timers.removeAll()
-        lastResponses.removeAll()
         
         // Alle Items löschen
         items.removeAll()
@@ -444,8 +401,9 @@ class URLMonitor: ObservableObject {
             // Historie komplett löschen
             items[index].history.removeAll()
             
-            // Letzten Response für Vergleichszwecke behalten
-            // lastResponses wird NICHT gelöscht, damit der letzte Zustand erhalten bleibt
+            // Request-Manager zurücksetzen
+            requestManager.resetHistory(for: item.id)
+            
             save()
         }
     }
@@ -470,8 +428,8 @@ class URLMonitor: ObservableObject {
             // Historie komplett löschen
             items[index].history.removeAll()
         }
-        // Letzte Responses für Vergleichszwecke behalten
-        // lastResponses wird NICHT gelöscht, damit die letzten Zustände erhalten bleiben
+        // Request-Manager zurücksetzen
+        requestManager.resetAllHistories()
         save()
     }
     
@@ -489,15 +447,14 @@ class URLMonitor: ObservableObject {
     
     func removeEmptyItems() {
         // Entferne leere Einträge, aber behalte immer mindestens einen
-        let emptyItems = items.filter { $0.urlString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-        if items.count > 1 && items.count > emptyItems.count {
-            items.removeAll { $0.urlString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-        }
+        // URLs sind bereits validiert, da sie URL-Objekte sind
+        // Keine leeren URLs mehr möglich
         // Kein automatisches Speichern hier
     }
     
     func findFirstEmptyItem() -> URLItem? {
-        return items.first { $0.urlString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        // URLs sind bereits validiert, da sie URL-Objekte sind
+        return nil
     }
     
     func ensureMinimumOneItem() {
@@ -513,277 +470,53 @@ class URLMonitor: ObservableObject {
     func check(itemID: UUID) {
         guard let index = items.firstIndex(where: { $0.id == itemID }) else { return }
         let item = items[index]
-        guard !item.urlString.isEmpty else { return }
+        // URL ist bereits validiert, da es ein URL-Objekt ist
         
         // Pending Requests Counter erhöhen
         items[index].pendingRequests += 1
         
-        let correctedURLString = correctURL(item.urlString)
-        guard let url = URL(string: correctedURLString) else { 
-            // Counter zurücksetzen bei ungültiger URL
-            items[index].pendingRequests = max(0, items[index].pendingRequests - 1)
-            return 
-        }
-        
-        // Intelligente HEAD/GET-Strategie
-        let hasInitialData = self.lastResponses[itemID] != nil
-        let hasETag = lastETags[itemID] != nil
-        
-        if !hasInitialData {
-            // Erster Request: Immer GET für Basis-Diff
-            print("🔄 Erster Request für \(item.urlString) - GET für Basis-Diff")
-            performGETRequest(url: url, itemID: itemID, item: item)
-        } else if hasETag {
-            // Folge-Requests mit ETag: Erst HEAD, dann GET nur bei Änderung
-            print("🔍 Folge-Request mit ETag für \(item.urlString) - HEAD-Check")
-            performHEADRequest(url: url, itemID: itemID, item: item)
-        } else {
-            // Folge-Requests ohne ETag: Immer GET
-            print("📄 Folge-Request ohne ETag für \(item.urlString) - GET")
-            performGETRequest(url: url, itemID: itemID, item: item)
+        requestManager.checkURL(for: item) { [weak self] status, httpStatusCode, responseSize, responseTime, diff in
+            guard let self = self else { return }
+            guard let currentIndex = self.items.firstIndex(where: { $0.id == itemID }) else { return }
+            
+            // Pending Requests Counter verringern
+            self.items[currentIndex].pendingRequests = max(0, self.items[currentIndex].pendingRequests - 1)
+            
+            // DiffInfo erstellen falls Diff vorhanden
+            var diffInfo: URLItem.DiffInfo? = nil
+            if let diff = diff {
+                let changedLines = diff.components(separatedBy: .newlines).filter { line in
+                    line.hasPrefix("+") || line.hasPrefix("-")
+                }
+                let previewLines = Array(changedLines.prefix(20))
+                diffInfo = URLItem.DiffInfo(
+                    totalChangedLines: changedLines.count,
+                    previewLines: previewLines
+                )
+            }
+            
+            // History-Eintrag erstellen
+            self.items[currentIndex].history.insert(URLItem.HistoryEntry(
+                date: Date(),
+                status: status,
+                httpStatusCode: httpStatusCode,
+                diffInfo: diffInfo,
+                responseSize: responseSize,
+                responseTime: responseTime
+            ), at: 0)
+            
+            if self.items[currentIndex].history.count > 1000 {
+                self.items[currentIndex].history.removeLast()
+            }
+            
+            // Notification senden
+            NotificationManager.shared.notifyIfNeeded(for: self.items[currentIndex], status: status, httpStatusCode: httpStatusCode)
         }
     }
     
-    private func performHEADRequest(url: URL, itemID: UUID, item: URLItem) {
-        var request = URLRequest(url: url)
-        request.httpMethod = "HEAD"
-        
-        // ETag aus vorherigem Request hinzufügen
-        if let etag = lastETags[itemID] {
-            request.setValue(etag, forHTTPHeaderField: "If-None-Match")
-        }
-        
-        let startTime = Date()
-        
-        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
-            DispatchQueue.main.async {
-                guard let self = self else { return }
-                guard let currentIndex = self.items.firstIndex(where: { $0.id == itemID }) else { return }
-                
-                // Pending Requests Counter verringern
-                self.items[currentIndex].pendingRequests = max(0, self.items[currentIndex].pendingRequests - 1)
-                
-                var status: URLItem.Status = .error
-                var httpStatusCode: Int? = nil
-                var responseSize: Int? = nil
-                var responseTime: Double? = nil
-                
-                responseTime = Date().timeIntervalSince(startTime)
-                
-                if let httpResponse = response as? HTTPURLResponse {
-                    httpStatusCode = httpResponse.statusCode
-                    
-                    print("🔍 HEAD Request: \(item.urlString)")
-                    print("📊 HTTP Status Code: \(httpStatusCode ?? 0)")
-                    
-                    // ETag aus Response extrahieren
-                    if let etag = httpResponse.value(forHTTPHeaderField: "ETag") {
-                        self.lastETags[itemID] = etag
-                        print("🏷️ ETag gefunden: \(etag)")
-                    }
-                    
-                    if let statusCode = httpStatusCode {
-                        // Prüfe zuerst, ob ETag identisch ist (Content unverändert)
-                        if let currentETag = httpResponse.value(forHTTPHeaderField: "ETag"),
-                           let lastETag = self.lastETags[itemID],
-                           currentETag == lastETag {
-                            // ETag identisch - Content unverändert, auch wenn Status != 304
-                            status = .success
-                            print("✅ Content unverändert (ETag identisch: \(currentETag))")
-                        } else {
-                            // ETag unterschiedlich oder nicht vorhanden - prüfe Status-Code
-                            switch statusCode {
-                            case 200...299:
-                                // Content hat sich geändert - GET Request für vollständigen Inhalt
-                                print("🔄 Content geändert (Status \(statusCode)) - GET Request folgt")
-                                self.performGETRequest(url: url, itemID: itemID, item: item)
-                                return
-                                
-                            case 304:
-                                // Content unverändert
-                                status = .success
-                                print("✅ Content unverändert (304 Not Modified)")
-                                
-                            default:
-                                // Andere Status-Codes - GET Request für vollständige Prüfung
-                                print("⚠️ Unerwarteter Status \(statusCode) - GET Request folgt")
-                                self.performGETRequest(url: url, itemID: itemID, item: item)
-                                return
-                            }
-                        }
-                    } else {
-                        // Kein HTTP Status Code - GET Request für vollständige Prüfung
-                        print("⚠️ Kein HTTP Status Code - GET Request folgt")
-                        self.performGETRequest(url: url, itemID: itemID, item: item)
-                        return
-                    }
-                } else {
-                    print("❌ HEAD Request fehlgeschlagen: \(error?.localizedDescription ?? "Unknown error")")
-                    // Fallback zu GET Request
-                    self.performGETRequest(url: url, itemID: itemID, item: item)
-                    return
-                }
-                
-                // History-Eintrag für HEAD Request
-                self.items[currentIndex].history.insert(URLItem.HistoryEntry(
-                    date: Date(),
-                    status: status,
-                    httpStatusCode: httpStatusCode,
-                    diffInfo: nil,
-                    responseSize: responseSize,
-                    responseTime: responseTime
-                ), at: 0)
-                
-                if self.items[currentIndex].history.count > 1000 {
-                    self.items[currentIndex].history.removeLast()
-                }
-                
-                // Notification senden
-                NotificationManager.shared.notifyIfNeeded(for: self.items[currentIndex], status: status, httpStatusCode: httpStatusCode)
-            }
-        }.resume()
-    }
+
     
-    private func performGETRequest(url: URL, itemID: UUID, item: URLItem) {
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        
-        // ETag aus vorherigem Request hinzufügen (für 304-Responses)
-        if let etag = lastETags[itemID] {
-            request.setValue(etag, forHTTPHeaderField: "If-None-Match")
-        }
-        
-        let startTime = Date()
-        
-        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
-            DispatchQueue.main.async {
-                guard let self = self else { return }
-                guard let currentIndex = self.items.firstIndex(where: { $0.id == itemID }) else { return }
-                
-                // Pending Requests Counter verringern
-                self.items[currentIndex].pendingRequests = max(0, self.items[currentIndex].pendingRequests - 1)
-                
-                var status: URLItem.Status = .error
-                var httpStatusCode: Int? = nil
-                var diff: String? = nil
-                var responseSize: Int? = nil
-                var responseTime: Double? = nil
-                
-                responseTime = Date().timeIntervalSince(startTime)
-                
-                if let httpResponse = response as? HTTPURLResponse {
-                    httpStatusCode = httpResponse.statusCode
-                    
-                    print("📄 GET Request: \(item.urlString)")
-                    print("📊 HTTP Status Code: \(httpStatusCode ?? 0)")
-                    
-                    // ETag aus Response extrahieren
-                    if let etag = httpResponse.value(forHTTPHeaderField: "ETag") {
-                        self.lastETags[itemID] = etag
-                        print("🏷️ ETag gefunden: \(etag)")
-                    }
-                    
-                    if let data = data, error == nil {
-                        // Content verarbeitung
-                        let contentLength = data.count
-                        responseSize = contentLength
-                        
-                        let contentPreview = String(data: data.prefix(200), encoding: .utf8) ?? "Binary data"
-                        
-                        print("📄 Content Length: \(contentLength) bytes")
-                        print("📝 Content Preview: \(contentPreview)")
-                        print("⏱️ Response Time: \(responseTime ?? 0) seconds")
-                        
-                        // lastResponses wird automatisch gesetzt - kein separater Flag nötig
-                        
-                        if let lastData = self.lastResponses[itemID], lastData != data {
-                            status = .changed
-                            print("🔄 Status: CHANGED (Content differs from last check)")
-                            
-                            // Diff erstellen
-                            if let lastContent = String(data: lastData, encoding: .utf8),
-                               let currentContent = String(data: data, encoding: .utf8) {
-                                diff = self.createDiff(from: lastContent, to: currentContent)
-                                print("📋 Diff erstellt: \(diff?.prefix(100) ?? "Kein Diff")")
-                            }
-                        } else {
-                            status = .success
-                            print("✅ Status: SUCCESS (Content unchanged)")
-                        }
-                        self.lastResponses[itemID] = data
-                    } else if httpStatusCode == 304 {
-                        // 304 Not Modified - Content unverändert
-                        status = .success
-                        print("✅ Content unverändert (304 Not Modified)")
-                    } else {
-                        print("❌ Error: No data received or network error")
-                    }
-                } else if let data = data, error == nil {
-                    // Non-HTTP response
-                    print("📄 GET Request (Non-HTTP): \(item.urlString)")
-                    
-                    let contentLength = data.count
-                    responseSize = contentLength
-                    
-                    let contentPreview = String(data: data.prefix(200), encoding: .utf8) ?? "Binary data"
-                    
-                    print("📄 Content Length: \(contentLength) bytes")
-                    print("📝 Content Preview: \(contentPreview)")
-                    print("⏱️ Response Time: \(responseTime ?? 0) seconds")
-                    
-                    // lastResponses wird automatisch gesetzt - kein separater Flag nötig
-                    
-                    if let lastData = self.lastResponses[itemID], lastData != data {
-                        status = .changed
-                        print("🔄 Status: CHANGED (Content differs from last check)")
-                        
-                        // Diff erstellen
-                        if let lastContent = String(data: lastData, encoding: .utf8),
-                           let currentContent = String(data: data, encoding: .utf8) {
-                            diff = self.createDiff(from: lastContent, to: currentContent)
-                            print("📋 Diff erstellt: \(diff?.prefix(100) ?? "Kein Diff")")
-                        }
-                    } else {
-                        status = .success
-                        print("✅ Status: SUCCESS (Content unchanged)")
-                    }
-                    self.lastResponses[itemID] = data
-                } else {
-                    print("📄 GET Request fehlgeschlagen: \(error?.localizedDescription ?? "Unknown error")")
-                }
-                
-                // DiffInfo erstellen falls Diff vorhanden
-                var diffInfo: URLItem.DiffInfo? = nil
-                if let diff = diff {
-                    let changedLines = diff.components(separatedBy: .newlines).filter { line in
-                        line.hasPrefix("+") || line.hasPrefix("-")
-                    }
-                    let previewLines = Array(changedLines.prefix(20))
-                    diffInfo = URLItem.DiffInfo(
-                        totalChangedLines: changedLines.count,
-                        previewLines: previewLines
-                    )
-                }
-                
-                // History-Eintrag für GET Request
-                self.items[currentIndex].history.insert(URLItem.HistoryEntry(
-                    date: Date(),
-                    status: status,
-                    httpStatusCode: httpStatusCode,
-                    diffInfo: diffInfo,
-                    responseSize: responseSize,
-                    responseTime: responseTime
-                ), at: 0)
-                
-                if self.items[currentIndex].history.count > 1000 {
-                    self.items[currentIndex].history.removeLast()
-                }
-                
-                // Notification senden
-                NotificationManager.shared.notifyIfNeeded(for: self.items[currentIndex], status: status, httpStatusCode: httpStatusCode)
-            }
-        }.resume()
-    }
+
     
     func save() {
         print("💾 Save-Funktion aufgerufen")
@@ -792,7 +525,7 @@ class URLMonitor: ObservableObject {
         // Debug: Alle Items vor dem Speichern auflisten
         print("📋 Items vor dem Speichern:")
         for (index, item) in items.enumerated() {
-            print("  \(index): \(item.id) - \(item.title ?? item.urlString)")
+            print("  \(index): \(item.id) - \(item.title ?? item.url.absoluteString)")
         }
         
         // Prüfe auf Duplikate in der Liste
@@ -806,7 +539,7 @@ class URLMonitor: ObservableObject {
                 let duplicates = items.filter { $0.id == duplicateID }
                 print("  ID \(duplicateID): \(duplicates.count) mal vorhanden")
                 for (index, duplicate) in duplicates.enumerated() {
-                    print("    \(index): \(duplicate.title ?? duplicate.urlString)")
+                    print("    \(index): \(duplicate.title ?? duplicate.url.absoluteString)")
                 }
             }
         }
@@ -875,7 +608,7 @@ class URLMonitor: ObservableObject {
                 // Debug: Alle geladenen Items auflisten
                 print("📋 Geladene Items:")
                 for (index, item) in items.enumerated() {
-                    print("  \(index): \(item.id) - \(item.title ?? item.urlString)")
+                    print("  \(index): \(item.id) - \(item.title ?? item.url.absoluteString)")
                 }
             } else {
                 // Fallback: Versuche als alte URLItems zu laden (mit Historie)
@@ -887,7 +620,7 @@ class URLMonitor: ObservableObject {
                     // Debug: Alle geladenen Items auflisten
                     print("📋 Geladene Items:")
                     for (index, item) in items.enumerated() {
-                        print("  \(index): \(item.id) - \(item.title ?? item.urlString)")
+                        print("  \(index): \(item.id) - \(item.title ?? item.url.absoluteString)")
                     }
                 } else {
                     print("❌ Fehler beim Decodieren der Items (beide Formate)")
@@ -898,51 +631,5 @@ class URLMonitor: ObservableObject {
         }
     }
     
-    // MARK: - Diff-Funktionalität
-    
-    /// Erstellt einen Diff zwischen zwei Strings
-    private func createDiff(from oldContent: String, to newContent: String) -> String {
-        let oldLines = oldContent.components(separatedBy: .newlines)
-        let newLines = newContent.components(separatedBy: .newlines)
-        
-        var diffLines: [String] = []
-        diffLines.append("=== DIFF ===")
-        diffLines.append("Alte Version: \(oldLines.count) Zeilen")
-        diffLines.append("Neue Version: \(newLines.count) Zeilen")
-        diffLines.append("")
-        
-        // Einfacher Zeilen-für-Zeilen Vergleich
-        let maxLines = max(oldLines.count, newLines.count)
-        
-        for i in 0..<maxLines {
-            let oldLine = i < oldLines.count ? oldLines[i] : ""
-            let newLine = i < newLines.count ? newLines[i] : ""
-            
-            if oldLine != newLine {
-                diffLines.append("Zeile \(i + 1):")
-                if !oldLine.isEmpty {
-                    diffLines.append("- \(oldLine)")
-                }
-                if !newLine.isEmpty {
-                    diffLines.append("+ \(newLine)")
-                }
-                diffLines.append("")
-            }
-        }
-        
-        // Zusätzliche Statistiken
-        let addedLines = newLines.count - oldLines.count
-        if addedLines > 0 {
-            diffLines.append("📈 \(addedLines) Zeilen hinzugefügt")
-        } else if addedLines < 0 {
-            diffLines.append("📉 \(abs(addedLines)) Zeilen entfernt")
-        }
-        
-        let changedLines = zip(oldLines, newLines).filter { $0 != $1 }.count
-        if changedLines > 0 {
-            diffLines.append("🔄 \(changedLines) Zeilen geändert")
-        }
-        
-        return diffLines.joined(separator: "\n")
-    }
+
 }

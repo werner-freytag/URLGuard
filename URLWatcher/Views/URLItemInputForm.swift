@@ -10,6 +10,7 @@ struct URLItemInputForm: View {
     
     // Kopie des kompletten Items für lokale Bearbeitung
     @State private var localItem: URLItem
+    @State private var urlString: String
     @State private var hasBeenEdited: Bool = false
     
     // Lokale Fehlermeldungen
@@ -23,18 +24,14 @@ struct URLItemInputForm: View {
         self.onValuesChanged = onValuesChanged
         self.onValidationRequested = onValidationRequested
         // Erstelle eine Kopie des Items für lokale Bearbeitung
-        var initialItem = item
-                    // Wenn die URL leer ist, "https://" voreintragen
-            if item.urlString.isEmpty {
-                initialItem.urlString = "https://"
-            }
-        self._localItem = State(initialValue: initialItem)
+        self._localItem = State(initialValue: item)
+        self._urlString = State(initialValue: item.url.absoluteString)
     }
     
     private var titlePlaceholder: String {
-        if !localItem.urlString.isEmpty && localItem.urlString != "https://" {
+        if !urlString.isEmpty && urlString != "https://" {
             // Host + letzte Pfadkomponente als Platzhalter verwenden
-            let correctedURL = localItem.urlString.hasPrefix("http") ? localItem.urlString : "https://" + localItem.urlString
+            let correctedURL = urlString.hasPrefix("http") ? urlString : "https://" + urlString
             
             if let url = URL(string: correctedURL), let host = url.host {
                 let path = url.path
@@ -49,7 +46,7 @@ struct URLItemInputForm: View {
             }
             
             // Fallback: URL verwenden
-            return localItem.urlString
+            return urlString
         } else {
             return "Titel eingeben..."
         }
@@ -72,13 +69,13 @@ struct URLItemInputForm: View {
                             get: { localItem.title ?? "" },
                             set: { localItem.title = $0.isEmpty ? nil : $0 }
                         ))
-                        .onChange(of: localItem.urlString) { oldValue, newValue in
+                        .onChange(of: urlString) { oldValue, newValue in
                             // Platzhalter wird automatisch aktualisiert durch titlePlaceholder
                         }
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .onChange(of: localItem.title) { oldValue, newValue in
                             // Benachrichtige über Wertänderung
-                            onValuesChanged(localItem.urlString, localItem.title, localItem.interval, localItem.isEnabled, localItem.enabledNotifications)
+                            onValuesChanged(urlString, localItem.title, localItem.interval, localItem.isEnabled, localItem.enabledNotifications)
                         }
                     }
                     
@@ -87,10 +84,10 @@ struct URLItemInputForm: View {
                         Text("URL")
                             .font(.caption)
                             .foregroundColor(.secondary)
-                        TextField("https://example.com", text: $localItem.urlString)
+                        TextField("https://example.com", text: $urlString)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .focused($focusedItemID, equals: item.id)
-                            .onChange(of: localItem.urlString) { oldValue, newValue in
+                            .onChange(of: urlString) { oldValue, newValue in
                                 // Benachrichtige über Wertänderung
                                 onValuesChanged(newValue, localItem.title, localItem.interval, localItem.isEnabled, localItem.enabledNotifications)
                             }
@@ -109,7 +106,7 @@ struct URLItemInputForm: View {
                                 
                                 // Nur speichern wenn keine Fehler vorhanden
                                 if urlError == nil && intervalError == nil {
-                                    onSave(localItem.urlString, localItem.title, localItem.interval, localItem.isEnabled, localItem.enabledNotifications)
+                                    onSave(urlString, localItem.title, localItem.interval, localItem.isEnabled, localItem.enabledNotifications)
                                 } else {
                                     print("❌ Validierungsfehler verhindern Speicherung:")
                                     if let urlError = urlError {
@@ -145,7 +142,7 @@ struct URLItemInputForm: View {
                                 .frame(width: 60)
                                 .onChange(of: localItem.interval) { oldValue, newValue in
                                     // Benachrichtige über Wertänderung
-                                    onValuesChanged(localItem.urlString, localItem.title, newValue, localItem.isEnabled, localItem.enabledNotifications)
+                                    onValuesChanged(urlString, localItem.title, newValue, localItem.isEnabled, localItem.enabledNotifications)
                                 }
                                 .onChange(of: focusedItemID) { oldValue, newValue in
                                     // Validierung nur bei onBlur (wenn Fokus verloren geht)
@@ -159,7 +156,7 @@ struct URLItemInputForm: View {
                                 .labelsHidden()
                                 .onChange(of: localItem.interval) { oldValue, newValue in
                                     // Benachrichtige über Wertänderung
-                                    onValuesChanged(localItem.urlString, localItem.title, newValue, localItem.isEnabled, localItem.enabledNotifications)
+                                    onValuesChanged(urlString, localItem.title, newValue, localItem.isEnabled, localItem.enabledNotifications)
                                 }
                         }
                         
@@ -185,7 +182,7 @@ struct URLItemInputForm: View {
                             Toggle("URL-Überwachung aktiviert", isOn: $localItem.isEnabled)
                                 .onChange(of: localItem.isEnabled) { oldValue, newValue in
                                     // Benachrichtige über Wertänderung
-                                    onValuesChanged(localItem.urlString, localItem.title, localItem.interval, newValue, localItem.enabledNotifications)
+                                    onValuesChanged(urlString, localItem.title, localItem.interval, newValue, localItem.enabledNotifications)
                                 }
                             Spacer()
                         }
@@ -208,7 +205,7 @@ struct URLItemInputForm: View {
                     )
                     .onChange(of: localItem.enabledNotifications) { oldValue, newValue in
                         // Benachrichtige über Wertänderung
-                        onValuesChanged(localItem.urlString, localItem.title, localItem.interval, localItem.isEnabled, newValue)
+                        onValuesChanged(urlString, localItem.title, localItem.interval, localItem.isEnabled, newValue)
                     }
                 }
             }
@@ -220,26 +217,26 @@ struct URLItemInputForm: View {
     }
     
     private func validateLocalURL() {
-        let validation = onValidationRequested(localItem.urlString, localItem.interval)
+        let validation = onValidationRequested(urlString, localItem.interval)
         urlError = validation.urlError
     }
     
     private func validateLocalInterval() {
-        let validation = onValidationRequested(localItem.urlString, localItem.interval)
+        let validation = onValidationRequested(urlString, localItem.interval)
         intervalError = validation.intervalError
     }
 }
 
 #Preview {
     let monitor = URLMonitor()
-            let item = URLItem(urlString: "https://example.com", interval: 10)
+            let item = URLItem(url: URL(string: "https://example.com")!, interval: 10)
     return URLItemInputForm(item: item, monitor: monitor, onSave: { _, _, _, _, _ in }, onValuesChanged: { _, _, _, _, _ in }, onValidationRequested: { _, _ in (nil, nil) })
         .frame(width: 600)
 }
 
 #Preview("Invalid URL") {
     let monitor = URLMonitor()
-            let item = URLItem(urlString: "invalid-url", interval: 10)
+            let item = URLItem(url: URL(string: "http://example.com")!, interval: 10)
     return URLItemInputForm(item: item, monitor: monitor, onSave: { _, _, _, _, _ in }, onValuesChanged: { _, _, _, _, _ in }, onValidationRequested: { _, _ in (nil, nil) })
         .frame(width: 600)
 } 
