@@ -7,6 +7,7 @@ class URLMonitor: ObservableObject {
     private var countdownTimers: [UUID: Timer] = [:]
     private let saveKey = "URLMonitorItems"
     private var lastResponses: [UUID: Data] = [:]
+    private var lastETags: [UUID: String] = [:]
     
     init() {
         print("🚀 URLMonitor init() aufgerufen")
@@ -516,20 +517,147 @@ class URLMonitor: ObservableObject {
         
         // Pending Requests Counter erhöhen
         items[index].pendingRequests += 1
-        // Kein save() nötig, da pendingRequests nicht persistiert wird
         
         let correctedURLString = correctURL(item.urlString)
         guard let url = URL(string: correctedURLString) else { 
             // Counter zurücksetzen bei ungültiger URL
             items[index].pendingRequests = max(0, items[index].pendingRequests - 1)
-            // Kein save() nötig, da pendingRequests nicht persistiert wird
             return 
         }
         
-        URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+        // Intelligente HEAD/GET-Strategie
+        let hasInitialData = self.lastResponses[itemID] != nil
+        let hasETag = lastETags[itemID] != nil
+        
+        if !hasInitialData {
+            // Erster Request: Immer GET für Basis-Diff
+            print("🔄 Erster Request für \(item.urlString) - GET für Basis-Diff")
+            performGETRequest(url: url, itemID: itemID, item: item)
+        } else if hasETag {
+            // Folge-Requests mit ETag: Erst HEAD, dann GET nur bei Änderung
+            print("🔍 Folge-Request mit ETag für \(item.urlString) - HEAD-Check")
+            performHEADRequest(url: url, itemID: itemID, item: item)
+        } else {
+            // Folge-Requests ohne ETag: Immer GET
+            print("📄 Folge-Request ohne ETag für \(item.urlString) - GET")
+            performGETRequest(url: url, itemID: itemID, item: item)
+        }
+    }
+    
+    private func performHEADRequest(url: URL, itemID: UUID, item: URLItem) {
+        var request = URLRequest(url: url)
+        request.httpMethod = "HEAD"
+        
+        // ETag aus vorherigem Request hinzufügen
+        if let etag = lastETags[itemID] {
+            request.setValue(etag, forHTTPHeaderField: "If-None-Match")
+        }
+        
+        let startTime = Date()
+        
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
             DispatchQueue.main.async {
                 guard let self = self else { return }
-                // Prüfen, ob das Item noch existiert
+                guard let currentIndex = self.items.firstIndex(where: { $0.id == itemID }) else { return }
+                
+                // Pending Requests Counter verringern
+                self.items[currentIndex].pendingRequests = max(0, self.items[currentIndex].pendingRequests - 1)
+                
+                var status: URLItem.Status = .error
+                var httpStatusCode: Int? = nil
+                var responseSize: Int? = nil
+                var responseTime: Double? = nil
+                
+                responseTime = Date().timeIntervalSince(startTime)
+                
+                if let httpResponse = response as? HTTPURLResponse {
+                    httpStatusCode = httpResponse.statusCode
+                    
+                    print("🔍 HEAD Request: \(item.urlString)")
+                    print("📊 HTTP Status Code: \(httpStatusCode ?? 0)")
+                    
+                    // ETag aus Response extrahieren
+                    if let etag = httpResponse.value(forHTTPHeaderField: "ETag") {
+                        self.lastETags[itemID] = etag
+                        print("🏷️ ETag gefunden: \(etag)")
+                    }
+                    
+                    if let statusCode = httpStatusCode {
+                        // Prüfe zuerst, ob ETag identisch ist (Content unverändert)
+                        if let currentETag = httpResponse.value(forHTTPHeaderField: "ETag"),
+                           let lastETag = self.lastETags[itemID],
+                           currentETag == lastETag {
+                            // ETag identisch - Content unverändert, auch wenn Status != 304
+                            status = .success
+                            print("✅ Content unverändert (ETag identisch: \(currentETag))")
+                        } else {
+                            // ETag unterschiedlich oder nicht vorhanden - prüfe Status-Code
+                            switch statusCode {
+                            case 200...299:
+                                // Content hat sich geändert - GET Request für vollständigen Inhalt
+                                print("🔄 Content geändert (Status \(statusCode)) - GET Request folgt")
+                                self.performGETRequest(url: url, itemID: itemID, item: item)
+                                return
+                                
+                            case 304:
+                                // Content unverändert
+                                status = .success
+                                print("✅ Content unverändert (304 Not Modified)")
+                                
+                            default:
+                                // Andere Status-Codes - GET Request für vollständige Prüfung
+                                print("⚠️ Unerwarteter Status \(statusCode) - GET Request folgt")
+                                self.performGETRequest(url: url, itemID: itemID, item: item)
+                                return
+                            }
+                        }
+                    } else {
+                        // Kein HTTP Status Code - GET Request für vollständige Prüfung
+                        print("⚠️ Kein HTTP Status Code - GET Request folgt")
+                        self.performGETRequest(url: url, itemID: itemID, item: item)
+                        return
+                    }
+                } else {
+                    print("❌ HEAD Request fehlgeschlagen: \(error?.localizedDescription ?? "Unknown error")")
+                    // Fallback zu GET Request
+                    self.performGETRequest(url: url, itemID: itemID, item: item)
+                    return
+                }
+                
+                // History-Eintrag für HEAD Request
+                self.items[currentIndex].history.insert(URLItem.HistoryEntry(
+                    date: Date(),
+                    status: status,
+                    httpStatusCode: httpStatusCode,
+                    diffInfo: nil,
+                    responseSize: responseSize,
+                    responseTime: responseTime
+                ), at: 0)
+                
+                if self.items[currentIndex].history.count > 1000 {
+                    self.items[currentIndex].history.removeLast()
+                }
+                
+                // Notification senden
+                NotificationManager.shared.notifyIfNeeded(for: self.items[currentIndex], status: status, httpStatusCode: httpStatusCode)
+            }
+        }.resume()
+    }
+    
+    private func performGETRequest(url: URL, itemID: UUID, item: URLItem) {
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        
+        // ETag aus vorherigem Request hinzufügen (für 304-Responses)
+        if let etag = lastETags[itemID] {
+            request.setValue(etag, forHTTPHeaderField: "If-None-Match")
+        }
+        
+        let startTime = Date()
+        
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
                 guard let currentIndex = self.items.firstIndex(where: { $0.id == itemID }) else { return }
                 
                 // Pending Requests Counter verringern
@@ -541,27 +669,32 @@ class URLMonitor: ObservableObject {
                 var responseSize: Int? = nil
                 var responseTime: Double? = nil
                 
-                // Response-Zeit messen
-                let startTime = Date()
+                responseTime = Date().timeIntervalSince(startTime)
                 
                 if let httpResponse = response as? HTTPURLResponse {
                     httpStatusCode = httpResponse.statusCode
                     
-                    // Log HTTP-Code
-                    print("🔍 URL Check: \(item.urlString)")
-                    print("📊 HTTP Status Code: \(String(describing: httpStatusCode))")
+                    print("📄 GET Request: \(item.urlString)")
+                    print("📊 HTTP Status Code: \(httpStatusCode ?? 0)")
+                    
+                    // ETag aus Response extrahieren
+                    if let etag = httpResponse.value(forHTTPHeaderField: "ETag") {
+                        self.lastETags[itemID] = etag
+                        print("🏷️ ETag gefunden: \(etag)")
+                    }
                     
                     if let data = data, error == nil {
-                        // Log Content-Länge und Preview
+                        // Content verarbeitung
                         let contentLength = data.count
                         responseSize = contentLength
-                        responseTime = Date().timeIntervalSince(startTime)
                         
                         let contentPreview = String(data: data.prefix(200), encoding: .utf8) ?? "Binary data"
                         
                         print("📄 Content Length: \(contentLength) bytes")
                         print("📝 Content Preview: \(contentPreview)")
                         print("⏱️ Response Time: \(responseTime ?? 0) seconds")
+                        
+                        // lastResponses wird automatisch gesetzt - kein separater Flag nötig
                         
                         if let lastData = self.lastResponses[itemID], lastData != data {
                             status = .changed
@@ -578,23 +711,27 @@ class URLMonitor: ObservableObject {
                             print("✅ Status: SUCCESS (Content unchanged)")
                         }
                         self.lastResponses[itemID] = data
+                    } else if httpStatusCode == 304 {
+                        // 304 Not Modified - Content unverändert
+                        status = .success
+                        print("✅ Content unverändert (304 Not Modified)")
                     } else {
                         print("❌ Error: No data received or network error")
                     }
                 } else if let data = data, error == nil {
                     // Non-HTTP response
-                    print("🔍 URL Check: \(item.urlString)")
-                    print("📊 Response Type: Non-HTTP")
+                    print("📄 GET Request (Non-HTTP): \(item.urlString)")
                     
                     let contentLength = data.count
                     responseSize = contentLength
-                    responseTime = Date().timeIntervalSince(startTime)
                     
                     let contentPreview = String(data: data.prefix(200), encoding: .utf8) ?? "Binary data"
                     
                     print("📄 Content Length: \(contentLength) bytes")
                     print("📝 Content Preview: \(contentPreview)")
                     print("⏱️ Response Time: \(responseTime ?? 0) seconds")
+                    
+                    // lastResponses wird automatisch gesetzt - kein separater Flag nötig
                     
                     if let lastData = self.lastResponses[itemID], lastData != data {
                         status = .changed
@@ -612,8 +749,7 @@ class URLMonitor: ObservableObject {
                     }
                     self.lastResponses[itemID] = data
                 } else {
-                    print("🔍 URL Check: \(item.urlString)")
-                    print("❌ Error: \(error?.localizedDescription ?? "Unknown error")")
+                    print("📄 GET Request fehlgeschlagen: \(error?.localizedDescription ?? "Unknown error")")
                 }
                 
                 // DiffInfo erstellen falls Diff vorhanden
@@ -629,9 +765,10 @@ class URLMonitor: ObservableObject {
                     )
                 }
                 
+                // History-Eintrag für GET Request
                 self.items[currentIndex].history.insert(URLItem.HistoryEntry(
-                    date: Date(), 
-                    status: status, 
+                    date: Date(),
+                    status: status,
                     httpStatusCode: httpStatusCode,
                     diffInfo: diffInfo,
                     responseSize: responseSize,
@@ -639,16 +776,11 @@ class URLMonitor: ObservableObject {
                 ), at: 0)
                 
                 if self.items[currentIndex].history.count > 1000 {
-                    self.items[currentIndex].history.removeLast() 
+                    self.items[currentIndex].history.removeLast()
                 }
                 
-                // currentStatus wird automatisch aus history abgeleitet
-                
-                // Notification senden, falls konfiguriert
+                // Notification senden
                 NotificationManager.shared.notifyIfNeeded(for: self.items[currentIndex], status: status, httpStatusCode: httpStatusCode)
-                
-                // Kein save() nötig, da sich nur die Historie ändert (wird nicht persistiert)
-                // self.save()
             }
         }.resume()
     }
