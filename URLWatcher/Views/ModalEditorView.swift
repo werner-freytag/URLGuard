@@ -10,6 +10,7 @@ struct ModalEditorView: View {
     @State private var currentUrlString: String
     @State private var currentTitle: String?
     @State private var currentInterval: Double
+    @State private var currentIsEnabled: Bool
     @State private var currentEnabledNotifications: Set<URLItem.NotificationType>
     
     init(item: URLItem, monitor: URLMonitor, isNewItem: Bool = false, onSave: ((URLItem) -> Void)? = nil) {
@@ -20,6 +21,7 @@ struct ModalEditorView: View {
         self._currentUrlString = State(initialValue: item.urlString)
         self._currentTitle = State(initialValue: item.title)
         self._currentInterval = State(initialValue: item.interval)
+        self._currentIsEnabled = State(initialValue: item.isEnabled)
         self._currentEnabledNotifications = State(initialValue: item.enabledNotifications)
     }
     
@@ -45,16 +47,17 @@ struct ModalEditorView: View {
                     URLItemInputForm(
                         item: item, 
                         monitor: monitor,
-                        onSave: { urlString, title, interval, enabledNotifications in
-                            if saveChanges(urlString: urlString, title: title, interval: interval, enabledNotifications: enabledNotifications) {
+                        onSave: { urlString, title, interval, isEnabled, enabledNotifications in
+                            if saveChanges(urlString: urlString, title: title, interval: interval, isEnabled: isEnabled, enabledNotifications: enabledNotifications) {
                                 dismiss()
                             }
                         },
-                        onValuesChanged: { urlString, title, interval, enabledNotifications in
+                        onValuesChanged: { urlString, title, interval, isEnabled, enabledNotifications in
                             // Aktualisiere die aktuellen Werte bei jeder Änderung
                             currentUrlString = urlString
                             currentTitle = title
                             currentInterval = interval
+                            currentIsEnabled = isEnabled
                             currentEnabledNotifications = enabledNotifications
                         },
                         onValidationRequested: { urlString, interval in
@@ -88,7 +91,7 @@ struct ModalEditorView: View {
                 
                 Button("Fertig") {
                     // Verwende die aktuellen Werte aus den State-Variablen
-                    if saveChanges(urlString: currentUrlString, title: currentTitle, interval: currentInterval, enabledNotifications: currentEnabledNotifications) {
+                    if saveChanges(urlString: currentUrlString, title: currentTitle, interval: currentInterval, isEnabled: currentIsEnabled, enabledNotifications: currentEnabledNotifications) {
                         dismiss()
                     }
                 }
@@ -103,7 +106,7 @@ struct ModalEditorView: View {
         .preferredColorScheme(.light)
     }
     
-    private func saveChanges(urlString: String, title: String?, interval: Double, enabledNotifications: Set<URLItem.NotificationType>) -> Bool {
+    private func saveChanges(urlString: String, title: String?, interval: Double, isEnabled: Bool, enabledNotifications: Set<URLItem.NotificationType>) -> Bool {
         // URL korrigieren
         let correctedURL = monitor.correctURL(urlString)
         
@@ -113,6 +116,7 @@ struct ModalEditorView: View {
             newItem.urlString = correctedURL
             newItem.title = title
             newItem.interval = interval
+            newItem.isEnabled = isEnabled
             newItem.enabledNotifications = enabledNotifications
             
             // Validiere das Item
@@ -126,7 +130,7 @@ struct ModalEditorView: View {
         } else {
             // Existierendes Item bearbeiten - finde das aktuelle Item im Monitor
             if let currentItem = monitor.items.first(where: { $0.id == item.id }) {
-                monitor.confirmEditingWithValues(for: currentItem, urlString: correctedURL, title: title, interval: interval, enabledNotifications: enabledNotifications)
+                monitor.confirmEditingWithValues(for: currentItem, urlString: correctedURL, title: title, interval: interval, isEnabled: isEnabled, enabledNotifications: enabledNotifications)
                 return true
             } else {
                 print("❌ Item nicht im Monitor gefunden: \(item.id)")

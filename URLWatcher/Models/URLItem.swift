@@ -6,10 +6,7 @@ struct PersistableURLItem: Codable {
     var urlString: String
     var title: String?
     var interval: Double
-    var isPaused: Bool
-    var currentStatus: URLItem.Status?
-    var urlError: String?
-    var intervalError: String?
+    var isEnabled: Bool
     var enabledNotifications: Set<URLItem.NotificationType>
     
     init(from urlItem: URLItem) {
@@ -17,10 +14,7 @@ struct PersistableURLItem: Codable {
         self.urlString = urlItem.urlString
         self.title = urlItem.title
         self.interval = urlItem.interval
-        self.isPaused = urlItem.isPaused
-        self.currentStatus = urlItem.currentStatus
-        self.urlError = urlItem.urlError
-        self.intervalError = urlItem.intervalError
+        self.isEnabled = urlItem.isEnabled
         self.enabledNotifications = urlItem.enabledNotifications
     }
     
@@ -30,10 +24,7 @@ struct PersistableURLItem: Codable {
             urlString: urlString,
             title: title,
             interval: interval,
-            isPaused: isPaused,
-            currentStatus: currentStatus,
-            urlError: urlError,
-            intervalError: intervalError,
+            isEnabled: isEnabled,
             enabledNotifications: enabledNotifications
         )
     }
@@ -126,11 +117,17 @@ struct URLItem: Identifiable, Codable, Equatable {
         let date: Date
         let status: Status
         let httpStatusCode: Int?
+        let diff: String? // Diff bei Veränderungen
+        let responseSize: Int? // Größe der Response in Bytes
+        let responseTime: Double? // Response-Zeit in Sekunden
         
-        init(date: Date, status: Status, httpStatusCode: Int? = nil) {
+        init(date: Date, status: Status, httpStatusCode: Int? = nil, diff: String? = nil, responseSize: Int? = nil, responseTime: Double? = nil) {
             self.date = date
             self.status = status
             self.httpStatusCode = httpStatusCode
+            self.diff = diff
+            self.responseSize = responseSize
+            self.responseTime = responseTime
         }
     }
     
@@ -138,7 +135,7 @@ struct URLItem: Identifiable, Codable, Equatable {
     var urlString: String
     var title: String? // Optionaler Titel für die Anzeige
     var interval: Double
-    var isPaused: Bool
+    var isEnabled: Bool
 
     var isEditing: Bool
     var pendingRequests: Int // Anzahl der wartenden Requests
@@ -158,12 +155,12 @@ struct URLItem: Identifiable, Codable, Equatable {
     // Notification-Einstellungen
     var enabledNotifications: Set<NotificationType> = [.error, .change]
     
-    init(id: UUID = UUID(), urlString: String = "", title: String? = nil, interval: Double = 5, isPaused: Bool = false, isEditing: Bool = false, pendingRequests: Int = 0, remainingTime: Double = 0, history: [HistoryEntry] = [], currentStatus: Status? = nil, urlError: String? = nil, intervalError: String? = nil, isModalEditing: Bool = false, enabledNotifications: Set<NotificationType> = [.error, .change]) {
+    init(id: UUID = UUID(), urlString: String = "", title: String? = nil, interval: Double = 5, isEnabled: Bool = true, isEditing: Bool = false, pendingRequests: Int = 0, remainingTime: Double = 0, history: [HistoryEntry] = [], currentStatus: Status? = nil, urlError: String? = nil, intervalError: String? = nil, isModalEditing: Bool = false, enabledNotifications: Set<NotificationType> = [.error, .change]) {
         self.id = id
         self.urlString = urlString
         self.title = title
         self.interval = interval
-        self.isPaused = isPaused
+        self.isEnabled = isEnabled
         self.isEditing = isEditing
         self.pendingRequests = pendingRequests
         self.remainingTime = remainingTime

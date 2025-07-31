@@ -16,13 +16,13 @@ struct URLItemHistory: View {
                                 RoundedRectangle(cornerRadius: 2)
                                     .fill(color(for: entry.status))
                                     .frame(width: 10, height: 10)
-                                    .opacity(item.isPaused ? 0.6 : 1.0) // Kräftiger wenn pausiert
+                                    .opacity(item.isEnabled ? 1.0 : 0.6) // Kräftiger wenn aktiviert
                                     .help(tooltipText(for: entry))
                                     .id(entry.date) // ID für ScrollViewReader
                             }
                             
                             // Countdown oder Progress (nur wenn nicht pausiert)
-                            if !item.isPaused {
+                            if item.isEnabled {
                                 if item.isWaiting {
                                     // ProgressView während Request
                                     ProgressView()
@@ -67,7 +67,7 @@ struct URLItemHistory: View {
                 }) {
                     Image(systemName: "arrow.clockwise")
                         .font(.caption)
-                        .foregroundColor(.secondary.opacity(item.isPaused ? 0.5 : 1.0))
+                        .foregroundColor(.secondary.opacity(item.isEnabled ? 1.0 : 0.5))
                 }
                 .buttonStyle(PlainButtonStyle())
                 .help("Historie leeren")
@@ -92,6 +92,18 @@ struct URLItemHistory: View {
             tooltip += " (HTTP \(httpCode))"
         }
         
+        if let responseSize = entry.responseSize {
+            tooltip += "\nGröße: \(responseSize) Bytes"
+        }
+        
+        if let responseTime = entry.responseTime {
+            tooltip += "\nZeit: \(String(format: "%.2f", responseTime))s"
+        }
+        
+        if let diff = entry.diff {
+            tooltip += "\n\nDiff verfügbar"
+        }
+        
         return tooltip
     }
 }
@@ -106,7 +118,10 @@ struct URLItemHistory: View {
             return URLItem.HistoryEntry(
                 date: Date().addingTimeInterval(-Double(i * 60)), 
                 status: status, 
-                httpStatusCode: status == .error ? 404 : 200
+                httpStatusCode: status == .error ? 404 : 200,
+                diff: status == .changed ? "Zeile 1: - Alter Text\nZeile 1: + Neuer Text" : nil,
+                responseSize: 1024,
+                responseTime: 0.5
             )
         }
     )

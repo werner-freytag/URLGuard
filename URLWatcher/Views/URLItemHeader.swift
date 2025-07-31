@@ -12,12 +12,12 @@ struct URLItemHeader: View {
                 guard monitor.items.contains(where: { $0.id == item.id }) else { return }
                 monitor.togglePause(for: item)
             }) {
-                Image(systemName: item.isPaused ? "play.circle.fill" : "pause.circle.fill")
+                Image(systemName: item.isEnabled ? "pause.circle.fill" : "play.circle.fill")
                     .font(.title)
                     .foregroundColor(.blue)
             }
             .buttonStyle(PlainButtonStyle())
-            .help(item.isPaused ? "Start" : "Pause")
+            .help(item.isEnabled ? "Pause" : "Start")
             
             VStack(alignment: .leading, spacing: 4) {
                 // Haupttitel
@@ -28,25 +28,25 @@ struct URLItemHeader: View {
                         .fontWeight(.bold)
                         .lineLimit(1)
                         .truncationMode(.middle)
-                        .foregroundColor(item.isPaused ? .secondary : .primary)
+                        .foregroundColor(item.isEnabled ? .primary : .secondary)
                 } else if let components = urlComponents {
                     // URL-Komponenten anzeigen
                     HStack(spacing: 4) {
                         Text(components.host)
                             .font(.headline)
                             .fontWeight(.bold)
-                            .foregroundColor(item.isPaused ? .secondary : .primary)
+                            .foregroundColor(item.isEnabled ? .primary : .secondary)
                         
                         if let lastPathComponent = components.lastPathComponent {
                             Text(" – ")
                                 .font(.headline)
                                 .fontWeight(.regular)
-                                .foregroundColor(item.isPaused ? .secondary.opacity(0.6) : .primary.opacity(0.6))
+                                .foregroundColor(item.isEnabled ? .primary.opacity(0.6) : .secondary.opacity(0.6))
                             
                             Text(lastPathComponent)
                                 .font(.headline)
                                 .fontWeight(.regular)
-                                .foregroundColor(item.isPaused ? .secondary.opacity(0.6) : .primary.opacity(0.6))
+                                .foregroundColor(item.isEnabled ? .primary.opacity(0.6) : .secondary.opacity(0.6))
                         }
                     }
                     .lineLimit(1)
@@ -58,7 +58,7 @@ struct URLItemHeader: View {
                         .fontWeight(.bold)
                         .lineLimit(1)
                         .truncationMode(.middle)
-                        .foregroundColor(item.isPaused ? .secondary : .primary)
+                        .foregroundColor(item.isEnabled ? .primary : .secondary)
                 }
                 
                 // URL und Intervall als Untertitel
@@ -173,7 +173,7 @@ struct URLItemHeader: View {
     let item = URLItem(
         urlString: "https://example.com", 
         interval: 10, 
-        isPaused: false,
+                    isEnabled: true,
         history: [
             URLItem.HistoryEntry(date: Date(), status: .success, httpStatusCode: 200),
             URLItem.HistoryEntry(date: Date().addingTimeInterval(-60), status: .changed, httpStatusCode: 200),

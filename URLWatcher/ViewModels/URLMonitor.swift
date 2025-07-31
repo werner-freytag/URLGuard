@@ -20,7 +20,7 @@ class URLMonitor: ObservableObject {
     }
     
     func startAll() {
-        for item in items where !item.isPaused && !item.urlString.isEmpty {
+        for item in items where item.isEnabled && !item.urlString.isEmpty {
             schedule(item: item)
         }
     }
@@ -29,8 +29,8 @@ class URLMonitor: ObservableObject {
         print("⏰ Schedule-Funktion aufgerufen für Item: \(item.id)")
         
         cancel(item: item)
-        guard !item.isPaused, !item.urlString.isEmpty else { 
-            print("⏰ Item ist pausiert oder URL ist leer - Timer nicht gestartet")
+        guard item.isEnabled, !item.urlString.isEmpty else { 
+            print("⏰ Item ist deaktiviert oder URL ist leer - Timer nicht gestartet")
             return 
         }
         
@@ -76,7 +76,7 @@ class URLMonitor: ObservableObject {
     
     func rescheduleTimer(for item: URLItem) {
         cancel(item: item)
-        guard !item.isPaused, !item.urlString.isEmpty else { return }
+        guard item.isEnabled, !item.urlString.isEmpty else { return }
         
         // Verbleibende Zeit auf Intervall setzen
         if let index = items.firstIndex(where: { $0.id == item.id }) {
@@ -119,9 +119,9 @@ class URLMonitor: ObservableObject {
     
     func togglePause(for item: URLItem) {
         if let index = items.firstIndex(where: { $0.id == item.id }) {
-            items[index].isPaused.toggle()
+            items[index].isEnabled.toggle()
             save()
-            if items[index].isPaused {
+            if !items[index].isEnabled {
                 cancel(item: items[index])
             } else {
                 schedule(item: items[index])
@@ -164,7 +164,7 @@ class URLMonitor: ObservableObject {
         duplicatedItem.history.removeAll()
         duplicatedItem.currentStatus = nil
 
-        duplicatedItem.isPaused = true // Pausiert starten
+        duplicatedItem.isEnabled = false // Deaktiviert starten
         duplicatedItem.isEditing = false // Nicht im Edit-Modus
         duplicatedItem.isModalEditing = false // Nicht im Modal-Edit-Modus
         duplicatedItem.pendingRequests = 0 // Keine wartenden Requests
@@ -243,12 +243,12 @@ class URLMonitor: ObservableObject {
         save()
         print("💾 Items gespeichert vor Timer-Start")
         
-        // Timer nur starten wenn nicht pausiert
-        if !duplicatedItem.isPaused {
+        // Timer nur starten wenn aktiviert
+        if duplicatedItem.isEnabled {
             schedule(item: duplicatedItem)
             print("⏰ Timer für Duplikat gestartet")
         } else {
-            print("⏸️ Duplikat ist pausiert - kein Timer gestartet")
+            print("⏸️ Duplikat ist deaktiviert - kein Timer gestartet")
         }
         
         // Nochmal speichern nach Timer-Start
@@ -274,7 +274,7 @@ class URLMonitor: ObservableObject {
             print("  - URL: \(foundItem.urlString)")
             print("  - Titel: \(foundItem.title ?? "Kein Titel")")
             print("  - Intervall: \(foundItem.interval)")
-            print("  - Pausiert: \(foundItem.isPaused)")
+            print("  - Aktiviert: \(foundItem.isEnabled)")
             print("  - Edit-Modus: \(foundItem.isEditing)")
             print("  - Modal-Edit: \(foundItem.isModalEditing)")
             print("  - Pending Requests: \(foundItem.pendingRequests)")
@@ -296,7 +296,7 @@ class URLMonitor: ObservableObject {
     func createNewItem() -> URLItem {
         print("createNewItem() aufgerufen")
         // Erstelle ein temporäres Item für die EditView
-        let newItem = URLItem(urlString: "https://", interval: 10, isPaused: true, isEditing: true)
+        let newItem = URLItem(urlString: "https://", interval: 10, isEnabled: false, isEditing: true)
         print("Temporäres Item erstellt, ID: \(newItem.id)")
         return newItem
     }
@@ -310,7 +310,7 @@ class URLMonitor: ObservableObject {
             // Item ist gültig - hinzufügen und starten
             var validItem = item
             validItem.isEditing = false
-            validItem.isPaused = false
+            validItem.isEnabled = true
             validItem.urlError = nil
             validItem.intervalError = nil
             
@@ -454,7 +454,7 @@ class URLMonitor: ObservableObject {
     
     // confirmNewItemWithValues wurde entfernt - neue Items werden über addItem() hinzugefügt
     
-    func confirmEditingWithValues(for item: URLItem, urlString: String, title: String?, interval: Double, enabledNotifications: Set<URLItem.NotificationType>? = nil) {
+    func confirmEditingWithValues(for item: URLItem, urlString: String, title: String?, interval: Double, isEnabled: Bool, enabledNotifications: Set<URLItem.NotificationType>? = nil) {
         if let index = items.firstIndex(where: { $0.id == item.id }) {
             // URL automatisch korrigieren
             let correctedURL = correctURL(urlString)
@@ -466,6 +466,7 @@ class URLMonitor: ObservableObject {
             items[index].urlString = correctedURL
             items[index].title = title
             items[index].interval = interval
+            items[index].isEnabled = isEnabled
             
             // Benachrichtigungseinstellungen übernehmen falls angegeben
             if let enabledNotifications = enabledNotifications {
@@ -535,8 +536,8 @@ class URLMonitor: ObservableObject {
     
     func pauseAllItems() {
         for index in items.indices {
-            if !items[index].isPaused {
-                items[index].isPaused = true
+                    if items[index].isEnabled {
+            items[index].isEnabled = false
                 cancel(item: items[index])
             }
         }
@@ -634,13 +635,13 @@ class URLMonitor: ObservableObject {
         
         // Pending Requests Counter erhöhen
         items[index].pendingRequests += 1
-        save()
+        // Kein save() nötig, da pendingRequests nicht persistiert wird
         
         let correctedURLString = correctURL(item.urlString)
         guard let url = URL(string: correctedURLString) else { 
             // Counter zurücksetzen bei ungültiger URL
             items[index].pendingRequests = max(0, items[index].pendingRequests - 1)
-            save()
+            // Kein save() nötig, da pendingRequests nicht persistiert wird
             return 
         }
         
@@ -655,25 +656,42 @@ class URLMonitor: ObservableObject {
                 
                 var status: URLItem.Status = .error
                 var httpStatusCode: Int? = nil
+                var diff: String? = nil
+                var responseSize: Int? = nil
+                var responseTime: Double? = nil
+                
+                // Response-Zeit messen
+                let startTime = Date()
                 
                 if let httpResponse = response as? HTTPURLResponse {
                     httpStatusCode = httpResponse.statusCode
                     
                     // Log HTTP-Code
                     print("🔍 URL Check: \(item.urlString)")
-                    print("📊 HTTP Status Code: \(httpStatusCode)")
+                    print("📊 HTTP Status Code: \(String(describing: httpStatusCode))")
                     
                     if let data = data, error == nil {
                         // Log Content-Länge und Preview
                         let contentLength = data.count
+                        responseSize = contentLength
+                        responseTime = Date().timeIntervalSince(startTime)
+                        
                         let contentPreview = String(data: data.prefix(200), encoding: .utf8) ?? "Binary data"
                         
                         print("📄 Content Length: \(contentLength) bytes")
                         print("📝 Content Preview: \(contentPreview)")
+                        print("⏱️ Response Time: \(responseTime ?? 0) seconds")
                         
                         if let lastData = self.lastResponses[itemID], lastData != data {
                             status = .changed
                             print("🔄 Status: CHANGED (Content differs from last check)")
+                            
+                            // Diff erstellen
+                            if let lastContent = String(data: lastData, encoding: .utf8),
+                               let currentContent = String(data: data, encoding: .utf8) {
+                                diff = self.createDiff(from: lastContent, to: currentContent)
+                                print("📋 Diff erstellt: \(diff?.prefix(100) ?? "Kein Diff")")
+                            }
                         } else {
                             status = .success
                             print("✅ Status: SUCCESS (Content unchanged)")
@@ -688,14 +706,25 @@ class URLMonitor: ObservableObject {
                     print("📊 Response Type: Non-HTTP")
                     
                     let contentLength = data.count
+                    responseSize = contentLength
+                    responseTime = Date().timeIntervalSince(startTime)
+                    
                     let contentPreview = String(data: data.prefix(200), encoding: .utf8) ?? "Binary data"
                     
                     print("📄 Content Length: \(contentLength) bytes")
                     print("📝 Content Preview: \(contentPreview)")
+                    print("⏱️ Response Time: \(responseTime ?? 0) seconds")
                     
                     if let lastData = self.lastResponses[itemID], lastData != data {
                         status = .changed
                         print("🔄 Status: CHANGED (Content differs from last check)")
+                        
+                        // Diff erstellen
+                        if let lastContent = String(data: lastData, encoding: .utf8),
+                           let currentContent = String(data: data, encoding: .utf8) {
+                            diff = self.createDiff(from: lastContent, to: currentContent)
+                            print("📋 Diff erstellt: \(diff?.prefix(100) ?? "Kein Diff")")
+                        }
                     } else {
                         status = .success
                         print("✅ Status: SUCCESS (Content unchanged)")
@@ -706,8 +735,16 @@ class URLMonitor: ObservableObject {
                     print("❌ Error: \(error?.localizedDescription ?? "Unknown error")")
                 }
                 
-                self.items[currentIndex].history.insert(URLItem.HistoryEntry(date: Date(), status: status, httpStatusCode: httpStatusCode), at: 0)
-                if self.items[currentIndex].history.count > 100 { 
+                self.items[currentIndex].history.insert(URLItem.HistoryEntry(
+                    date: Date(), 
+                    status: status, 
+                    httpStatusCode: httpStatusCode,
+                    diff: diff,
+                    responseSize: responseSize,
+                    responseTime: responseTime
+                ), at: 0)
+                
+                if self.items[currentIndex].history.count > 1000 {
                     self.items[currentIndex].history.removeLast() 
                 }
                 
@@ -717,7 +754,8 @@ class URLMonitor: ObservableObject {
                 // Notification senden, falls konfiguriert
                 NotificationManager.shared.notifyIfNeeded(for: self.items[currentIndex], status: status, httpStatusCode: httpStatusCode)
                 
-                self.save()
+                // Kein save() nötig, da sich nur die Historie ändert (wird nicht persistiert)
+                // self.save()
             }
         }.resume()
     }
@@ -833,5 +871,53 @@ class URLMonitor: ObservableObject {
         } else {
             print("📭 Keine gespeicherten Daten gefunden")
         }
+    }
+    
+    // MARK: - Diff-Funktionalität
+    
+    /// Erstellt einen Diff zwischen zwei Strings
+    private func createDiff(from oldContent: String, to newContent: String) -> String {
+        let oldLines = oldContent.components(separatedBy: .newlines)
+        let newLines = newContent.components(separatedBy: .newlines)
+        
+        var diffLines: [String] = []
+        diffLines.append("=== DIFF ===")
+        diffLines.append("Alte Version: \(oldLines.count) Zeilen")
+        diffLines.append("Neue Version: \(newLines.count) Zeilen")
+        diffLines.append("")
+        
+        // Einfacher Zeilen-für-Zeilen Vergleich
+        let maxLines = max(oldLines.count, newLines.count)
+        
+        for i in 0..<maxLines {
+            let oldLine = i < oldLines.count ? oldLines[i] : ""
+            let newLine = i < newLines.count ? newLines[i] : ""
+            
+            if oldLine != newLine {
+                diffLines.append("Zeile \(i + 1):")
+                if !oldLine.isEmpty {
+                    diffLines.append("- \(oldLine)")
+                }
+                if !newLine.isEmpty {
+                    diffLines.append("+ \(newLine)")
+                }
+                diffLines.append("")
+            }
+        }
+        
+        // Zusätzliche Statistiken
+        let addedLines = newLines.count - oldLines.count
+        if addedLines > 0 {
+            diffLines.append("📈 \(addedLines) Zeilen hinzugefügt")
+        } else if addedLines < 0 {
+            diffLines.append("📉 \(abs(addedLines)) Zeilen entfernt")
+        }
+        
+        let changedLines = zip(oldLines, newLines).filter { $0 != $1 }.count
+        if changedLines > 0 {
+            diffLines.append("🔄 \(changedLines) Zeilen geändert")
+        }
+        
+        return diffLines.joined(separator: "\n")
     }
 }
