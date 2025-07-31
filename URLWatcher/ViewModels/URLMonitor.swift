@@ -249,8 +249,14 @@ class URLMonitor: ObservableObject {
     
     func confirmNewItemWithValues(for item: URLItem, urlString: String, interval: Double, enabledNotifications: Set<URLItem.NotificationType>? = nil) {
         if let index = items.firstIndex(where: { $0.id == item.id }) {
+            // URL automatisch korrigieren
+            let correctedURL = correctURL(urlString)
+            
+            // Prüfen, ob sich die URL geändert hat
+            let urlChanged = items[index].urlString != correctedURL
+            
             // Lokale Werte übernehmen
-            items[index].urlString = urlString
+            items[index].urlString = correctedURL
             items[index].interval = interval
             
             // Benachrichtigungseinstellungen übernehmen falls angegeben
@@ -265,9 +271,13 @@ class URLMonitor: ObservableObject {
             items[index].intervalError = validation.intervalError
             
             if validation.isValid {
-                // URL automatisch korrigieren und speichern
-                let correctedURL = correctURL(items[index].urlString)
-                items[index].urlString = correctedURL
+                // Historie löschen, wenn sich die URL geändert hat
+                if urlChanged {
+                    print("🔄 URL changed from '\(item.urlString)' to '\(correctedURL)' - clearing history and status")
+                    items[index].history.removeAll()
+                    items[index].currentStatus = nil
+                    lastResponses.removeValue(forKey: item.id)
+                }
                 
                 // Nur bestätigen wenn gültig
                 items[index].isNewItem = false
@@ -286,8 +296,14 @@ class URLMonitor: ObservableObject {
     
     func confirmEditingWithValues(for item: URLItem, urlString: String, interval: Double, enabledNotifications: Set<URLItem.NotificationType>? = nil) {
         if let index = items.firstIndex(where: { $0.id == item.id }) {
+            // URL automatisch korrigieren
+            let correctedURL = correctURL(urlString)
+            
+            // Prüfen, ob sich die URL geändert hat
+            let urlChanged = items[index].urlString != correctedURL
+            
             // Lokale Werte übernehmen
-            items[index].urlString = urlString
+            items[index].urlString = correctedURL
             items[index].interval = interval
             
             // Benachrichtigungseinstellungen übernehmen falls angegeben
@@ -303,9 +319,13 @@ class URLMonitor: ObservableObject {
             items[index].intervalError = validation.intervalError
             
             if validation.isValid {
-                // URL automatisch korrigieren und speichern
-                let correctedURL = correctURL(items[index].urlString)
-                items[index].urlString = correctedURL
+                // Historie löschen, wenn sich die URL geändert hat
+                if urlChanged {
+                    print("🔄 URL changed from '\(item.urlString)' to '\(correctedURL)' - clearing history and status")
+                    items[index].history.removeAll()
+                    items[index].currentStatus = nil
+                    lastResponses.removeValue(forKey: item.id)
+                }
                 
                 // Nur beenden wenn gültig
                 items[index].isEditing = false
@@ -525,21 +545,52 @@ class URLMonitor: ObservableObject {
                 
                 if let httpResponse = response as? HTTPURLResponse {
                     httpStatusCode = httpResponse.statusCode
+                    
+                    // Log HTTP-Code
+                    print("🔍 URL Check: \(item.urlString)")
+                    print("📊 HTTP Status Code: \(httpStatusCode)")
+                    
                     if let data = data, error == nil {
+                        // Log Content-Länge und Preview
+                        let contentLength = data.count
+                        let contentPreview = String(data: data.prefix(200), encoding: .utf8) ?? "Binary data"
+                        
+                        print("📄 Content Length: \(contentLength) bytes")
+                        print("📝 Content Preview: \(contentPreview)")
+                        
                         if let lastData = self.lastResponses[itemID], lastData != data {
                             status = .changed
+                            print("🔄 Status: CHANGED (Content differs from last check)")
                         } else {
                             status = .success
+                            print("✅ Status: SUCCESS (Content unchanged)")
                         }
                         self.lastResponses[itemID] = data
+                    } else {
+                        print("❌ Error: No data received or network error")
                     }
                 } else if let data = data, error == nil {
+                    // Non-HTTP response
+                    print("🔍 URL Check: \(item.urlString)")
+                    print("📊 Response Type: Non-HTTP")
+                    
+                    let contentLength = data.count
+                    let contentPreview = String(data: data.prefix(200), encoding: .utf8) ?? "Binary data"
+                    
+                    print("📄 Content Length: \(contentLength) bytes")
+                    print("📝 Content Preview: \(contentPreview)")
+                    
                     if let lastData = self.lastResponses[itemID], lastData != data {
                         status = .changed
+                        print("🔄 Status: CHANGED (Content differs from last check)")
                     } else {
                         status = .success
+                        print("✅ Status: SUCCESS (Content unchanged)")
                     }
                     self.lastResponses[itemID] = data
+                } else {
+                    print("🔍 URL Check: \(item.urlString)")
+                    print("❌ Error: \(error?.localizedDescription ?? "Unknown error")")
                 }
                 
                 self.items[currentIndex].history.insert(URLItem.HistoryEntry(date: Date(), status: status, httpStatusCode: httpStatusCode), at: 0)

@@ -5,6 +5,17 @@ struct ModalEditorView: View {
     let monitor: URLMonitor
     @Environment(\.dismiss) private var dismiss
     @State private var hasValidationErrors: Bool = false
+    @State private var currentUrlString: String
+    @State private var currentInterval: Double
+    @State private var currentEnabledNotifications: Set<URLItem.NotificationType>
+    
+    init(item: URLItem, monitor: URLMonitor) {
+        self.item = item
+        self.monitor = monitor
+        self._currentUrlString = State(initialValue: item.urlString)
+        self._currentInterval = State(initialValue: item.interval)
+        self._currentEnabledNotifications = State(initialValue: item.enabledNotifications)
+    }
     
     var body: some View {
         VStack(spacing: 0) {
@@ -32,9 +43,26 @@ struct ModalEditorView: View {
                             if saveChanges(urlString: urlString, interval: interval, enabledNotifications: enabledNotifications) {
                                 dismiss()
                             }
+                        },
+                        onValuesChanged: { urlString, interval, enabledNotifications in
+                            // Aktualisiere die aktuellen Werte bei jeder Änderung
+                            currentUrlString = urlString
+                            currentInterval = interval
+                            currentEnabledNotifications = enabledNotifications
+                        },
+                        onValidationRequested: { urlString, interval in
+                            // Validiere die Werte und gib Fehler zurück
+                            var tempItem = item
+                            tempItem.urlString = urlString
+                            tempItem.interval = interval
+                            let validation = monitor.validateItem(tempItem)
+                            return (validation.urlError, validation.intervalError)
                         }
                     )
                     .padding()
+                    .onAppear {
+                        // Initialisierung erfolgt bereits im init
+                    }
                 }
                 .padding(.vertical)
             }
@@ -55,9 +83,8 @@ struct ModalEditorView: View {
                 .buttonStyle(.bordered)
                 
                 Button("Fertig") {
-                    // Hole die aktuellen Werte aus der URLItemInputForm
-                    // Da wir keinen direkten Zugriff haben, verwenden wir die ursprünglichen Werte
-                    if saveChanges(urlString: item.urlString, interval: item.interval, enabledNotifications: item.enabledNotifications) {
+                    // Verwende die aktuellen Werte aus den State-Variablen
+                    if saveChanges(urlString: currentUrlString, interval: currentInterval, enabledNotifications: currentEnabledNotifications) {
                         dismiss()
                     }
                 }
@@ -73,27 +100,32 @@ struct ModalEditorView: View {
     }
     
     private func saveChanges(urlString: String, interval: Double, enabledNotifications: Set<URLItem.NotificationType>) -> Bool {
-        // Erstelle ein temporäres Item mit den aktuellen Werten für die Validierung
-        var tempItem = item
-        tempItem.urlString = urlString
-        tempItem.interval = interval
-        tempItem.enabledNotifications = enabledNotifications
-        
-        // Validiere die aktuellen Werte
-        let validation = monitor.validateItem(tempItem)
-        
-        if validation.isValid {
-            // Nur speichern wenn gültig
-            if item.isNewItem {
-                monitor.confirmNewItemWithValues(for: item, urlString: urlString, interval: interval, enabledNotifications: enabledNotifications)
-            } else if item.isEditing {
-                monitor.confirmEditingWithValues(for: item, urlString: urlString, interval: interval, enabledNotifications: enabledNotifications)
-            }
-            return true
+        // Speichern (Validierung erfolgt bereits in URLItemInputForm)
+        if item.isNewItem {
+            monitor.confirmNewItemWithValues(for: item, urlString: urlString, interval: interval, enabledNotifications: enabledNotifications)
+        } else if item.isEditing {
+            monitor.confirmEditingWithValues(for: item, urlString: urlString, interval: interval, enabledNotifications: enabledNotifications)
         } else {
-            // Validierungsfehler vorhanden, nicht schließen
-            return false
+            // Fallback: Direkt speichern mit URL-Änderungsprüfung
+            if let index = monitor.items.firstIndex(where: { $0.id == item.id }) {
+                let correctedURL = monitor.correctURL(urlString)
+                let urlChanged = monitor.items[index].urlString != correctedURL
+                
+                // Historie löschen, wenn sich die URL geändert hat
+                if urlChanged {
+                    print("🔄 URL changed from '\(monitor.items[index].urlString)' to '\(correctedURL)' - clearing history and status")
+                    monitor.items[index].history.removeAll()
+                    monitor.items[index].currentStatus = nil
+                    // lastResponses ist private, daher können wir es hier nicht direkt löschen
+                }
+                
+                monitor.items[index].urlString = correctedURL
+                monitor.items[index].interval = interval
+                monitor.items[index].enabledNotifications = enabledNotifications
+                monitor.save()
+            }
         }
+        return true
     }
 }
 

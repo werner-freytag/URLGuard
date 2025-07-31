@@ -18,17 +18,28 @@ struct ContentView: View {
         }
     }
     
+    var hasAnyItems: Bool {
+        // Prüfe ob überhaupt Einträge vorhanden sind (ohne Filter)
+        return !monitor.items.filter { !$0.isNewItem }.isEmpty
+    }
+    
     var body: some View {
         VStack {
             // Hauptinhalt
             if filteredItems.isEmpty {
-                EmptyStateView(monitor: monitor, onNewItem: {
-                    // Neuen Eintrag hinzufügen und sofort bearbeiten
-                    monitor.addNewItem()
-                    if let newItem = monitor.items.first {
-                        editingItem = newItem
-                    }
-                })
+                if hasAnyItems {
+                    // Einträge vorhanden, aber Filter zeigt keine Ergebnisse
+                    NoSearchResultsView(searchText: searchText)
+                } else {
+                    // Keine Einträge vorhanden
+                    EmptyStateView(monitor: monitor, onNewItem: {
+                        // Neuen Eintrag hinzufügen und sofort bearbeiten
+                        monitor.addNewItem()
+                        if let newItem = monitor.items.first {
+                            editingItem = newItem
+                        }
+                    })
+                }
             } else {
                 List {
                     ForEach(filteredItems) { item in
@@ -105,6 +116,34 @@ struct EmptyStateView: View {
                 .foregroundColor(.blue)
             }
             .buttonStyle(.bordered)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(.controlBackgroundColor))
+    }
+}
+
+struct NoSearchResultsView: View {
+    let searchText: String
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            // Icon
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 60))
+                .foregroundColor(.secondary)
+            
+            // Text
+            VStack(spacing: 8) {
+                Text("Keine Einträge gefunden")
+                    .font(.title2)
+                    .fontWeight(.medium)
+                    .foregroundColor(.primary)
+                
+                Text("Für '\(searchText)' wurden keine übereinstimmenden URLs gefunden")
+                    .font(.body)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.controlBackgroundColor))

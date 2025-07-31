@@ -21,23 +21,24 @@ struct URLItemHistory: View {
             
             // Historie-Container mit Padding
             HStack(alignment: .top, spacing: 12) {
-                // Historie-Visualisierung (linksbündig)
-                GeometryReader { geometry in
-                    let columns = Int(max(1, geometry.size.width / 11))
-                    LazyVGrid(columns: Array(repeating: GridItem(.fixed(10), spacing: 1), count: columns), spacing: 1) {
-                        ForEach(item.history.prefix(300), id: \.date) { entry in
+                // Historie-Visualisierung (einzeilig mit Scroll)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 1) {
+                        ForEach(Array(item.history.prefix(300).reversed()), id: \.date) { entry in
                             RoundedRectangle(cornerRadius: 2)
                                 .fill(color(for: entry.status))
                                 .frame(width: 10, height: 10)
                                 .help(tooltipText(for: entry))
                         }
                     }
-                    .frame(height: CGFloat(((item.history.count) / columns + 1) * 12))
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.trailing, 8) // Abstand am Ende für bessere Optik
                 }
-                .frame(height: 40)
+                .frame(height: 12) // Feste Höhe für einzeilige Anzeige
+                .frame(maxWidth: .infinity, alignment: .leading)
                 
-                // Reset-Button für Historie (rechts neben der Historie)
+                Spacer()
+                
+                // Reset-Button für Historie (rechtsbündig)
                 Button(action: {
                     guard monitor.items.contains(where: { $0.id == item.id }) else { return }
                     monitor.resetHistory(for: item)
@@ -51,7 +52,6 @@ struct URLItemHistory: View {
                     .foregroundColor(.secondary)
                 }
                 .buttonStyle(PlainButtonStyle())
-                .frame(width: 120, alignment: .leading)
                 .help("Historie leeren")
             }
         }
@@ -63,7 +63,7 @@ struct URLItemHistory: View {
     func color(for status: URLItem.Status) -> Color {
         switch status {
         case .success: return .green
-        case .changed: return .yellow
+        case .changed: return .blue
         case .error: return .red
         }
     }

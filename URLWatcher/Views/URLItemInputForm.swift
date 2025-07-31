@@ -4,16 +4,20 @@ struct URLItemInputForm: View {
     let item: URLItem
     let monitor: URLMonitor
     let onSave: (String, Double, Set<URLItem.NotificationType>) -> Void // Callback mit aktuellen Werten
+    let onValuesChanged: (String, Double, Set<URLItem.NotificationType>) -> Void // Callback für Wertänderungen
+    let onValidationRequested: (String, Double) -> (urlError: String?, intervalError: String?) // Callback für Validierung
     @FocusState private var focusedItemID: UUID?
     
     // Kopie des kompletten Items für lokale Bearbeitung
     @State private var localItem: URLItem
     @State private var hasBeenEdited: Bool = false
     
-    init(item: URLItem, monitor: URLMonitor, onSave: @escaping (String, Double, Set<URLItem.NotificationType>) -> Void) {
+    init(item: URLItem, monitor: URLMonitor, onSave: @escaping (String, Double, Set<URLItem.NotificationType>) -> Void, onValuesChanged: @escaping (String, Double, Set<URLItem.NotificationType>) -> Void, onValidationRequested: @escaping (String, Double) -> (urlError: String?, intervalError: String?)) {
         self.item = item
         self.monitor = monitor
         self.onSave = onSave
+        self.onValuesChanged = onValuesChanged
+        self.onValidationRequested = onValidationRequested
         // Erstelle eine Kopie des Items für lokale Bearbeitung
         var initialItem = item
         // Wenn es ein neuer Eintrag ist und die URL leer ist, "https://" voreintragen
@@ -37,6 +41,10 @@ struct URLItemInputForm: View {
                         TextField("https://example.com", text: $localItem.urlString)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .focused($focusedItemID, equals: item.id)
+                            .onChange(of: localItem.urlString) { oldValue, newValue in
+                                // Benachrichtige über Wertänderung
+                                onValuesChanged(newValue, localItem.interval, localItem.enabledNotifications)
+                            }
                             .onChange(of: focusedItemID) { oldValue, newValue in
                                 // Validierung nur bei onBlur (wenn Fokus verloren geht)
                                 if oldValue == item.id && newValue != item.id {
@@ -45,8 +53,14 @@ struct URLItemInputForm: View {
                                 }
                             }
                             .onSubmit {
-                                // Automatisch "Fertig" bestätigen bei Return
-                                onSave(localItem.urlString, localItem.interval, localItem.enabledNotifications)
+                                // Validiere vor dem Speichern
+                                validateLocalURL()
+                                validateLocalInterval()
+                                
+                                // Nur speichern wenn keine Fehler vorhanden
+                                if localItem.urlError == nil && localItem.intervalError == nil {
+                                    onSave(localItem.urlString, localItem.interval, localItem.enabledNotifications)
+                                }
                             }
                         
                         // URL-Fehlermeldung mit fester Höhe
@@ -71,6 +85,10 @@ struct URLItemInputForm: View {
                             TextField("5", value: $localItem.interval, formatter: NumberFormatter())
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .frame(width: 60)
+                                .onChange(of: localItem.interval) { oldValue, newValue in
+                                    // Benachrichtige über Wertänderung
+                                    onValuesChanged(localItem.urlString, newValue, localItem.enabledNotifications)
+                                }
                                 .onChange(of: focusedItemID) { oldValue, newValue in
                                     // Validierung nur bei onBlur (wenn Fokus verloren geht)
                                     if oldValue == item.id && newValue != item.id {
@@ -81,6 +99,10 @@ struct URLItemInputForm: View {
                             
                             Stepper("", value: $localItem.interval, in: 1...3600, step: 1)
                                 .labelsHidden()
+                                .onChange(of: localItem.interval) { oldValue, newValue in
+                                    // Benachrichtige über Wertänderung
+                                    onValuesChanged(localItem.urlString, newValue, localItem.enabledNotifications)
+                                }
                         }
                         
                         // Interval-Fehlermeldung mit fester Höhe
@@ -155,13 +177,13 @@ struct URLItemInputForm: View {
 #Preview {
     let monitor = URLMonitor()
     let item = URLItem(urlString: "https://example.com", interval: 10, isEditing: true)
-    return URLItemInputForm(item: item, monitor: monitor, onSave: {})
+    return URLItemInputForm(item: item, monitor: monitor, onSave: { _, _, _ in }, onValuesChanged: { _, _, _ in }, onValidationRequested: { _, _ in (nil, nil) })
         .frame(width: 600)
 }
 
 #Preview("Invalid URL") {
     let monitor = URLMonitor()
     let item = URLItem(urlString: "invalid-url", interval: 10, isEditing: true, urlError: "Ungültige URL-Struktur")
-    return URLItemInputForm(item: item, monitor: monitor, onSave: {})
+    return URLItemInputForm(item: item, monitor: monitor, onSave: { _, _, _ in }, onValuesChanged: { _, _, _ in }, onValidationRequested: { _, _ in (nil, nil) })
         .frame(width: 600)
 } 
