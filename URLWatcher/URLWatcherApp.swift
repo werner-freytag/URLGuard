@@ -10,23 +10,50 @@ import SwiftData
 
 @main
 struct URLWatcherApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @StateObject private var monitor = URLMonitor()
+    @State private var editingItem: URLItem? = nil
 
     var body: some Scene {
-        WindowGroup {
-            ContentView()
+        Window("URL Monitor", id: "main") {
+            ContentView(monitor: monitor)
+                .toolbar {
+                    // Gruppe 1: Erstellung
+                    ToolbarItemGroup(placement: .primaryAction) {
+                        Button(action: {
+                            monitor.addNewItem()
+                            if let newItem = monitor.items.first(where: { $0.isNewItem }) {
+                                editingItem = newItem
+                            }
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "plus.circle")
+                                Text("Eintrag hinzufügen")
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .help("Eintrag hinzufügen")
+                    }
+                }
+                .toolbar(.visible, for: .windowToolbar)
+                .toolbar(.automatic, for: .windowToolbar)
+                .sheet(item: $editingItem) { item in
+                    ModalEditorView(item: item, monitor: monitor)
+                }
         }
-        .modelContainer(sharedModelContainer)
+        .windowStyle(.titleBar)
+        .windowToolbarStyle(.unified)
+        .defaultSize(width: 600, height: 400)
+        .windowResizability(.contentSize)
+        .commands {
+            // App beenden wenn Fenster geschlossen wird
+            CommandGroup(replacing: .newItem) { }
+            CommandGroup(replacing: .windowSize) { }
+            CommandGroup(replacing: .windowArrangement) { }
+        }
+
+        Settings {
+            EmptyView() // Keine extra Settings
+        }
     }
 }
