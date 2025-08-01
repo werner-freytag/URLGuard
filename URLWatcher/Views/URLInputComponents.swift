@@ -108,7 +108,7 @@ struct IntervalInputView: View {
                 TextField("", value: $viewModel.interval, format: .number)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .frame(width: 80)
-                    .onChange(of: viewModel.interval) { _ in
+                    .onChange(of: viewModel.interval) {
                         viewModel.clearError()
                     }
                 

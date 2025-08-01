@@ -82,10 +82,10 @@ class NotificationManager: ObservableObject {
             title = "URL Fehler"
             body = "\(item.url.absoluteString) ist nicht erreichbar"
         case .changed:
-            title = "URL Geändert"
+            title = "Inhalt der URL hat sich geändert"
             body = "\(item.url.absoluteString) hat sich geändert"
         case .success:
-            title = "URL Erfolgreich"
+            title = "URL erfolgreich"
             body = "\(item.url.absoluteString) ist erreichbar"
         }
         

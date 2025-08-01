@@ -20,7 +20,6 @@ struct PersistableURLItem: Codable {
     
     func toURLItem() -> URLItem {
         return URLItem(
-            id: id,
             url: url,
             title: title,
             interval: interval,
@@ -123,7 +122,8 @@ struct URLItem: Identifiable, Codable, Equatable {
         }
     }
     
-    struct HistoryEntry: Codable, Equatable {
+    struct HistoryEntry: Codable, Equatable, Identifiable {
+        let id: UUID
         let date: Date
         let status: Status
         let httpStatusCode: Int?
@@ -131,7 +131,8 @@ struct URLItem: Identifiable, Codable, Equatable {
         let responseSize: Int? // Größe der Response in Bytes
         let responseTime: Double? // Response-Zeit in Sekunden
         
-        init(date: Date, status: Status, httpStatusCode: Int? = nil, diffInfo: DiffInfo? = nil, responseSize: Int? = nil, responseTime: Double? = nil) {
+        init(id: UUID = UUID(), date: Date, status: Status, httpStatusCode: Int? = nil, diffInfo: DiffInfo? = nil, responseSize: Int? = nil, responseTime: Double? = nil) {
+            self.id = id
             self.date = date
             self.status = status
             self.httpStatusCode = httpStatusCode
@@ -162,7 +163,7 @@ struct URLItem: Identifiable, Codable, Equatable {
     var history: [HistoryEntry]
     var enabledNotifications: Set<NotificationType> = [.error, .change]
     
-    init(id: UUID = UUID(), url: URL = URL(string: "http://example.com")!, title: String? = nil, interval: Double = 5, isEnabled: Bool = true, pendingRequests: Int = 0, remainingTime: Double = 0, history: [HistoryEntry] = [], enabledNotifications: Set<NotificationType> = [.error, .change]) {
+    init(id: UUID = UUID(), url: URL = URL(string: "https://")!, title: String? = nil, interval: Double = 5, isEnabled: Bool = true, pendingRequests: Int = 0, remainingTime: Double = 0, history: [HistoryEntry] = [], enabledNotifications: Set<NotificationType> = [.error, .change]) {
         self.id = id
         self.url = url
         self.title = title

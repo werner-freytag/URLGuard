@@ -203,11 +203,11 @@
 				};
 			};
 			buildConfigurationList = AD42F7C42E3B62BC005A5D21 /* Build configuration list for PBXProject "URLWatcher" */;
-			developmentRegion = en;
+			developmentRegion = de;
 			hasScannedForEncodings = 0;
 			knownRegions = (
-				en,
 				Base,
+				de,
 			);
 			mainGroup = AD42F7C02E3B62BC005A5D21;
 			minimizedProjectReferenceProxies = 1;

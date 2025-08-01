@@ -83,7 +83,6 @@ class URLRequestManager {
                 
                 var status: URLItem.Status = .error
                 var httpStatusCode: Int? = nil
-                let responseSize: Int? = nil
                 var responseTime: Double? = nil
                 
                 responseTime = Date().timeIntervalSince(startTime)
@@ -128,7 +127,7 @@ class URLRequestManager {
                     return
                 }
                 
-                onComplete(status, httpStatusCode, responseSize, responseTime, nil)
+                onComplete(status, httpStatusCode, data?.count, responseTime, nil)
             }
         }.resume()
     }
@@ -149,7 +148,6 @@ class URLRequestManager {
                 var status: URLItem.Status = .error
                 var httpStatusCode: Int? = nil
                 var diff: String? = nil
-                var responseSize: Int? = nil
                 var responseTime: Double? = nil
 
                 responseTime = Date().timeIntervalSince(startTime)
@@ -159,7 +157,6 @@ class URLRequestManager {
                     self.processHTTPResponse(httpResponse, for: item)
 
                     if let data = data, error == nil {
-                        responseSize = data.count
                         let (contentStatus, contentDiff) = self.processContent(data, for: item)
                         status = contentStatus
                         diff = contentDiff
@@ -169,13 +166,12 @@ class URLRequestManager {
                     }
                 } else if let data = data, error == nil {
                     // Non-HTTP response
-                    responseSize = data.count
                     let (contentStatus, contentDiff) = self.processContent(data, for: item)
                     status = contentStatus
                     diff = contentDiff
                 }
 
-                onComplete(status, httpStatusCode, responseSize, responseTime, diff)
+                onComplete(status, httpStatusCode, data?.count, responseTime, diff)
             }
         }.resume()
     }

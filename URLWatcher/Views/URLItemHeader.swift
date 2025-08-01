@@ -78,9 +78,11 @@ struct URLItemHeader: View {
                         Text("\(Int(item.interval))s")
                     }
                     
-                    HStack(spacing: 2) {
-                        Image(systemName: "bell")
-                        Text(notificationTypesText)
+                    if !notificationTypesText.isEmpty {
+                        HStack(spacing: 2) {
+                            Image(systemName: "bell")
+                            Text(notificationTypesText)
+                        }
                     }
                 }
                 .font(.caption)

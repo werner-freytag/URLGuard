@@ -129,6 +129,7 @@ class URLMonitor: ObservableObject {
         save()
     }
     
+    @discardableResult
     func duplicate(item: URLItem) -> URLItem {
         
         // Intelligente Titel-Generierung

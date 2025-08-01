@@ -22,11 +22,8 @@ struct URLWatcherApp: App {
                 .toolbar {
                     ToolbarItemGroup(placement: .primaryAction) {
                         Button(action: {
-                            monitor.createNewItem()
-                            // Das neu erstellte Item ist das letzte in der Liste
-                            if let newItem = monitor.items.last {
-                                editingItem = newItem
-                            }
+                            // Erstelle ein neues Item nur für den Editor, ohne es zur Liste hinzuzufügen
+                            editingItem = URLItem()
                         }) {
                             HStack(spacing: 4) {
                                 Image(systemName: "plus")
@@ -55,8 +52,10 @@ struct URLWatcherApp: App {
                         monitor: monitor, 
                         isNewItem: isNewItem,
                         onSave: { newItem in
-                            // Neues Item hinzufügen
-                            monitor.addItem(newItem)
+                            if isNewItem {
+                                // Neues Item hinzufügen
+                                monitor.addItem(newItem)
+                            }
                         }
                     )
                 }
