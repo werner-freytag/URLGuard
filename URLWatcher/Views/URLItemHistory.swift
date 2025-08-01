@@ -162,11 +162,9 @@ struct HistoryDetailView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             ForEach(diffInfo.previewLines, id: \.self) { line in
                                 Text(line)
-                                    .font(.caption)
-                                    .fontFamily(.monospaced)
+                                    .font(.system(.caption, design: .monospaced))
                                     .foregroundColor(lineColor(for: line))
-                                    .padding(.horizontal, 4)
-                                    .padding(.vertical, 1)
+                                    .padding(EdgeInsets(top: 1, leading: 4, bottom: 1, trailing: 4))
                                     .background(lineBackgroundColor(for: line))
                                     .cornerRadius(2)
                             }

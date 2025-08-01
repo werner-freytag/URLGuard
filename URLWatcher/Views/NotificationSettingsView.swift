@@ -113,8 +113,6 @@ struct NotificationSettingsView: View {
             }
         }
         .font(.body)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
     }
 }
 

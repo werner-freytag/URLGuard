@@ -37,4 +37,15 @@ extension URL {
         
         return true
     }
-} 
+}
+
+
+func sanitizeURLString(_ urLString : String) -> String {
+    let regex = /^https?:\/\//.ignoresCase()
+    let trimmed = urLString.trimmingCharacters(in: .whitespacesAndNewlines)
+    if trimmed.isEmpty || trimmed.firstMatch(of: regex) != nil {
+        return trimmed
+    }
+    
+    return "https://" + trimmed
+}
