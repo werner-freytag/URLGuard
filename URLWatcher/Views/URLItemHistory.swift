@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 
 struct URLItemHistory: View {
     let item: URLItem
@@ -15,30 +16,10 @@ struct URLItemHistory: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 1) {
                         ForEach(item.history) { entry in
-                            RoundedRectangle(cornerRadius: 2)
-                                .fill(color(for: entry.status))
-                                .frame(width: 10, height: 10)
-                                .opacity(item.isEnabled ? 1.0 : 0.6) // Kräftiger wenn aktiviert
-                                .cornerRadius(3)
-                                .border(showingDetailPopover && entry == selectedEntry ? Color.black : .clear)
-                                .onHover { hovering in
-                                    if hovering {
-                                        showingDetailPopover = true
-                                        selectedEntry = entry
-                                    }
-                                }
-                                .id(entry.date)
-                        }
-                        .popover(item: $selectedEntry, attachmentAnchor: .rect(.bounds)) { entry in
-                            if let entry = selectedEntry {
-                                HistoryDetailView(entry: entry)
-                                    .frame(width: 400, height: 300)
-                                    .presentationBackground(Color(.controlBackgroundColor))
-                                    .presentationCornerRadius(0)
-                            }
+                            HistoryEntryView(entry: entry)
                         }
 
-                        CountdownView(item: item)
+                        CountdownView(item: .constant(item))
                             .id("countdown")
                     }
                     .padding(.trailing, 8) // Abstand am Ende für bessere Optik
@@ -61,26 +42,17 @@ struct URLItemHistory: View {
             }) {
                 Image(systemName: "arrow.clockwise")
                     .font(.caption)
-                    .foregroundColor(.secondary.opacity(item.isEnabled ? 1.0 : 0.5))
             }
             .buttonStyle(PlainButtonStyle())
             .help("Historie leeren")
         }
-
         .padding(16)
-    }
-    
-    func color(for status: URLItem.Status) -> Color {
-        switch status {
-        case .success: return .green
-        case .changed: return .blue
-        case .error: return .red
-        }
+        .opacity(item.isEnabled ? 1.0 : 0.5)
     }
 }
 
 struct CountdownView: View {
-    @State var item: URLItem
+    @Binding var item: URLItem
     
     var body: some View {
         if item.isEnabled {
@@ -106,6 +78,51 @@ struct CountdownView: View {
     }
 }
 
+
+func color(for status: URLItem.Status) -> Color {
+    switch status {
+    case .success: return .green
+    case .changed: return .blue
+    case .error: return .red
+    }
+}
+
+struct HistoryEntryView: View {
+    @State var entry: URLItem.HistoryEntry
+    @State private var hovering = false
+    @State private var showPopover = false
+    @State private var cancellable: AnyCancellable?
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 2)
+            .fill(color(for: entry.status))
+            .frame(width: 10, height: 10)
+            .onHover { isHovering in
+                hovering = isHovering
+                
+                // alten Subscriber abbrechen
+                cancellable?.cancel()
+                
+                if isHovering {
+                    cancellable = Just(true)
+                        .delay(for: .seconds(0.3), scheduler: RunLoop.main)
+                        .sink { _ in
+                            if hovering { showPopover = true }
+                        }
+                } else {
+                    // sofort schließen
+                    showPopover = false
+                }
+            }
+            .popover(isPresented: $showPopover, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom) {
+                HistoryDetailView(entry: entry)
+                    .frame(width: 400, height: entry.status == .changed ? 400 : 200)
+                    .presentationBackground(Color(.controlBackgroundColor))
+                    .presentationCornerRadius(0)
+            }
+    }
+}
+
 #Preview {
     let monitor = URLMonitor()
     let item = URLItem(
@@ -114,8 +131,8 @@ struct CountdownView: View {
         history: Array(0..<50).map { i in
             let status: URLItem.Status = i % 3 == 0 ? .success : (i % 3 == 1 ? .changed : .error)
             return URLItem.HistoryEntry(
-                date: Date().addingTimeInterval(-Double(i * 60)), 
-                status: status, 
+                date: Date().addingTimeInterval(-Double(i * 60)),
+                status: status,
                 httpStatusCode: status == .error ? 404 : 200,
                 diffInfo: status == .changed ? URLItem.DiffInfo(
                     totalChangedLines: 2,
@@ -128,4 +145,5 @@ struct CountdownView: View {
     )
     URLItemHistory(item: item, monitor: monitor)
         .frame(width: 600, height: 200)
-} 
+}
+
