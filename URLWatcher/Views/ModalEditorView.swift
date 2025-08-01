@@ -138,12 +138,11 @@ struct ModalEditorView: View {
         validateForm()
         
         if !isFormValid {
-            print("❌ Validierungsfehler verhindern Speicherung:")
             if let urlError = urlError {
-                print("  URL-Fehler: \(urlError)")
+                // URL-Fehler vorhanden
             }
             if let intervalError = intervalError {
-                print("  Intervall-Fehler: \(intervalError)")
+                // Interval-Fehler vorhanden
             }
             return false
         }
@@ -168,7 +167,6 @@ struct ModalEditorView: View {
                 monitor.confirmEditingWithValues(for: currentItem, urlString: trimmedURL, title: title, interval: interval, isEnabled: isEnabled, enabledNotifications: enabledNotifications)
                 return true
             } else {
-                print("❌ Item nicht im Monitor gefunden: \(item.id)")
                 return false
             }
         }

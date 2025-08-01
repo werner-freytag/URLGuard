@@ -46,7 +46,7 @@ struct ContentView: View {
                             if let currentItem = monitor.items.first(where: { $0.id == item.id }) {
                                 editingItem = currentItem
                             } else {
-                                print("❌ Item nicht im Monitor gefunden für Bearbeitung: \(item.id)")
+                                print("Item nicht im Monitor gefunden für Bearbeitung: \(item.id)")
                             }
                         })
                         .listRowInsets(EdgeInsets())
@@ -109,9 +109,7 @@ struct EmptyStateView: View {
             
             // Button
             Button(action: {
-                print("Eintrag erstellen Button geklickt")
                 onNewItem()
-                print("Neue Items Anzahl: \(monitor.items.count)")
             }) {
                 HStack(spacing: 8) {
                     Image(systemName: "plus.circle.fill")

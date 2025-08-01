@@ -9,13 +9,13 @@ class URLMonitor: ObservableObject {
     let requestManager = URLRequestManager()
     
     init() {
-        print("🚀 URLMonitor init() aufgerufen")
         load()
-        print("📊 Items nach Load: \(items.count)")
         
         // Sofort alle nicht-pausierten Items starten
-        DispatchQueue.main.async { [weak self] in
-            self?.startAll()
+        for item in items {
+            if item.isEnabled {
+                schedule(item: item)
+            }
         }
     }
     
@@ -26,20 +26,16 @@ class URLMonitor: ObservableObject {
     }
     
     func schedule(item: URLItem) {
-        print("⏰ Schedule-Funktion aufgerufen für Item: \(item.id)")
         
         cancel(item: item)
         guard item.isEnabled else { 
-            print("⏰ Item ist deaktiviert - Timer nicht gestartet")
             return 
         }
         
         // Verbleibende Zeit auf Intervall setzen
         if let index = items.firstIndex(where: { $0.id == item.id }) {
             items[index].remainingTime = item.interval
-            print("⏰ RemainingTime für Item \(item.id) auf \(item.interval) gesetzt")
         } else {
-            print("❌ Item \(item.id) nicht in items-Array gefunden beim Schedule")
             return
         }
         
@@ -49,7 +45,6 @@ class URLMonitor: ObservableObject {
             
             DispatchQueue.main.async {
                 guard let currentIndex = self.items.firstIndex(where: { $0.id == item.id }) else { 
-                    print("❌ Item \(item.id) nicht in Timer-Callback gefunden - Timer wird gestoppt")
                     self.timers[item.id]?.invalidate()
                     self.timers.removeValue(forKey: item.id)
                     return 
@@ -69,7 +64,6 @@ class URLMonitor: ObservableObject {
             }
         }
         timers[item.id] = timer
-        print("⏰ Timer für Item \(item.id) erfolgreich gestartet")
     }
     
     // startCountdown und stopCountdown wurden entfernt - Countdown wird jetzt vom Haupt-Timer gehandhabt
@@ -135,39 +129,31 @@ class URLMonitor: ObservableObject {
         save()
     }
     
-    func duplicate(item: URLItem) {
-        print("🔄 Dupliziere Item: \(item.title ?? item.url.absoluteString)")
+    func duplicate(item: URLItem) -> URLItem {
         
-        // Erstelle eine Kopie des Items
+        // Intelligente Titel-Generierung
+        let existingTitles = items.map { $0.title ?? $0.url.absoluteString }
+        let newTitle = (item.title ?? item.url.absoluteString).generateUniqueCopyName(existingTitles: existingTitles)
+        
+        // Neues Item erstellen
         var duplicatedItem = item
-        duplicatedItem.id = UUID() // Neue eindeutige ID
-        duplicatedItem.isEnabled = false // Startet pausiert
-        duplicatedItem.pendingRequests = 0
-        duplicatedItem.remainingTime = 0
-        duplicatedItem.history = [] // Keine Historie für Duplikate
-        // currentStatus wird automatisch aus history abgeleitet
+        duplicatedItem.id = UUID() // Neue ID für das Duplikat
+        duplicatedItem.title = newTitle
+        duplicatedItem.isEnabled = false // Duplikat ist standardmäßig pausiert
         
-        // Intelligente Titel-Generierung für Duplikate
-        let baseTitle = item.title ?? "URL"
-        let existingTitles = items.compactMap { $0.title }
-        duplicatedItem.title = baseTitle.generateUniqueCopyName(existingTitles: existingTitles)
+        // Historie zurücksetzen
+        duplicatedItem.history.removeAll()
         
-        print("📝 Generierter Titel: \(duplicatedItem.title ?? "Kein Titel")")
-        
-        // Füge das duplizierte Item hinzu
+        // Item zur Liste hinzufügen
         items.append(duplicatedItem)
         
-        // Force UI Update
-        objectWillChange.send()
-        
-        // Speichere die Änderungen
+        // Speichern
         save()
         
-        print("✅ Item erfolgreich dupliziert")
+        return duplicatedItem
     }
     
     func createNewItem() {
-        print("➕ Erstelle neues Item")
         
         let newItem = URLItem(url: URL(string: "https://")!, interval: 10, isEnabled: false)
         
@@ -180,11 +166,9 @@ class URLMonitor: ObservableObject {
         // Speichere die Änderungen
         save()
         
-        print("✅ Neues Item erstellt")
     }
     
     func addItem(_ item: URLItem) {
-        print("addItem() aufgerufen für Item: \(item.id)")
         
         // Item ist bereits validiert - direkt hinzufügen und starten
         var validItem = item
@@ -193,7 +177,6 @@ class URLMonitor: ObservableObject {
         items.insert(validItem, at: 0)
         schedule(item: validItem)
         save()
-        print("Item erfolgreich hinzugefügt und gestartet")
     }
     
     func testURL(_ urlString: String, completion: @escaping (Bool, String?) -> Void) {
@@ -230,11 +213,9 @@ class URLMonitor: ObservableObject {
     
     func confirmEditingWithValues(for item: URLItem, urlString: String, title: String?, interval: Double, isEnabled: Bool, enabledNotifications: Set<URLItem.NotificationType>? = nil) {
         if let index = items.firstIndex(where: { $0.id == item.id }) {
-            print("💾 Bestätige Bearbeitung für Item: \(item.title ?? item.url.absoluteString)")
             
             // URL validieren und erstellen
             guard let url = URL(string: urlString) else {
-                print("❌ Ungültige URL: \(urlString)")
                 return
             }
             
@@ -257,7 +238,6 @@ class URLMonitor: ObservableObject {
             
             // History zurücksetzen, wenn sich die URL geändert hat
             if urlChanged {
-                print("🔄 URL geändert - History wird zurückgesetzt")
                 resetHistory(for: items[index])
             }
             
@@ -265,12 +245,10 @@ class URLMonitor: ObservableObject {
             if isEnabledChanged {
                 if isEnabled {
                     // Item wurde aktiviert - Timer starten
-                    print("▶️ Timer für Item starten: \(items[index].title ?? items[index].url.absoluteString)")
-                    schedule(item: items[index])
+                    schedule(item: self.items[index])
                 } else {
                     // Item wurde deaktiviert - Timer stoppen
-                    print("⏸️ Timer für Item stoppen: \(items[index].title ?? items[index].url.absoluteString)")
-                    cancel(item: items[index])
+                    cancel(item: self.items[index])
                 }
             }
             
@@ -280,7 +258,6 @@ class URLMonitor: ObservableObject {
             // Speichere die Änderungen
             save()
             
-            print("✅ Bearbeitung bestätigt")
         }
     }
     
@@ -339,12 +316,10 @@ class URLMonitor: ObservableObject {
     
     func toggleEditing(for item: URLItem) {
         // Diese Funktion ist nicht mehr benötigt, da nur noch Modal-Editor verwendet wird
-        print("⚠️ toggleEditing() ist veraltet - Modal-Editor wird verwendet")
     }
     
     func cancelEditing(for item: URLItem) {
         // Diese Funktion ist nicht mehr benötigt, da nur noch Modal-Editor verwendet wird
-        print("⚠️ cancelEditing() ist veraltet - Modal-Editor wird verwendet")
     }
     
     func removeEmptyItems() {
@@ -421,30 +396,6 @@ class URLMonitor: ObservableObject {
 
     
     func save() {
-        print("💾 Save-Funktion aufgerufen")
-        print("📊 Anzahl Items zum Speichern: \(items.count)")
-        
-        // Debug: Alle Items vor dem Speichern auflisten
-        print("📋 Items vor dem Speichern:")
-        for (index, item) in items.enumerated() {
-            print("  \(index): \(item.id) - \(item.title ?? item.url.absoluteString)")
-        }
-        
-        // Prüfe auf Duplikate in der Liste
-        let duplicateIDs = Dictionary(grouping: items, by: { $0.id })
-            .filter { $1.count > 1 }
-            .keys
-        
-        if !duplicateIDs.isEmpty {
-            print("⚠️ Warnung: Duplikate in der Items-Liste gefunden:")
-            for duplicateID in duplicateIDs {
-                let duplicates = items.filter { $0.id == duplicateID }
-                print("  ID \(duplicateID): \(duplicates.count) mal vorhanden")
-                for (index, duplicate) in duplicates.enumerated() {
-                    print("    \(index): \(duplicate.title ?? duplicate.url.absoluteString)")
-                }
-            }
-        }
         
         // Konvertiere zu PersistableURLItems (ohne Historie)
         let persistableItems = items.map { PersistableURLItem(from: $0) }
@@ -452,18 +403,12 @@ class URLMonitor: ObservableObject {
         if let data = try? JSONEncoder().encode(persistableItems) {
             UserDefaults.standard.set(data, forKey: saveKey)
             UserDefaults.standard.synchronize() // Sofort synchronisieren
-            print("✅ Items erfolgreich gespeichert (ohne Historie)")
-            
-            // Debug: Speichergröße anzeigen
-            print("📦 Speichergröße: \(data.count) bytes")
             
             // Validierung: Versuche die Daten sofort wieder zu laden
             if let savedData = UserDefaults.standard.data(forKey: saveKey),
                let decodedPersistableItems = try? JSONDecoder().decode([PersistableURLItem].self, from: savedData) {
                 let decodedItems = decodedPersistableItems.map { $0.toURLItem() }
-                print("✅ Validierung erfolgreich: \(decodedItems.count) Items geladen")
-                if decodedItems.count != items.count {
-                    print("⚠️ Warnung: Anzahl der gespeicherten Items (\(decodedItems.count)) stimmt nicht mit aktueller Anzahl (\(items.count)) überein")
+                if decodedItems.count != self.items.count {
                 }
                 
                 // Prüfe auf Duplikate in den geladenen Daten
@@ -472,64 +417,30 @@ class URLMonitor: ObservableObject {
                     .keys
                 
                 if !loadedDuplicateIDs.isEmpty {
-                    print("⚠️ Warnung: Duplikate in den geladenen Daten gefunden:")
-                    for duplicateID in loadedDuplicateIDs {
-                        let duplicates = decodedItems.filter { $0.id == duplicateID }
-                        print("  ID \(duplicateID): \(duplicates.count) mal vorhanden")
-                    }
                 }
             } else {
-                print("❌ Validierung fehlgeschlagen: Items konnten nicht wieder geladen werden")
             }
         } else {
-            print("❌ Fehler beim Encodieren der Items")
-            
-            // Debug: Versuche herauszufinden, welches Item das Problem verursacht
-            for (index, persistableItem) in persistableItems.enumerated() {
-                do {
-                    _ = try JSONEncoder().encode(persistableItem)
-                    print("✅ Item \(index) (\(persistableItem.id)) kann encodiert werden")
-                } catch {
-                    print("❌ Item \(index) (\(persistableItem.id)) kann NICHT encodiert werden: \(error)")
-                }
-            }
         }
     }
     
     func load() {
-        print("📂 Load-Funktion aufgerufen")
         
         if let data = UserDefaults.standard.data(forKey: saveKey) {
-            print("📦 Daten gefunden, Größe: \(data.count) bytes")
             
             // Versuche zuerst als PersistableURLItems zu laden (neues Format)
             if let decodedPersistable = try? JSONDecoder().decode([PersistableURLItem].self, from: data) {
                 self.items = decodedPersistable.map { $0.toURLItem() }
-                print("✅ Items erfolgreich geladen (neues Format ohne Historie): \(items.count) Items")
                 
-                // Debug: Alle geladenen Items auflisten
-                print("📋 Geladene Items:")
-                for (index, item) in items.enumerated() {
-                    print("  \(index): \(item.id) - \(item.title ?? item.url.absoluteString)")
-                }
             } else {
                 // Fallback: Versuche als alte URLItems zu laden (mit Historie)
-                print("🔄 Versuche Fallback auf altes Format...")
                 if let decoded = try? JSONDecoder().decode([URLItem].self, from: data) {
                     self.items = decoded
-                    print("✅ Items erfolgreich geladen (altes Format): \(items.count) Items")
                     
-                    // Debug: Alle geladenen Items auflisten
-                    print("📋 Geladene Items:")
-                    for (index, item) in items.enumerated() {
-                        print("  \(index): \(item.id) - \(item.title ?? item.url.absoluteString)")
-                    }
                 } else {
-                    print("❌ Fehler beim Decodieren der Items (beide Formate)")
                 }
             }
         } else {
-            print("📭 Keine gespeicherten Daten gefunden")
         }
     }
     
