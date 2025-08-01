@@ -14,30 +14,36 @@ struct URLWatcherApp: App {
     @StateObject private var monitor = URLMonitor()
     @State private var editingItem: URLItem? = nil
 
+    @State private var isButtonHovering = false
+
     var body: some Scene {
         Window("URL Monitor", id: "main") {
             ContentView(monitor: monitor)
                 .toolbar {
-                    // Gruppe 1: Erstellung
                     ToolbarItemGroup(placement: .primaryAction) {
                         Button(action: {
-                            editingItem = monitor.createNewItem()
+                            monitor.createNewItem()
+                            // Das neu erstellte Item ist das letzte in der Liste
+                            if let newItem = monitor.items.last {
+                                editingItem = newItem
+                            }
                         }) {
-                            HStack(spacing: 6) {
-                                Image(systemName: "plus.circle.fill")
-                                    .font(.title3)
+                            HStack(spacing: 4) {
+                                Image(systemName: "plus")
                                 Text("Eintrag hinzufügen")
-                                    .font(.body)
-                                    .fontWeight(.medium)
                             }
                             .foregroundColor(.white)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(Color.blue)
-                            .cornerRadius(8)
+                            .fontWeight(.semibold)
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 16)
+                            .background(isButtonHovering ? .blue : .gray.opacity(0.55))
+                            .animation(.easeInOut(duration: 0.2), value: isButtonHovering)
+                            .cornerRadius(6)
+                            .onHover(perform: { hovering in isButtonHovering = hovering })
                         }
                         .buttonStyle(.plain)
                         .help("Eintrag hinzufügen")
+                        Spacer(minLength: 20)
                     }
                 }
                 .toolbar(.visible, for: .windowToolbar)
@@ -66,6 +72,7 @@ struct URLWatcherApp: App {
             CommandGroup(replacing: .newItem) { }
             CommandGroup(replacing: .windowSize) { }
             CommandGroup(replacing: .windowArrangement) { }
+            CommandGroup(replacing: .toolbar) { }
         }
 
         Settings {
