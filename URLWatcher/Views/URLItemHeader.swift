@@ -65,25 +65,26 @@ struct URLItemHeader: View {
                 HStack(spacing: 4) {
                     if item.title != nil {
                         Text(item.url.absoluteString)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
                             .lineLimit(1)
                             .truncationMode(.middle)
                     } else {
                         Text(item.url.absoluteString)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
                             .lineLimit(1)
                             .truncationMode(.middle)
                     }
                     
-                    Text("•")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    Text("Intervall: \(Int(item.interval))s")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    HStack(spacing: 2) {
+                        Image(systemName: "clock")
+                        Text("\(Int(item.interval))s")
+                    }
+                    
+                    HStack(spacing: 2) {
+                        Image(systemName: "bell")
+                        Text(notificationTypesText)
+                    }
                 }
+                .font(.caption)
+                .foregroundColor(.secondary)
             }
             .onTapGesture(count: 2) {
                 // Doppelklick zum Bearbeiten
@@ -155,14 +156,29 @@ struct URLItemHeader: View {
         return (host: host, path: path, lastPathComponent: lastPathComponent)
     }
     
+    private var notificationTypesText: String {
+        let types = item.enabledNotifications.map { notificationType in
+            switch notificationType {
+            case .success:
+                return "Erfolg"
+            case .error:
+                return "Fehler"
+            case .change:
+                return "Änderung"
+            case .httpCode(let code):
+                return "HTTP \(code)"
+            }
+        }
+        return types.joined(separator: ", ")
+    }
 
 }
 
 #Preview {
     let monitor = URLMonitor()
     let item = URLItem(
-        url: URL(string: "https://example.com")!, 
-        interval: 10, 
+        url: URL(string: "https://example.com")!,
+        interval: 10,
         isEnabled: true,
         history: [
             URLItem.HistoryEntry(date: Date(), status: .success, httpStatusCode: 200),
@@ -172,4 +188,5 @@ struct URLItemHeader: View {
     )
     URLItemHeader(item: item, monitor: monitor, onEdit: {})
         .frame(width: 600)
-} 
+}
+

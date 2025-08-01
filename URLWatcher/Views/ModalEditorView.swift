@@ -33,7 +33,7 @@ struct ModalEditorView: View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Text(isNewItem ? "Neuen URL-Eintrag erstellen" : "URL-Eintrag bearbeiten")
+                Text(isNewItem ? "Eintrag erstellen" : "Eintrag bearbeiten")
                     .font(.headline)
                     .fontWeight(.medium)
                 
