@@ -155,11 +155,6 @@ struct URLItem: Identifiable, Codable, Equatable {
         return pendingRequests > 0
     }
     
-    // Computed property für currentStatus
-    var currentStatus: Status? {
-        return history.first?.status
-    }
-    
     var history: [HistoryEntry]
     var enabledNotifications: Set<NotificationType> = [.error, .change]
     

@@ -14,7 +14,7 @@ struct URLItemHistory: View {
             ScrollViewReader { proxy in
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 1) {
-                        ForEach(item.history.reversed()) { entry in
+                        ForEach(item.history) { entry in
                             RoundedRectangle(cornerRadius: 2)
                                 .fill(color(for: entry.status))
                                 .frame(width: 10, height: 10)
@@ -39,19 +39,17 @@ struct URLItemHistory: View {
                         }
 
                         CountdownView(item: item)
+                            .id("countdown")
                     }
                     .padding(.trailing, 8) // Abstand am Ende für bessere Optik
                 }
                 .frame(height: 12)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .onChange(of: item.history) { oldCount, newCount in
-                    if let firstEntry = item.history.first {
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            proxy.scrollTo(firstEntry.date, anchor: .trailing)
-                        }
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        proxy.scrollTo("countdown", anchor: .trailing)
                     }
                 }
-
             }
             
             Spacer()

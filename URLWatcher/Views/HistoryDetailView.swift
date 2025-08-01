@@ -143,10 +143,9 @@ struct HistoryDetailView: View {
 
 private extension Int {
     func formattedBytes() -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.groupingSeparator = "."
-        return "\(formatter.string(from: NSNumber(value: self)) ?? "\(self)") Bytes"
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = .memory
+        return formatter.string(fromByteCount: Int64(self))
     }
 }
 

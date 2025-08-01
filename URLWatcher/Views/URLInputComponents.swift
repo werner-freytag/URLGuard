@@ -59,6 +59,7 @@ class IntervalInputViewModel: ObservableObject {
 struct URLInputView: View {
     @ObservedObject var viewModel: URLInputViewModel
     let onSubmit: (() -> Void)?
+    @FocusState private var isFocused: Bool
     
     init(viewModel: URLInputViewModel, onSubmit: (() -> Void)? = nil) {
         self.viewModel = viewModel
@@ -73,11 +74,15 @@ struct URLInputView: View {
             
             TextField("https://example.com", text: $viewModel.urlString)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
+                .focused($isFocused)
                 .onChange(of: viewModel.urlString) {
                     viewModel.clearError()
                 }
                 .onSubmit {
                     onSubmit?()
+                }
+                .onAppear {
+                    isFocused = true
                 }
             
             if let error = viewModel.error {

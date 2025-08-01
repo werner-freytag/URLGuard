@@ -146,7 +146,11 @@ class URLMonitor: ObservableObject {
         duplicatedItem.history.removeAll()
         
         // Item zur Liste hinzufügen
-        items.append(duplicatedItem)
+        if let index = items.firstIndex(of: item) {
+            items.insert(duplicatedItem, at: index + 1)
+        } else {
+            items.append(duplicatedItem)
+        }
         
         // Speichern
         save()
@@ -156,11 +160,7 @@ class URLMonitor: ObservableObject {
     
     @discardableResult
     func createNewItem() -> URLItem {
-        
         let newItem = URLItem(url: URL(string: "https://")!, interval: 10, isEnabled: false)
-        
-        // Füge das neue Item hinzu
-        items.append(newItem)
         
         // Force UI Update
         objectWillChange.send()
@@ -172,13 +172,13 @@ class URLMonitor: ObservableObject {
     }
     
     func addItem(_ item: URLItem) {
+        var newItem = item
+        newItem.isEnabled = true
         
-        // Item ist bereits validiert - direkt hinzufügen und starten
-        var validItem = item
-        validItem.isEnabled = true
+        // Füge das neue Item hinzu
+        items.append(newItem)
         
-        items.insert(validItem, at: 0)
-        schedule(item: validItem)
+        schedule(item: newItem)
         save()
     }
     
@@ -334,17 +334,17 @@ class URLMonitor: ObservableObject {
             }
             
             // History-Eintrag erstellen
-            self.items[currentIndex].history.insert(URLItem.HistoryEntry(
+            self.items[currentIndex].history.append(URLItem.HistoryEntry(
                 date: Date(),
                 status: status,
                 httpStatusCode: httpStatusCode,
                 diffInfo: diffInfo,
                 responseSize: responseSize,
                 responseTime: responseTime
-            ), at: 0)
+            ))
             
             if self.items[currentIndex].history.count > 1000 {
-                self.items[currentIndex].history.removeLast()
+                self.items[currentIndex].history.removeFirst()
             }
             
             // Notification senden
