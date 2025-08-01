@@ -32,18 +32,16 @@ struct URLWatcherApp: App {
                                 Image(systemName: "plus")
                                 Text("Eintrag hinzufügen")
                             }
-                            .foregroundColor(.white)
-                            .fontWeight(.semibold)
                             .padding(.vertical, 6)
                             .padding(.horizontal, 16)
-                            .background(isButtonHovering ? .blue : .gray.opacity(0.55))
-                            .animation(.easeInOut(duration: 0.2), value: isButtonHovering)
+                            .foregroundColor(isButtonHovering ? .white : .primary)
+                            .background(isButtonHovering ? .blue : .clear)
+                            .animation(.easeInOut(duration: 0.15), value: isButtonHovering)
                             .cornerRadius(6)
                             .onHover(perform: { hovering in isButtonHovering = hovering })
                         }
                         .buttonStyle(.plain)
                         .help("Eintrag hinzufügen")
-                        Spacer(minLength: 20)
                     }
                 }
                 .toolbar(.visible, for: .windowToolbar)
@@ -68,9 +66,7 @@ struct URLWatcherApp: App {
         .defaultSize(width: 600, height: 400)
         .windowResizability(.contentSize)
         .commands {
-            // App beenden wenn Fenster geschlossen wird
             CommandGroup(replacing: .newItem) { }
-            CommandGroup(replacing: .windowSize) { }
             CommandGroup(replacing: .windowArrangement) { }
             CommandGroup(replacing: .toolbar) { }
         }
