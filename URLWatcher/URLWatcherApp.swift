@@ -21,11 +21,7 @@ struct URLWatcherApp: App {
                     // Gruppe 1: Erstellung
                     ToolbarItemGroup(placement: .primaryAction) {
                         Button(action: {
-                            monitor.createNewItem()
-                            // Das neu erstellte Item ist das letzte in der Liste
-                            if let newItem = monitor.items.last {
-                                editingItem = newItem
-                            }
+                            editingItem = monitor.createNewItem()
                         }) {
                             HStack(spacing: 6) {
                                 Image(systemName: "plus.circle.fill")

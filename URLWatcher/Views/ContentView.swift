@@ -30,12 +30,7 @@ struct ContentView: View {
                 } else {
                     // Keine Einträge vorhanden
                     EmptyStateView(monitor: monitor, onNewItem: {
-                        // Neuen Eintrag erstellen und sofort bearbeiten
-                        monitor.createNewItem()
-                        // Das neu erstellte Item ist das letzte in der Liste
-                        if let newItem = monitor.items.last {
-                            editingItem = newItem
-                        }
+                        editingItem = monitor.createNewItem()
                     })
                 }
             } else {

@@ -153,7 +153,8 @@ class URLMonitor: ObservableObject {
         return duplicatedItem
     }
     
-    func createNewItem() {
+    @discardableResult
+    func createNewItem() -> URLItem {
         
         let newItem = URLItem(url: URL(string: "https://")!, interval: 10, isEnabled: false)
         
@@ -166,6 +167,7 @@ class URLMonitor: ObservableObject {
         // Speichere die Änderungen
         save()
         
+        return newItem
     }
     
     func addItem(_ item: URLItem) {
@@ -299,48 +301,6 @@ class URLMonitor: ObservableObject {
                 cancel(item: items[index])
             }
         }
-        save()
-    }
-    
-    func resetAllHistories() {
-        for index in items.indices {
-            // Historie komplett löschen
-            items[index].history.removeAll()
-        }
-        // Request-Manager zurücksetzen
-        requestManager.resetAllHistories()
-        save()
-    }
-    
-
-    
-    func toggleEditing(for item: URLItem) {
-        // Diese Funktion ist nicht mehr benötigt, da nur noch Modal-Editor verwendet wird
-    }
-    
-    func cancelEditing(for item: URLItem) {
-        // Diese Funktion ist nicht mehr benötigt, da nur noch Modal-Editor verwendet wird
-    }
-    
-    func removeEmptyItems() {
-        // Entferne leere Einträge, aber behalte immer mindestens einen
-        // URLs sind bereits validiert, da sie URL-Objekte sind
-        // Keine leeren URLs mehr möglich
-        // Kein automatisches Speichern hier
-    }
-    
-    func findFirstEmptyItem() -> URLItem? {
-        // URLs sind bereits validiert, da sie URL-Objekte sind
-        return nil
-    }
-    
-    func ensureMinimumOneItem() {
-        // Diese Funktion ist nicht mehr nötig, da neue Items nicht mehr automatisch erstellt werden
-        // Neue Items werden nur über createNewItem() erstellt
-    }
-    
-    func cleanupAndSave() {
-        removeEmptyItems()
         save()
     }
     

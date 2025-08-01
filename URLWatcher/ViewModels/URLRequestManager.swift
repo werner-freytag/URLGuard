@@ -33,11 +33,6 @@ class URLRequestManager {
         lastETags.removeValue(forKey: itemID)
     }
     
-    func resetAllHistories() {
-        lastResponses.removeAll()
-        lastETags.removeAll()
-    }
-    
     // MARK: - Private Request Methods
     
     /// Gemeinsame Request-Vorbereitung für HEAD und GET Requests
