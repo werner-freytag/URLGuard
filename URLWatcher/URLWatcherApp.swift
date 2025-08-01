@@ -27,10 +27,18 @@ struct URLWatcherApp: App {
                                 editingItem = newItem
                             }
                         }) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "plus.circle")
+                            HStack(spacing: 6) {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.title3)
                                 Text("Eintrag hinzufügen")
+                                    .font(.body)
+                                    .fontWeight(.medium)
                             }
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color.blue)
+                            .cornerRadius(8)
                         }
                         .buttonStyle(.plain)
                         .help("Eintrag hinzufügen")

@@ -4,6 +4,8 @@ struct URLItemHistory: View {
     let item: URLItem
     let monitor: URLMonitor
     @State private var scrollToEnd = false
+    @State private var selectedEntry: URLItem.HistoryEntry? = nil
+    @State private var showingDetailPopover = false
     
     var body: some View {
             // Historie-Container mit Padding
@@ -17,7 +19,10 @@ struct URLItemHistory: View {
                                     .fill(color(for: entry.status))
                                     .frame(width: 10, height: 10)
                                     .opacity(item.isEnabled ? 1.0 : 0.6) // Kräftiger wenn aktiviert
-                                    .help(tooltipText(for: entry))
+                                    .onTapGesture {
+                                        selectedEntry = entry
+                                        showingDetailPopover = true
+                                    }
                                     .id(entry.date) // ID für ScrollViewReader
                             }
                             
@@ -72,6 +77,12 @@ struct URLItemHistory: View {
                 .buttonStyle(PlainButtonStyle())
                 .help("Historie leeren")
             }
+            .popover(isPresented: $showingDetailPopover, arrowEdge: .top) {
+                if let entry = selectedEntry {
+                    HistoryDetailView(entry: entry)
+                        .frame(width: 400, height: 300)
+                }
+            }
         .padding(16)
     }
     
@@ -82,48 +93,191 @@ struct URLItemHistory: View {
         case .error: return .red
         }
     }
+}
+
+struct HistoryDetailView: View {
+    let entry: URLItem.HistoryEntry
     
-    private func tooltipText(for entry: URLItem.HistoryEntry) -> String {
-        let statusText = entry.status.rawValue
-        let dateString = entry.date.formatted()
-        var tooltip = "Datum: \(dateString)\nStatus: \(statusText)"
-        
-        if let httpCode = entry.httpStatusCode {
-            tooltip += "\nHTTP \(httpCode)"
-        }
-        
-        if let responseSize = entry.responseSize {
-            let formatter = NumberFormatter()
-            formatter.numberStyle = .decimal
-            formatter.groupingSeparator = "."
-            let formattedSize = formatter.string(from: NSNumber(value: responseSize)) ?? "\(responseSize)"
-            tooltip += "\nGröße: \(formattedSize) Bytes"
-        }
-        
-        if let responseTime = entry.responseTime {
-            let formatter = NumberFormatter()
-            formatter.numberStyle = .decimal
-            formatter.minimumFractionDigits = 2
-            formatter.maximumFractionDigits = 2
-            let formattedTime = formatter.string(from: NSNumber(value: responseTime)) ?? String(format: "%.2f", responseTime)
-            tooltip += "\nÜbertragungsdauer: \(formattedTime)s"
-        }
-        
-        if let diffInfo = entry.diffInfo {
-            tooltip += "\n\n\(diffInfo.totalChangedLines) Zeilen geändert:"
-            
-            for line in diffInfo.previewLines {
-                tooltip += "\n\(line)"
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Header mit Status und Datum
+            HStack {
+                statusIcon
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(statusTitle)
+                        .font(.headline)
+                        .foregroundColor(statusColor)
+                    Text(entry.date.formatted(date: .abbreviated, time: .shortened))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                Spacer()
             }
             
-            if diffInfo.totalChangedLines > 20 {
-                tooltip += "\n..."
+            Divider()
+            
+            // Technische Details
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Technische Details")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                
+                LazyVGrid(columns: [
+                    GridItem(.flexible()),
+                    GridItem(.flexible())
+                ], spacing: 8) {
+                    if let httpCode = entry.httpStatusCode {
+                        DetailRow(label: "HTTP Status", value: "\(httpCode)")
+                    }
+                    
+                    if let responseSize = entry.responseSize {
+                        DetailRow(label: "Größe", value: formatBytes(responseSize))
+                    }
+                    
+                    if let responseTime = entry.responseTime {
+                        DetailRow(label: "Übertragungsdauer", value: formatTime(responseTime))
+                    }
+                }
             }
+            
+            // Diff-Informationen
+            if let diffInfo = entry.diffInfo {
+                Divider()
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Änderungen")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                        Spacer()
+                        Text("\(diffInfo.totalChangedLines) Zeilen")
+                            .font(.caption)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .background(Color.blue.opacity(0.1))
+                            .cornerRadius(4)
+                    }
+                    
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 4) {
+                            ForEach(diffInfo.previewLines, id: \.self) { line in
+                                Text(line)
+                                    .font(.caption)
+                                    .fontFamily(.monospaced)
+                                    .foregroundColor(lineColor(for: line))
+                                    .padding(.horizontal, 4)
+                                    .padding(.vertical, 1)
+                                    .background(lineBackgroundColor(for: line))
+                                    .cornerRadius(2)
+                            }
+                            
+                            if diffInfo.totalChangedLines > 20 {
+                                Text("... und \(diffInfo.totalChangedLines - 20) weitere Änderungen")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                    .italic()
+                            }
+                        }
+                    }
+                    .frame(maxHeight: 120)
+                }
+            } else if entry.status == .success {
+                Divider()
+                
+                HStack {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(.green)
+                    Text("Inhalt nicht geändert")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+            }
+            
+            Spacer()
+        }
+        .padding(20)
+        .background(Color(.controlBackgroundColor))
+    }
+    
+    private var statusIcon: some View {
+        Image(systemName: statusIconName)
+            .font(.title2)
+            .foregroundColor(statusColor)
+    }
+    
+    private var statusIconName: String {
+        switch entry.status {
+        case .success: return "checkmark.circle.fill"
+        case .changed: return "arrow.triangle.2.circlepath"
+        case .error: return "exclamationmark.triangle.fill"
+        }
+    }
+    
+    private var statusTitle: String {
+        switch entry.status {
+        case .success: return "Erfolgreich"
+        case .changed: return "Geändert"
+        case .error: return "Fehler"
+        }
+    }
+    
+    private var statusColor: Color {
+        switch entry.status {
+        case .success: return .green
+        case .changed: return .blue
+        case .error: return .red
+        }
+    }
+    
+    private func formatBytes(_ bytes: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.groupingSeparator = "."
+        return "\(formatter.string(from: NSNumber(value: bytes)) ?? "\(bytes)") Bytes"
+    }
+    
+    private func formatTime(_ time: Double) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 2
+        formatter.maximumFractionDigits = 2
+        return "\(formatter.string(from: NSNumber(value: time)) ?? String(format: "%.2f", time))s"
+    }
+    
+    private func lineColor(for line: String) -> Color {
+        if line.hasPrefix("+") {
+            return .green
+        } else if line.hasPrefix("-") {
+            return .red
         } else {
-            tooltip += "\n\nInhalt nicht geändert."
+            return .primary
         }
-        
-        return tooltip
+    }
+    
+    private func lineBackgroundColor(for line: String) -> Color {
+        if line.hasPrefix("+") {
+            return Color.green.opacity(0.1)
+        } else if line.hasPrefix("-") {
+            return Color.red.opacity(0.1)
+        } else {
+            return Color.clear
+        }
+    }
+}
+
+struct DetailRow: View {
+    let label: String
+    let value: String
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(label)
+                .font(.caption)
+                .foregroundColor(.secondary)
+            Text(value)
+                .font(.body)
+                .fontWeight(.medium)
+        }
     }
 }
 
