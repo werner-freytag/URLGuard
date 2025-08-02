@@ -51,7 +51,7 @@ class URLMonitor: ObservableObject {
     
     func startTimers() {
         for item in items where item.isEnabled {
-            schedule(item: item)
+            startTimer(for: item, resume: true)
         }
     }
     
@@ -83,18 +83,16 @@ class URLMonitor: ObservableObject {
         }
     }
     
-    func schedule(item: URLItem) {
-        
+    func startTimer(for item: URLItem, resume: Bool = false) {
         cancel(item: item)
-        guard item.isEnabled && !isGlobalPaused else { 
-            return 
+        guard item.isEnabled && !isGlobalPaused else { return }
+        
+        // Restart
+        if !resume || getRemainingTime(for: item.id) <= 0 {
+            setRemainingTime(item.interval, for: item.id)
         }
         
-        // Verbleibende Zeit auf Intervall setzen
-        setRemainingTime(item.interval, for: item.id)
-        
-        // Einziger Timer für Countdown und Checks (jede Sekunde)
-        let timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+        timers[item.id] = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             guard let self = self else { return }
             
             DispatchQueue.main.async {
@@ -118,48 +116,11 @@ class URLMonitor: ObservableObject {
                 }
             }
         }
-        timers[item.id] = timer
-    }
-    
-    // startCountdown und stopCountdown wurden entfernt - Countdown wird jetzt vom Haupt-Timer gehandhabt
-    
-    func rescheduleTimer(for item: URLItem) {
-        cancel(item: item)
-        guard item.isEnabled && !isGlobalPaused else { return }
-        
-        // Verbleibende Zeit auf Intervall setzen
-        setRemainingTime(item.interval, for: item.id)
-        
-        // Einziger Timer für Countdown und Checks (jede Sekunde)
-        let timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            guard let self = self else { return }
-            
-            DispatchQueue.main.async {
-                guard self.items.firstIndex(where: { $0.id == item.id }) != nil else { return }
-                
-                // Countdown aktualisieren
-                let currentTime = self.getRemainingTime(for: item.id)
-                if currentTime > 0 {
-                    self.setRemainingTime(currentTime - 1.0, for: item.id)
-                }
-                
-                // Check auslösen wenn Countdown bei 0 ist
-                if self.getRemainingTime(for: item.id) <= 0 {
-                    self.check(itemID: item.id)
-                    // Countdown auf Intervall zurücksetzen
-                    self.setRemainingTime(item.interval, for: item.id)
-                }
-            }
-        }
-        timers[item.id] = timer
     }
     
     func cancel(item: URLItem) {
         timers[item.id]?.invalidate()
         timers.removeValue(forKey: item.id)
-        
-        // Countdown zurücksetzen
-        setRemainingTime(0, for: item.id)
     }
     
     func togglePause(for item: URLItem) {
@@ -169,7 +130,7 @@ class URLMonitor: ObservableObject {
             if !items[index].isEnabled {
                 cancel(item: items[index])
             } else {
-                schedule(item: items[index])
+                startTimer(for: items[index], resume: true)
             }
         }
     }
@@ -232,7 +193,7 @@ class URLMonitor: ObservableObject {
         
         // Nur starten wenn nicht global pausiert
         if !isGlobalPaused {
-            schedule(item: newItem)
+            startTimer(for: newItem)
         }
         save()
     }
@@ -265,10 +226,6 @@ class URLMonitor: ObservableObject {
         task.resume()
     }
     
-
-    
-    // confirmNewItemWithValues wurde entfernt - neue Items werden über addItem() hinzugefügt
-    
     func confirmEditingWithValues(for item: URLItem, urlString: String, title: String?, interval: Double, isEnabled: Bool, enabledNotifications: Set<URLItem.NotificationType>? = nil) {
         if let index = items.firstIndex(where: { $0.id == item.id }) {
             
@@ -277,13 +234,10 @@ class URLMonitor: ObservableObject {
                 return
             }
             
-            // Prüfe, ob sich die URL geändert hat
             let urlChanged = items[index].url.absoluteString != url.absoluteString
-            
-            // Prüfe, ob sich isEnabled geändert hat
-            let wasEnabled = items[index].isEnabled
-            let isEnabledChanged = wasEnabled != isEnabled
-            
+            let isEnabledChanged = items[index].isEnabled != isEnabled
+            let intervalChanged = items[index].interval != interval
+
             // Aktualisiere das Item
             items[index].url = url
             items[index].title = title
@@ -299,13 +253,11 @@ class URLMonitor: ObservableObject {
                 resetHistory(for: items[index])
             }
             
-            // Timer-Management basierend auf isEnabled Änderung
             if isEnabledChanged {
                 if isEnabled && !isGlobalPaused {
-                    // Item wurde aktiviert und globale Pause ist nicht aktiv - Timer starten
-                    schedule(item: self.items[index])
+                    let resume = !urlChanged && !intervalChanged
+                    startTimer(for: self.items[index], resume: resume)
                 } else {
-                    // Item wurde deaktiviert oder globale Pause ist aktiv - Timer stoppen
                     cancel(item: self.items[index])
                 }
             }
@@ -315,7 +267,6 @@ class URLMonitor: ObservableObject {
             
             // Speichere die Änderungen
             save()
-            
         }
     }
     
