@@ -121,7 +121,7 @@ struct URLItem: Identifiable, Codable, Equatable {
     // MARK: - Persistierung ohne Historie
     
     /// Erstellt eine Kopie ohne Historie für die Persistierung
-    func withoutHistory() -> URLItem {
+    var withoutHistory: URLItem {
         return URLItem(
             id: id,
             url: url,

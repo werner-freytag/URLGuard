@@ -14,31 +14,41 @@ struct URLGuardApp: App {
     @StateObject private var monitor = URLMonitor()
     @State private var editingItem: URLItem? = nil
 
-    @State private var isButtonHovering = false
-
     var body: some Scene {
         Window("URL Guard", id: "main") {
             ContentView(monitor: monitor)
                 .toolbar {
                     ToolbarItemGroup(placement: .primaryAction) {
+                        // Pause/Start Button
+                        Button(action: {
+                            monitor.toggleGlobalPause()
+                        }) {
+                            HStack(spacing: 6) {
+                                Image(systemName: monitor.isGlobalPaused ? "play.fill" : "pause.fill")
+                                Text(monitor.isGlobalPaused ? "Starten" : "Pausieren")
+                            }
+                            .foregroundColor(monitor.isGlobalPaused ? .white : .primary)
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 12)
+                            .background(monitor.isGlobalPaused ? Color.secondary : .clear)
+                            .cornerRadius(8)
+                        }
+                        .buttonStyle(.plain)
+                        
+                        // Separator
+                        Divider()
+                            .frame(height: 20)
+                        
                         Button(action: {
                             // Erstelle ein neues Item nur für den Editor, ohne es zur Liste hinzuzufügen
                             editingItem = URLItem()
                         }) {
-                            HStack(spacing: 4) {
+                            HStack(spacing: 6) {
                                 Image(systemName: "plus")
-                                Text("Eintrag hinzufügen")
+                                Text("Neuer Eintrag")
                             }
-                            .padding(.vertical, 6)
-                            .padding(.horizontal, 16)
-                            .foregroundColor(isButtonHovering ? .white : .primary)
-                            .background(isButtonHovering ? .blue : .clear)
-                            .animation(.easeInOut(duration: 0.15), value: isButtonHovering)
-                            .cornerRadius(6)
-                            .onHover(perform: { hovering in isButtonHovering = hovering })
                         }
                         .buttonStyle(.plain)
-                        .help("Eintrag hinzufügen")
                     }
                 }
                 .toolbar(.visible, for: .windowToolbar)
@@ -65,9 +75,26 @@ struct URLGuardApp: App {
         .defaultSize(width: 600, height: 400)
         .windowResizability(.contentSize)
         .commands {
-            CommandGroup(replacing: .newItem) { }
+            CommandGroup(replacing: .newItem) { 
+                Button("Neuer Eintrag") {
+                    editingItem = URLItem()
+                }
+                .keyboardShortcut("n", modifiers: .command)
+            }
             CommandGroup(replacing: .windowArrangement) { }
             CommandGroup(replacing: .toolbar) { }
+            CommandGroup(replacing: .windowSize) {
+                Button("Fenster schließen") {
+                    NSApplication.shared.keyWindow?.close()
+                }
+                .keyboardShortcut("w", modifiers: .command)
+            }
+            CommandGroup(after: .newItem) {
+                Button("Monitoring pausieren/starten") {
+                    monitor.toggleGlobalPause()
+                }
+                .keyboardShortcut("p", modifiers: [.command, .shift])
+            }
         }
 
         Settings {

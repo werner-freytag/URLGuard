@@ -29,6 +29,7 @@ struct URLItemCard: View {
         )
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
+        .opacity(monitor.isGlobalPaused ? 0.5 : 1.0)
     }
 }
 

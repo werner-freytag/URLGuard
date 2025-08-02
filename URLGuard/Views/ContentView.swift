@@ -11,20 +11,15 @@ struct ContentView: View {
         }
         
         return monitor.items.filter { item in
-            item.url.absoluteString.localizedCaseInsensitiveContains(searchText)
+            item.url.absoluteString.localizedCaseInsensitiveContains(searchText) || item.title?.localizedCaseInsensitiveContains(searchText) == true
         }
-    }
-    
-    var hasAnyItems: Bool {
-        // Prüfe ob überhaupt Einträge vorhanden sind
-        return !monitor.items.isEmpty
     }
     
     var body: some View {
         VStack {
             // Hauptinhalt
             if filteredItems.isEmpty {
-                if hasAnyItems {
+                if !monitor.items.isEmpty {
                     // Einträge vorhanden, aber Filter zeigt keine Ergebnisse
                     NoSearchResultsView(searchText: searchText)
                 } else {
@@ -102,19 +97,18 @@ struct EmptyStateView: View {
                     .multilineTextAlignment(.center)
             }
             
+            
             // Button
             Button(action: {
                 onNewItem()
             }) {
-                HStack(spacing: 8) {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.title3)
-                    Text("Eintrag erstellen")
-                        .font(.body)
+                HStack(spacing: 6) {
+                    Image(systemName: "plus")
+                    Text("Neuer Eintrag")
                 }
-                .foregroundColor(.blue)
+                .foregroundStyle(.blue)
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.plain)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.controlBackgroundColor))
@@ -138,7 +132,7 @@ struct NoSearchResultsView: View {
                     .fontWeight(.medium)
                     .foregroundColor(.primary)
                 
-                Text("Für '\(searchText)' wurden keine übereinstimmenden URLs gefunden")
+                Text("Für '\(searchText)' wurden keine Übereinstimmung gefunden")
                     .font(.body)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)

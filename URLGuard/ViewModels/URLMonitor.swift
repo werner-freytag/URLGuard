@@ -3,6 +3,16 @@ import Combine
 
 class URLMonitor: ObservableObject {
     @Published var items: [URLItem] = []
+    @Published var isGlobalPaused: Bool = true {
+        didSet {
+            if isGlobalPaused {
+                startTimers()
+            } else {
+                stopTimers()
+            }
+        }
+    }
+    
     private var timers: [UUID: Timer] = [:]
     private var countdownTimers: [UUID: Timer] = [:]
     
@@ -11,6 +21,8 @@ class URLMonitor: ObservableObject {
     @Published private var pendingRequests: [UUID: Int] = [:]
     
     private let saveKey = "URLMonitorItems"
+    private let globalPauseKey = "URLMonitorGlobalPause"
+    
     let requestManager = URLRequestManager()
     
     // MARK: - Zustandsverwaltung
@@ -45,27 +57,35 @@ class URLMonitor: ObservableObject {
         return getPendingRequests(for: itemID) > 0
     }
     
-    init() {
-        load()
-        
-        // Sofort alle nicht-pausierten Items starten
-        for item in items {
-            if item.isEnabled {
-                schedule(item: item)
-            }
-        }
-    }
-    
-    func startAll() {
+    func startTimers() {
         for item in items where item.isEnabled {
             schedule(item: item)
         }
     }
     
+    func stopTimers() {
+        for (_, timer) in timers {
+            timer.invalidate()
+        }
+        timers.removeAll()
+    }
+    
+    init() {
+        load()
+        
+        if !isGlobalPaused {
+            startTimers()
+        }
+    }
+    
+    func toggleGlobalPause() {
+        isGlobalPaused.toggle()
+    }
+    
     func schedule(item: URLItem) {
         
         cancel(item: item)
-        guard item.isEnabled else { 
+        guard item.isEnabled && !isGlobalPaused else { 
             return 
         }
         
@@ -104,7 +124,7 @@ class URLMonitor: ObservableObject {
     
     func rescheduleTimer(for item: URLItem) {
         cancel(item: item)
-        guard item.isEnabled else { return }
+        guard item.isEnabled && !isGlobalPaused else { return }
         
         // Verbleibende Zeit auf Intervall setzen
         setRemainingTime(item.interval, for: item.id)
@@ -209,7 +229,10 @@ class URLMonitor: ObservableObject {
         // Füge das neue Item hinzu
         items.append(newItem)
         
-        schedule(item: newItem)
+        // Nur starten wenn nicht global pausiert
+        if !isGlobalPaused {
+            schedule(item: newItem)
+        }
         save()
     }
     
@@ -277,11 +300,11 @@ class URLMonitor: ObservableObject {
             
             // Timer-Management basierend auf isEnabled Änderung
             if isEnabledChanged {
-                if isEnabled {
-                    // Item wurde aktiviert - Timer starten
+                if isEnabled && !isGlobalPaused {
+                    // Item wurde aktiviert und globale Pause ist nicht aktiv - Timer starten
                     schedule(item: self.items[index])
                 } else {
-                    // Item wurde deaktiviert - Timer stoppen
+                    // Item wurde deaktiviert oder globale Pause ist aktiv - Timer stoppen
                     cancel(item: self.items[index])
                 }
             }
@@ -293,20 +316,6 @@ class URLMonitor: ObservableObject {
             save()
             
         }
-    }
-    
-    // confirmNewItem und cancelNewItem wurden entfernt - neue Items werden über addItem() hinzugefügt
-    
-    func removeAllItems() {
-        // Alle Timer stoppen
-        for (_, timer) in timers {
-            timer.invalidate()
-        }
-        timers.removeAll()
-        
-        // Alle Items löschen
-        items.removeAll()
-        save()
     }
     
     func resetHistory(for item: URLItem) {
@@ -323,16 +332,6 @@ class URLMonitor: ObservableObject {
     
     func moveItems(from source: IndexSet, to destination: Int) {
         items.move(fromOffsets: source, toOffset: destination)
-        save()
-    }
-    
-    func pauseAllItems() {
-        for index in items.indices {
-                    if items[index].isEnabled {
-            items[index].isEnabled = false
-                cancel(item: items[index])
-            }
-        }
         save()
     }
     
@@ -387,52 +386,29 @@ class URLMonitor: ObservableObject {
     }
     
     func save() {
+        let persistableItems = items.map(\.withoutHistory)
         
-        // Konvertiere zu URLItems ohne Historie für die Persistierung
-        let persistableItems = items.map { $0.withoutHistory() }
-        
-        if let data = try? JSONEncoder().encode(persistableItems) {
-            UserDefaults.standard.set(data, forKey: saveKey)
-            UserDefaults.standard.synchronize() // Sofort synchronisieren
-            
-            // Validierung: Versuche die Daten sofort wieder zu laden
-            if let savedData = UserDefaults.standard.data(forKey: saveKey),
-               let decodedItems = try? JSONDecoder().decode([URLItem].self, from: savedData) {
-                if decodedItems.count != self.items.count {
-                }
-                
-                // Prüfe auf Duplikate in den geladenen Daten
-                let loadedDuplicateIDs = Dictionary(grouping: decodedItems, by: { $0.id })
-                    .filter { $1.count > 1 }
-                    .keys
-                
-                if !loadedDuplicateIDs.isEmpty {
-                }
-            } else {
-            }
-        } else {
+        guard let data = try? JSONEncoder().encode(persistableItems) else {
+            print("Fehler beim Encoding der Daten.")
+            return
         }
+    
+        UserDefaults.standard.set(data, forKey: saveKey)
+        UserDefaults.standard.set(isGlobalPaused, forKey: globalPauseKey)
+        UserDefaults.standard.synchronize()
     }
     
     func load() {
+        isGlobalPaused = UserDefaults.standard.bool(forKey: globalPauseKey)
         
-        if let data = UserDefaults.standard.data(forKey: saveKey) {
-            
-            // Lade URLItems (ohne Historie, da sie beim Speichern entfernt wurde)
-            if let decoded = try? JSONDecoder().decode([URLItem].self, from: data) {
-                self.items = decoded
-                
-            } else {
-                // Fallback: Versuche als alte URLItems zu laden (mit Historie)
-                if let decoded = try? JSONDecoder().decode([URLItem].self, from: data) {
-                    self.items = decoded
-                    
-                } else {
-                }
-            }
-        } else {
+        guard let data = UserDefaults.standard.data(forKey: saveKey) else {
+            print("Fehler beim Laden der Daten.")
+            return
+        }
+
+        // Lade URLItems (ohne Historie, da sie beim Speichern entfernt wurde)
+        if let decoded = try? JSONDecoder().decode([URLItem].self, from: data) {
+            self.items = decoded
         }
     }
-    
-
 }
