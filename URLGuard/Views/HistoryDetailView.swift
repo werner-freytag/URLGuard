@@ -7,16 +7,16 @@ struct HistoryDetailView: View {
         VStack(alignment: .leading, spacing: 16) {
             // Header mit Status und Datum
             HStack {
-                statusIcon
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(statusTitle)
-                        .font(.headline)
-                        .foregroundColor(statusColor)
-                    Text(entry.date.formatted(date: .abbreviated, time: .standard))
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
+                Image(systemName: statusIconName)
+                    .font(.title2)
+                    .foregroundColor(statusColor)
+                Text(statusTitle)
+                    .font(.headline)
+                    .foregroundColor(statusColor)
                 Spacer()
+                Text(entry.date.formatted(date: .abbreviated, time: .standard))
+                    .font(.caption)
+                    .foregroundColor(.secondary)
             }
             
             Divider()
@@ -90,16 +90,10 @@ struct HistoryDetailView: View {
         .padding(20)
     }
     
-    private var statusIcon: some View {
-        Image(systemName: statusIconName)
-            .font(.title2)
-            .foregroundColor(statusColor)
-    }
-    
     private var statusIconName: String {
         switch entry.status {
         case .success: return "checkmark.circle.fill"
-        case .changed: return "arrow.triangle.2.circlepath"
+        case .changed: return "arrow.trianglehead.2.clockwise.rotate.90.circle.fill"
         case .error: return "exclamationmark.triangle.fill"
         }
     }
