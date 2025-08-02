@@ -1,27 +1,19 @@
 import Foundation
 import Combine
+import SwiftUI
 
 class URLMonitor: ObservableObject {
     @Published var items: [URLItem] = []
-    @Published var isGlobalPaused: Bool = true {
-        didSet {
-            if isGlobalPaused {
-                startTimers()
-            } else {
-                stopTimers()
-            }
-        }
-    }
+
+    @AppStorage("maxHistoryItems") var maxHistoryItems: Int = 200
+    @AppStorage("URLMonitorGlobalPause") var isGlobalPaused: Bool = true
+    @AppStorage("URLMonitorItemsData") private var savedItemsData: Data = Data()
     
     private var timers: [UUID: Timer] = [:]
     private var countdownTimers: [UUID: Timer] = [:]
     
-    // Externe Zustandsverwaltung für Timer und Requests - als @Published für UI-Updates
     @Published private var remainingTimes: [UUID: Double] = [:]
     @Published private var pendingRequests: [UUID: Int] = [:]
-    
-    private let saveKey = "URLMonitorItems"
-    private let globalPauseKey = "URLMonitorGlobalPause"
     
     let requestManager = URLRequestManager()
     
@@ -71,6 +63,9 @@ class URLMonitor: ObservableObject {
     }
     
     init() {
+        // Stelle sicher, dass der globale Pause-Status beim Start immer true ist
+        isGlobalPaused = true
+        
         load()
         
         if !isGlobalPaused {
@@ -80,6 +75,12 @@ class URLMonitor: ObservableObject {
     
     func toggleGlobalPause() {
         isGlobalPaused.toggle()
+        
+        if isGlobalPaused {
+            stopTimers()
+        } else {
+            startTimers()
+        }
     }
     
     func schedule(item: URLItem) {
@@ -373,8 +374,7 @@ class URLMonitor: ObservableObject {
                 responseTime: responseTime
             ))
             
-            let maxHistoryItems = UserDefaults.standard.integer(forKey: "maxHistoryItems")
-            let limit = maxHistoryItems > 0 ? maxHistoryItems : 1000 // Fallback auf 1000
+            let limit = maxHistoryItems.clamped(to: 1...999)
             
             if self.items[currentIndex].history.count > limit {
                 self.items[currentIndex].history.removeFirst()
@@ -393,21 +393,17 @@ class URLMonitor: ObservableObject {
             return
         }
     
-        UserDefaults.standard.set(data, forKey: saveKey)
-        UserDefaults.standard.set(isGlobalPaused, forKey: globalPauseKey)
-        UserDefaults.standard.synchronize()
+        savedItemsData = data
     }
     
     func load() {
-        isGlobalPaused = UserDefaults.standard.bool(forKey: globalPauseKey)
-        
-        guard let data = UserDefaults.standard.data(forKey: saveKey) else {
-            print("Fehler beim Laden der Daten.")
+        guard !savedItemsData.isEmpty else {
+            print("Keine gespeicherten Daten vorhanden.")
             return
         }
 
         // Lade URLItems (ohne Historie, da sie beim Speichern entfernt wurde)
-        if let decoded = try? JSONDecoder().decode([URLItem].self, from: data) {
+        if let decoded = try? JSONDecoder().decode([URLItem].self, from: savedItemsData) {
             self.items = decoded
         }
     }

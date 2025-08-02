@@ -102,13 +102,13 @@ struct URLItem: Identifiable, Codable, Equatable {
     
     var id: UUID
     var url: URL
-    var title: String? // Optionaler Titel für die Anzeige
+    var title: String?
     var interval: Double
     var isEnabled: Bool
     var history: [HistoryEntry]
-    var enabledNotifications: Set<NotificationType> = [.error, .change]
+    var enabledNotifications: Set<NotificationType>
     
-    init(id: UUID = UUID(), url: URL = URL(string: "https://")!, title: String? = nil, interval: Double = 5, isEnabled: Bool = true, history: [HistoryEntry] = [], enabledNotifications: Set<NotificationType> = [.error, .change]) {
+    init(id: UUID = UUID(), url: URL = URL(string: "https://")!, title: String? = nil, interval: Double = 5, isEnabled: Bool = true, history: [HistoryEntry] = [], enabledNotifications: Set<NotificationType> = []) {
         self.id = id
         self.url = url
         self.title = title

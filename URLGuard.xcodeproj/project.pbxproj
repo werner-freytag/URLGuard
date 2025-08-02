@@ -42,11 +42,22 @@
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		36949F782E3E90C700D42F82 /* Exceptions for "URLGuard" folder in "Copy Bundle Resources" phase from "URLGuard" target */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			buildPhase = AD42F7C72E3B62BD005A5D21 /* Resources */;
+			membershipExceptions = (
+				Helpers/Comparable.swift,
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		AD42F7CB2E3B62BD005A5D21 /* URLGuard */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				AD42F7EC2E3B62BE005A5D21 /* Exceptions for "URLGuard" folder in "URLGuard" target */,
+				36949F782E3E90C700D42F82 /* Exceptions for "URLGuard" folder in "Copy Bundle Resources" phase from "URLGuard" target */,
 			);
 			path = URLGuard;
 			sourceTree = "<group>";
