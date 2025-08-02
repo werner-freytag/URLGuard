@@ -97,8 +97,28 @@ struct URLGuardApp: App {
             }
         }
 
+        MenuBarExtra("URL Guard", image: "StatusbarIcon") {
+            Button("Öffnen") {
+                NSApp.activate(ignoringOtherApps: true)
+
+                NSApp.windows.forEach { window in
+                    if window.canBecomeKey {
+                        window.makeKeyAndOrderFront(nil)
+                    }
+                }
+            }
+            Divider()
+            Button(monitor.isGlobalPaused ? "Monitoring starten" : "Monitoring pausieren") {
+                monitor.toggleGlobalPause()
+            }
+            Divider()
+            Button("Beenden") {
+                NSApp.terminate(nil)
+            }
+        }
+
         Settings {
-            EmptyView() // Keine extra Settings
+            SettingsView()
         }
     }
 }

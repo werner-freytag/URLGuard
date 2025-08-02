@@ -43,14 +43,7 @@ struct SettingsView: View {
         .padding()
         .frame(width: 300, height: 200)
         .onChange(of: maxHistoryEntries) { oldValue, newValue in
-            // Stelle sicher, dass der Wert mindestens 1 ist
-            if newValue < 1 {
-                maxHistoryEntries = 1
-            }
-            // Begrenze auf einen sinnvollen Maximalwert
-            if newValue > 999 {
-                maxHistoryEntries = 999
-            }
+            maxHistoryEntries = newValue.clamped(to: 1...999)
         }
         .onChange(of: showStatusBarIcon) { oldValue, newValue in
             // Benachrichtige den AppDelegate über die Änderung
