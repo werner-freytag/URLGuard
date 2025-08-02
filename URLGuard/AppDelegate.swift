@@ -27,10 +27,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func openMainWindow() {
+        // App in den Vordergrund bringen
         NSApp.activate(ignoringOtherApps: true)
         
-        for window in NSApp.windows {
-            window.makeKeyAndOrderFront(nil)
+        NSApp.windows.forEach { window in
+            if window.canBecomeKey {
+                window.makeKeyAndOrderFront(nil)
+            }
         }
     }
     
@@ -42,10 +45,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Status Item erzeugen (Menüleisten-Icon)
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         
-        if let button = statusItem?.button {
-            button.image = NSImage(systemSymbolName: "link.circle.fill", accessibilityDescription: nil)
-            button.image?.isTemplate = true // passt sich Hell/Dunkelmodus an
-        }
+        statusItem?.button?.image = NSImage(named: "StatusbarIcon")
         
         // Menü erstellen
         let menu = NSMenu()
