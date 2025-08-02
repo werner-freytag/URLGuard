@@ -374,7 +374,10 @@ class URLMonitor: ObservableObject {
                 responseTime: responseTime
             ))
             
-            if self.items[currentIndex].history.count > 1000 {
+            let maxHistoryItems = UserDefaults.standard.integer(forKey: "maxHistoryItems")
+            let limit = maxHistoryItems > 0 ? maxHistoryItems : 1000 // Fallback auf 1000
+            
+            if self.items[currentIndex].history.count > limit {
                 self.items[currentIndex].history.removeFirst()
             }
             
@@ -382,10 +385,6 @@ class URLMonitor: ObservableObject {
             NotificationManager.shared.notifyIfNeeded(for: self.items[currentIndex], status: status, httpStatusCode: httpStatusCode)
         }
     }
-    
-
-    
-
     
     func save() {
         
