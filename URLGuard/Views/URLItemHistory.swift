@@ -90,37 +90,23 @@ func color(for status: URLItem.Status) -> Color {
 
 struct HistoryEntryView: View {
     @State var entry: URLItem.HistoryEntry
-    @State private var hovering = false
     @State private var showPopover = false
-    @State private var cancellable: AnyCancellable?
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 2)
-            .fill(color(for: entry.status))
-            .frame(width: 10, height: 10)
-            .onHover { isHovering in
-                hovering = isHovering
-                
-                // alten Subscriber abbrechen
-                cancellable?.cancel()
-                
-                if isHovering {
-                    cancellable = Just(true)
-                        .delay(for: .seconds(0.3), scheduler: RunLoop.main)
-                        .sink { _ in
-                            if hovering { showPopover = true }
-                        }
-                } else {
-                    // sofort schließen
-                    showPopover = false
-                }
-            }
-            .popover(isPresented: $showPopover, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom) {
-                HistoryDetailView(entry: entry)
-                    .frame(width: 400, height: entry.status == .changed ? 400 : 200)
-                    .presentationBackground(Color(.controlBackgroundColor))
-                    .presentationCornerRadius(0)
-            }
+        Button(action: {
+            showPopover = true
+        }) {
+            RoundedRectangle(cornerRadius: 2)
+                .fill(color(for: entry.status))
+                .frame(width: 10, height: 10)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .popover(isPresented: $showPopover, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom) {
+            HistoryDetailView(entry: entry)
+                .frame(width: 400, height: entry.status == .changed ? 400 : 200)
+                .presentationBackground(Color(.controlBackgroundColor))
+                .presentationCornerRadius(0)
+        }
     }
 }
 
