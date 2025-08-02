@@ -9,10 +9,29 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupMenuBar()
         setupNotifications()
+        
+        // AppDelegate als Delegate für Dock-Klicks registrieren
+        NSApp.delegate = self
     }
     
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        return false // App läuft weiter, auch wenn Fenster geschlossen wird
+    }
+    
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if !flag {
+            // Wenn keine Fenster sichtbar sind, öffne das Hauptfenster
+            openMainWindow()
+        }
         return true
+    }
+    
+    func openMainWindow() {
+        NSApp.activate(ignoringOtherApps: true)
+        
+        for window in NSApp.windows {
+            window.makeKeyAndOrderFront(nil)
+        }
     }
     
     func setupNotifications() {
@@ -38,8 +57,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     @objc func openApp() {
-        // Hauptfenster wieder in den Vordergrund bringen
-        NSApp.activate(ignoringOtherApps: true)
+        openMainWindow()
     }
     
     @objc func quitApp() {
