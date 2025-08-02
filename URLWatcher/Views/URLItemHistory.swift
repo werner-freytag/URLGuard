@@ -56,7 +56,7 @@ struct CountdownView: View {
     
     var body: some View {
         if item.isEnabled {
-            if item.isWaiting {
+            if item.pendingRequests > 0 {
                 // ProgressView während Request
                 ProgressView()
                     .scaleEffect(0.3)

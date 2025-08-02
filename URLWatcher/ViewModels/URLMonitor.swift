@@ -358,8 +358,8 @@ class URLMonitor: ObservableObject {
     
     func save() {
         
-        // Konvertiere zu PersistableURLItems (ohne Historie)
-        let persistableItems = items.map { PersistableURLItem(from: $0) }
+        // Konvertiere zu URLItems ohne Historie für die Persistierung
+        let persistableItems = items.map { $0.withoutHistory() }
         
         if let data = try? JSONEncoder().encode(persistableItems) {
             UserDefaults.standard.set(data, forKey: saveKey)
@@ -367,8 +367,7 @@ class URLMonitor: ObservableObject {
             
             // Validierung: Versuche die Daten sofort wieder zu laden
             if let savedData = UserDefaults.standard.data(forKey: saveKey),
-               let decodedPersistableItems = try? JSONDecoder().decode([PersistableURLItem].self, from: savedData) {
-                let decodedItems = decodedPersistableItems.map { $0.toURLItem() }
+               let decodedItems = try? JSONDecoder().decode([URLItem].self, from: savedData) {
                 if decodedItems.count != self.items.count {
                 }
                 
@@ -389,9 +388,9 @@ class URLMonitor: ObservableObject {
         
         if let data = UserDefaults.standard.data(forKey: saveKey) {
             
-            // Versuche zuerst als PersistableURLItems zu laden (neues Format)
-            if let decodedPersistable = try? JSONDecoder().decode([PersistableURLItem].self, from: data) {
-                self.items = decodedPersistable.map { $0.toURLItem() }
+            // Lade URLItems (ohne Historie, da sie beim Speichern entfernt wurde)
+            if let decoded = try? JSONDecoder().decode([URLItem].self, from: data) {
+                self.items = decoded
                 
             } else {
                 // Fallback: Versuche als alte URLItems zu laden (mit Historie)

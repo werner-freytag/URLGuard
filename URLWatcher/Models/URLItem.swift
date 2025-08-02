@@ -1,34 +1,5 @@
 import Foundation
 
-// Struktur für die Persistierung ohne Historie
-struct PersistableURLItem: Codable {
-    let id: UUID
-    let url: URL
-    let title: String?
-    let interval: Double
-    let isEnabled: Bool
-    let enabledNotifications: Set<URLItem.NotificationType>
-    
-    init(from item: URLItem) {
-        self.id = item.id
-        self.url = item.url
-        self.title = item.title
-        self.interval = item.interval
-        self.isEnabled = item.isEnabled
-        self.enabledNotifications = item.enabledNotifications
-    }
-    
-    func toURLItem() -> URLItem {
-        return URLItem(
-            url: url,
-            title: title,
-            interval: interval,
-            isEnabled: isEnabled,
-            enabledNotifications: enabledNotifications
-        )
-    }
-}
-
 struct URLItem: Identifiable, Codable, Equatable {
     enum Status: String, Codable {
         case success, changed, error
@@ -50,19 +21,6 @@ struct URLItem: Identifiable, Codable, Equatable {
                 return "Bei Erfolg"
             case .httpCode(let code):
                 return "Bei HTTP Code \(code)"
-            }
-        }
-        
-        var displayDescription: String {
-            switch self {
-            case .error:
-                return "Bei Fehlern"
-            case .change:
-                return "Bei Änderungen"
-            case .success:
-                return "Bei Erfolg"
-            case .httpCode:
-                return "Bei HTTP Code"
             }
         }
         
@@ -147,13 +105,9 @@ struct URLItem: Identifiable, Codable, Equatable {
     var title: String? // Optionaler Titel für die Anzeige
     var interval: Double
     var isEnabled: Bool
+    
     var pendingRequests: Int // Anzahl der wartenden Requests
     var remainingTime: Double
-    
-    // Computed property für isWaiting
-    var isWaiting: Bool {
-        return pendingRequests > 0
-    }
     
     var history: [HistoryEntry]
     var enabledNotifications: Set<NotificationType> = [.error, .change]
@@ -168,5 +122,22 @@ struct URLItem: Identifiable, Codable, Equatable {
         self.remainingTime = remainingTime
         self.history = history
         self.enabledNotifications = enabledNotifications
+    }
+    
+    // MARK: - Persistierung ohne Historie
+    
+    /// Erstellt eine Kopie ohne Historie für die Persistierung
+    func withoutHistory() -> URLItem {
+        return URLItem(
+            id: id,
+            url: url,
+            title: title,
+            interval: interval,
+            isEnabled: isEnabled,
+            pendingRequests: 0, // Reset für Persistierung
+            remainingTime: 0,   // Reset für Persistierung
+            history: [],        // Keine Historie
+            enabledNotifications: enabledNotifications
+        )
     }
 }

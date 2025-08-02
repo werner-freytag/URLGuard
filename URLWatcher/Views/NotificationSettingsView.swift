@@ -116,6 +116,21 @@ struct NotificationSettingsView: View {
     }
 }
 
+extension URLItem.NotificationType {
+    var displayDescription: String {
+        switch self {
+        case .error:
+            return "Bei Fehlern"
+        case .change:
+            return "Bei Änderungen"
+        case .success:
+            return "Bei Erfolg"
+        case .httpCode:
+            return "Bei HTTP Code"
+        }
+    }
+}
+
 #Preview {
     NotificationSettingsView(
         enabledNotifications: .constant([.error, .change, .httpCode(404)])
