@@ -14,6 +14,8 @@ struct URLGuardApp: App {
     @StateObject private var monitor = URLMonitor()
     @State private var editingItem: URLItem? = nil
 
+    @AppStorage("showStatusBarIcon") var showStatusBarIcon: Bool = true
+
     var body: some Scene {
         Window("URL Guard", id: "main") {
             ContentView(monitor: monitor)
@@ -97,7 +99,7 @@ struct URLGuardApp: App {
             }
         }
 
-        MenuBarExtra("URL Guard", image: "StatusbarIcon") {
+        MenuBarExtra("URL Guard", image: "StatusbarIcon", isInserted: .constant(showStatusBarIcon)) {
             Button("Öffnen") {
                 NSApp.activate(ignoringOtherApps: true)
 
