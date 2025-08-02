@@ -1,13 +1,13 @@
 //
-//  URLWatcherUITests.swift
-//  URLWatcherUITests
+//  URLGuardUITests.swift
+//  URLGuardUITests
 //
 //  Created by Freytag, Werner on 31.07.25.
 //
 
 import XCTest
 
-final class URLWatcherUITests: XCTestCase {
+final class URLGuardUITests: XCTestCase {
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.

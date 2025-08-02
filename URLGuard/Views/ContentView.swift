@@ -91,7 +91,7 @@ struct EmptyStateView: View {
             
             // Text
             VStack(spacing: 8) {
-                Text("Keine URL-Einträge vorhanden")
+                Text("Keine Einträge vorhanden")
                     .font(.title2)
                     .fontWeight(.medium)
                     .foregroundColor(.primary)

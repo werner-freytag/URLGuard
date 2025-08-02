@@ -105,21 +105,15 @@ struct URLItem: Identifiable, Codable, Equatable {
     var title: String? // Optionaler Titel für die Anzeige
     var interval: Double
     var isEnabled: Bool
-    
-    var pendingRequests: Int // Anzahl der wartenden Requests
-    var remainingTime: Double
-    
     var history: [HistoryEntry]
     var enabledNotifications: Set<NotificationType> = [.error, .change]
     
-    init(id: UUID = UUID(), url: URL = URL(string: "https://")!, title: String? = nil, interval: Double = 5, isEnabled: Bool = true, pendingRequests: Int = 0, remainingTime: Double = 0, history: [HistoryEntry] = [], enabledNotifications: Set<NotificationType> = [.error, .change]) {
+    init(id: UUID = UUID(), url: URL = URL(string: "https://")!, title: String? = nil, interval: Double = 5, isEnabled: Bool = true, history: [HistoryEntry] = [], enabledNotifications: Set<NotificationType> = [.error, .change]) {
         self.id = id
         self.url = url
         self.title = title
         self.interval = interval
         self.isEnabled = isEnabled
-        self.pendingRequests = pendingRequests
-        self.remainingTime = remainingTime
         self.history = history
         self.enabledNotifications = enabledNotifications
     }
@@ -134,8 +128,6 @@ struct URLItem: Identifiable, Codable, Equatable {
             title: title,
             interval: interval,
             isEnabled: isEnabled,
-            pendingRequests: 0, // Reset für Persistierung
-            remainingTime: 0,   // Reset für Persistierung
             history: [],        // Keine Historie
             enabledNotifications: enabledNotifications
         )

@@ -1,6 +1,6 @@
 //
-//  URLWatcherApp.swift
-//  URLWatcher
+//  URLGuardApp.swift
+//  URLGuard
 //
 //  Created by Freytag, Werner on 31.07.25.
 //
@@ -9,7 +9,7 @@ import SwiftUI
 import SwiftData
 
 @main
-struct URLWatcherApp: App {
+struct URLGuardApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var monitor = URLMonitor()
     @State private var editingItem: URLItem? = nil
@@ -17,7 +17,7 @@ struct URLWatcherApp: App {
     @State private var isButtonHovering = false
 
     var body: some Scene {
-        Window("URL Monitor", id: "main") {
+        Window("URL Guard", id: "main") {
             ContentView(monitor: monitor)
                 .toolbar {
                     ToolbarItemGroup(placement: .primaryAction) {

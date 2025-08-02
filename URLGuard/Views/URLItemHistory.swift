@@ -19,7 +19,7 @@ struct URLItemHistory: View {
                             HistoryEntryView(entry: entry)
                         }
 
-                        CountdownView(item: .constant(item))
+                        CountdownView(item: .constant(item), monitor: monitor)
                             .id("countdown")
                     }
                     .padding(.trailing, 8) // Abstand am Ende für bessere Optik
@@ -53,18 +53,19 @@ struct URLItemHistory: View {
 
 struct CountdownView: View {
     @Binding var item: URLItem
+    @ObservedObject var monitor: URLMonitor
     
     var body: some View {
         if item.isEnabled {
-            if item.pendingRequests > 0 {
+            if monitor.isWaiting(for: item.id) {
                 // ProgressView während Request
                 ProgressView()
                     .scaleEffect(0.3)
                     .frame(width: 10, height: 10)
                     .padding(.horizontal, 2)
-            } else if item.remainingTime > 0 {
+            } else if monitor.getRemainingTime(for: item.id) > 0 {
                 // Countdown zwischen Requests
-                Text("\(Int(item.remainingTime))")
+                Text("\(Int(monitor.getRemainingTime(for: item.id)))")
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .padding(.horizontal, 4)

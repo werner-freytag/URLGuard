@@ -5,8 +5,45 @@ class URLMonitor: ObservableObject {
     @Published var items: [URLItem] = []
     private var timers: [UUID: Timer] = [:]
     private var countdownTimers: [UUID: Timer] = [:]
+    
+    // Externe Zustandsverwaltung für Timer und Requests - als @Published für UI-Updates
+    @Published private var remainingTimes: [UUID: Double] = [:]
+    @Published private var pendingRequests: [UUID: Int] = [:]
+    
     private let saveKey = "URLMonitorItems"
     let requestManager = URLRequestManager()
+    
+    // MARK: - Zustandsverwaltung
+    
+    func getRemainingTime(for itemID: UUID) -> Double {
+        return remainingTimes[itemID] ?? 0
+    }
+    
+    func setRemainingTime(_ time: Double, for itemID: UUID) {
+        remainingTimes[itemID] = time
+    }
+    
+    func getPendingRequests(for itemID: UUID) -> Int {
+        return pendingRequests[itemID] ?? 0
+    }
+    
+    func setPendingRequests(_ count: Int, for itemID: UUID) {
+        pendingRequests[itemID] = count
+    }
+    
+    func incrementPendingRequests(for itemID: UUID) {
+        let current = getPendingRequests(for: itemID)
+        setPendingRequests(current + 1, for: itemID)
+    }
+    
+    func decrementPendingRequests(for itemID: UUID) {
+        let current = getPendingRequests(for: itemID)
+        setPendingRequests(max(0, current - 1), for: itemID)
+    }
+    
+    func isWaiting(for itemID: UUID) -> Bool {
+        return getPendingRequests(for: itemID) > 0
+    }
     
     init() {
         load()
@@ -33,33 +70,30 @@ class URLMonitor: ObservableObject {
         }
         
         // Verbleibende Zeit auf Intervall setzen
-        if let index = items.firstIndex(where: { $0.id == item.id }) {
-            items[index].remainingTime = item.interval
-        } else {
-            return
-        }
+        setRemainingTime(item.interval, for: item.id)
         
         // Einziger Timer für Countdown und Checks (jede Sekunde)
         let timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             guard let self = self else { return }
             
             DispatchQueue.main.async {
-                guard let currentIndex = self.items.firstIndex(where: { $0.id == item.id }) else { 
+                guard self.items.firstIndex(where: { $0.id == item.id }) != nil else { 
                     self.timers[item.id]?.invalidate()
                     self.timers.removeValue(forKey: item.id)
                     return 
                 }
                 
                 // Countdown aktualisieren
-                if self.items[currentIndex].remainingTime > 0 {
-                    self.items[currentIndex].remainingTime -= 1.0
+                let currentTime = self.getRemainingTime(for: item.id)
+                if currentTime > 0 {
+                    self.setRemainingTime(currentTime - 1.0, for: item.id)
                 }
                 
                 // Check auslösen wenn Countdown bei 0 ist
-                if self.items[currentIndex].remainingTime <= 0 {
+                if self.getRemainingTime(for: item.id) <= 0 {
                     self.check(itemID: item.id)
                     // Countdown auf Intervall zurücksetzen
-                    self.items[currentIndex].remainingTime = self.items[currentIndex].interval
+                    self.setRemainingTime(item.interval, for: item.id)
                 }
             }
         }
@@ -73,27 +107,26 @@ class URLMonitor: ObservableObject {
         guard item.isEnabled else { return }
         
         // Verbleibende Zeit auf Intervall setzen
-        if let index = items.firstIndex(where: { $0.id == item.id }) {
-            items[index].remainingTime = item.interval
-        }
+        setRemainingTime(item.interval, for: item.id)
         
         // Einziger Timer für Countdown und Checks (jede Sekunde)
         let timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             guard let self = self else { return }
             
             DispatchQueue.main.async {
-                guard let currentIndex = self.items.firstIndex(where: { $0.id == item.id }) else { return }
+                guard self.items.firstIndex(where: { $0.id == item.id }) != nil else { return }
                 
                 // Countdown aktualisieren
-                if self.items[currentIndex].remainingTime > 0 {
-                    self.items[currentIndex].remainingTime -= 1.0
+                let currentTime = self.getRemainingTime(for: item.id)
+                if currentTime > 0 {
+                    self.setRemainingTime(currentTime - 1.0, for: item.id)
                 }
                 
                 // Check auslösen wenn Countdown bei 0 ist
-                if self.items[currentIndex].remainingTime <= 0 {
+                if self.getRemainingTime(for: item.id) <= 0 {
                     self.check(itemID: item.id)
                     // Countdown auf Intervall zurücksetzen
-                    self.items[currentIndex].remainingTime = self.items[currentIndex].interval
+                    self.setRemainingTime(item.interval, for: item.id)
                 }
             }
         }
@@ -105,9 +138,7 @@ class URLMonitor: ObservableObject {
         timers.removeValue(forKey: item.id)
         
         // Countdown zurücksetzen
-        if let index = items.firstIndex(where: { $0.id == item.id }) {
-            items[index].remainingTime = 0
-        }
+        setRemainingTime(0, for: item.id)
     }
     
     func togglePause(for item: URLItem) {
@@ -311,14 +342,14 @@ class URLMonitor: ObservableObject {
         // URL ist bereits validiert, da es ein URL-Objekt ist
         
         // Pending Requests Counter erhöhen
-        items[index].pendingRequests += 1
+        incrementPendingRequests(for: itemID)
         
         requestManager.checkURL(for: item) { [weak self] status, httpStatusCode, responseSize, responseTime, diff in
             guard let self = self else { return }
             guard let currentIndex = self.items.firstIndex(where: { $0.id == itemID }) else { return }
             
             // Pending Requests Counter verringern
-            self.items[currentIndex].pendingRequests = max(0, self.items[currentIndex].pendingRequests - 1)
+            self.decrementPendingRequests(for: itemID)
             
             // DiffInfo erstellen falls Diff vorhanden
             var diffInfo: URLItem.DiffInfo? = nil
