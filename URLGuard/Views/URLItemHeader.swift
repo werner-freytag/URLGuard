@@ -104,6 +104,28 @@ struct URLItemHeader: View {
         .onTapGesture {
             monitor.togglePause(for: item)
         }
+        .contextMenu {
+            Button(item.isEnabled ? "Pausieren" : "Starten") {
+                monitor.togglePause(for: item)
+            }
+            
+            Divider()
+            
+            Button("Bearbeiten") {
+                onEdit()
+            }
+            
+            Button("Duplizieren") {
+                monitor.duplicate(item: item)
+            }
+            
+            Divider()
+            
+            Button("Löschen") {
+                monitor.remove(item: item)
+            }
+            .foregroundColor(.red)
+        }
     }
     
     private var notificationTypesText: String {

@@ -72,7 +72,7 @@ struct ModalEditorView: View {
                         IntervalInputView(viewModel: intervalViewModel)
 
                         // Enabled Toggle
-                        Toggle("URL-Überwachung aktiviert", isOn: $isEnabled)
+                        Toggle("Starten", isOn: $isEnabled)
 
                     }
                     .frame(maxWidth: .infinity)
