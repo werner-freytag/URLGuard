@@ -7,7 +7,6 @@ struct URLItemHeader: View {
     
     var body: some View {
         HStack {
-            // Start/Pause Button ganz links und groß
             Button(action: {
                 guard monitor.items.contains(where: { $0.id == item.id }) else { return }
                 monitor.togglePause(for: item)

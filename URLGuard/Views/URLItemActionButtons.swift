@@ -6,7 +6,7 @@ struct URLItemActionButtons: View {
     let onEdit: () -> Void
     
     var body: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: 2) {
             // Bearbeiten-Button
             Button(action: onEdit) {
                 Image(systemName: "pencil")
@@ -57,10 +57,6 @@ struct URLItemActionButtons: View {
             .help("Löschen")
         }
         .cornerRadius(6)
-        .overlay(
-            RoundedRectangle(cornerRadius: 6)
-                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-        )
     }
 }
 
