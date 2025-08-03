@@ -7,12 +7,12 @@ struct HistoryDetailView: View {
         VStack(alignment: .leading, spacing: 16) {
             // Header mit Status und Datum
             HStack {
-                Image(systemName: statusIconName)
+                Image(systemName: entry.statusIconName)
                     .font(.title2)
-                    .foregroundColor(statusColor)
-                Text(statusTitle)
+                    .foregroundColor(entry.statusColor)
+                Text(entry.statusTitle)
                     .font(.headline)
-                    .foregroundColor(statusColor)
+                    .foregroundColor(entry.statusColor)
                 Spacer()
                 Text(entry.date.formatted(date: .abbreviated, time: .standard))
                     .font(.caption)
@@ -59,9 +59,9 @@ struct HistoryDetailView: View {
                             ForEach(diffInfo.previewLines, id: \.self) { line in
                                 Text(line)
                                     .font(.system(.caption, design: .monospaced))
-                                    .foregroundColor(lineColor(for: line))
+                                    .foregroundColor(diffLineColor(for: line))
                                     .padding(EdgeInsets(top: 1, leading: 4, bottom: 1, trailing: 4))
-                                    .background(lineBackgroundColor(for: line))
+                                    .background(diffLineBackgroundColor(for: line))
                                     .cornerRadius(2)
                             }
                             
@@ -89,48 +89,50 @@ struct HistoryDetailView: View {
         }
         .padding(20)
     }
-    
-    private var statusIconName: String {
-        switch entry.status {
+}
+
+private func diffLineColor(for line: String) -> Color {
+    if line.hasPrefix("+") {
+        return .green
+    } else if line.hasPrefix("-") {
+        return .red
+    } else {
+        return .primary
+    }
+}
+
+private func diffLineBackgroundColor(for line: String) -> Color {
+    if line.hasPrefix("+") {
+        return Color.green.opacity(0.1)
+    } else if line.hasPrefix("-") {
+        return Color.red.opacity(0.1)
+    } else {
+        return Color.clear
+    }
+}
+
+private extension URLItem.HistoryEntry {
+    var statusIconName: String {
+        switch status {
         case .success: return "checkmark.circle.fill"
         case .changed: return "arrow.trianglehead.2.clockwise.rotate.90.circle.fill"
         case .error: return "exclamationmark.triangle.fill"
         }
     }
     
-    private var statusTitle: String {
-        switch entry.status {
+    var statusTitle: String {
+        switch status {
         case .success: return "Erfolgreich"
         case .changed: return "Geändert"
         case .error: return "Fehler"
         }
     }
     
-    private var statusColor: Color {
-        switch entry.status {
+    var statusColor: Color {
+        switch status {
         case .success: return .green
         case .changed: return .blue
         case .error: return .red
-        }
-    }
-    
-    private func lineColor(for line: String) -> Color {
-        if line.hasPrefix("+") {
-            return .green
-        } else if line.hasPrefix("-") {
-            return .red
-        } else {
-            return .primary
-        }
-    }
-    
-    private func lineBackgroundColor(for line: String) -> Color {
-        if line.hasPrefix("+") {
-            return Color.green.opacity(0.1)
-        } else if line.hasPrefix("-") {
-            return Color.red.opacity(0.1)
-        } else {
-            return Color.clear
         }
     }
 }

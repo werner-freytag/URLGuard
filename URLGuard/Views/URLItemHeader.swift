@@ -29,21 +29,21 @@ struct URLItemHeader: View {
                         .lineLimit(1)
                         .truncationMode(.middle)
                         .foregroundColor(item.isEnabled ? .primary : .secondary)
-                } else if let components = urlComponents {
+                } else if let host = item.url.host {
                     // URL-Komponenten anzeigen
                     HStack(spacing: 4) {
-                        Text(components.host)
+                        Text(host)
                             .font(.headline)
                             .fontWeight(.bold)
                             .foregroundColor(item.isEnabled ? .primary : .secondary)
                         
-                        if let lastPathComponent = components.lastPathComponent {
+                        if !item.url.lastPathComponent.isEmpty {
                             Text(" – ")
                                 .font(.headline)
                                 .fontWeight(.regular)
                                 .foregroundColor(item.isEnabled ? .primary.opacity(0.6) : .secondary.opacity(0.6))
                             
-                            Text(lastPathComponent)
+                            Text(item.url.lastPathComponent)
                                 .font(.headline)
                                 .fontWeight(.regular)
                                 .foregroundColor(item.isEnabled ? .primary.opacity(0.6) : .secondary.opacity(0.6))
@@ -53,7 +53,7 @@ struct URLItemHeader: View {
                     .truncationMode(.middle)
                 } else {
                     // Fallback
-                    Text(displayTitle)
+                    Text(item.url.absoluteString)
                         .font(.headline)
                         .fontWeight(.bold)
                         .lineLimit(1)
@@ -131,31 +131,6 @@ struct URLItemHeader: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
-    }
-    
-    private var displayTitle: String {
-        if let title = item.title, !title.isEmpty {
-            return title
-        } else {
-            return item.url.absoluteString
-        }
-    }
-    
-    private var urlComponents: (host: String, path: String, lastPathComponent: String?)? {
-        guard let host = item.url.host else { return nil }
-        
-        let path = item.url.path.isEmpty ? "" : item.url.path
-        
-        // Letzte Pfadkomponente extrahieren
-        let lastPathComponent: String?
-        if !path.isEmpty && path != "/" {
-            let pathComponents = path.components(separatedBy: "/").filter { !$0.isEmpty }
-            lastPathComponent = pathComponents.last
-        } else {
-            lastPathComponent = nil
-        }
-        
-        return (host: host, path: path, lastPathComponent: lastPathComponent)
     }
     
     private var notificationTypesText: String {

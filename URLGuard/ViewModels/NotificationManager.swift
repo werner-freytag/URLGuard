@@ -61,16 +61,15 @@ class NotificationManager: ObservableObject {
     func notifyIfNeeded(for item: URLItem, status: URLItem.Status, httpStatusCode: Int?) {
         guard shouldNotify(for: item, status: status, httpStatusCode: httpStatusCode) else { return }
         
-        let title: String
+        let title = item.displayTitle
         let body: String
         
         // Prüfe zuerst HTTP-Code-Benachrichtigung (nur bei erfolgreichen Requests)
         if let httpCode = httpStatusCode, status == .success {
             for notification in item.enabledNotifications {
                 if case .httpCode(let notifyCode) = notification, httpCode == notifyCode {
-                    title = "HTTP Code \(httpCode)"
-                                body = "\(item.url.absoluteString) - HTTP \(httpCode) empfangen"
-            sendNotification(title: title, body: body, url: item.url.absoluteString)
+                    body = "HTTP \(httpCode) empfangen"
+                    sendNotification(title: title, body: body, url: item.url.absoluteString)
                     return
                 }
             }
@@ -79,14 +78,11 @@ class NotificationManager: ObservableObject {
         // Status-basierte Benachrichtigungen
         switch status {
         case .error:
-            title = "URL Fehler"
-            body = "\(item.url.absoluteString) ist nicht erreichbar"
+            body = "URL ist nicht erreichbar"
         case .changed:
-            title = "Inhalt der URL hat sich geändert"
-            body = "\(item.url.absoluteString) hat sich geändert"
+            body = "Inhalt der URL hat sich geändert"
         case .success:
-            title = "URL erfolgreich"
-            body = "\(item.url.absoluteString) ist erreichbar"
+            body = "URL erfolgreich abgerufen"
         }
         
         sendNotification(title: title, body: body, url: item.url.absoluteString)

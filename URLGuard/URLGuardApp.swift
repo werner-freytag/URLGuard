@@ -113,6 +113,27 @@ struct URLGuardApp: App {
             Button(monitor.isGlobalPaused ? "Monitoring starten" : "Monitoring pausieren") {
                 monitor.toggleGlobalPause()
             }
+            
+            if !monitor.items.isEmpty {
+                Divider()
+                
+                ForEach(monitor.items) { item in
+                    let entry = item.history.last
+
+                    Button {} label: {
+                        Image(systemName: entry?.statusIconName ?? "circle.dashed")
+                        Text(item.displayTitle)
+                        if let entry {
+                            Text([
+                                entry.statusTitle ,
+                                entry.httpStatusCode != nil ? "Code \(entry.httpStatusCode!)" : "",
+                                entry.date.formatted(date: .numeric, time: .standard)
+                            ].filter { !$0.isEmpty }.joined(separator: " • "))
+                        }
+                    }
+                    .disabled(!item.isEnabled)
+                }
+            }
             Divider()
             Button("Beenden") {
                 NSApp.terminate(nil)
@@ -121,6 +142,25 @@ struct URLGuardApp: App {
 
         Settings {
             SettingsView()
+        }
+    }
+}
+
+
+private extension URLItem.HistoryEntry {
+    var statusIconName: String {
+        switch status {
+        case .success: return "checkmark.circle.fill"
+        case .changed: return "arrow.trianglehead.2.clockwise.rotate.90.circle.fill"
+        case .error: return "exclamationmark.triangle.fill"
+        }
+    }
+        
+    var statusTitle: String {
+        switch status {
+        case .success: return "Erfolgreich"
+        case .changed: return "Geändert"
+        case .error: return "Fehler"
         }
     }
 }

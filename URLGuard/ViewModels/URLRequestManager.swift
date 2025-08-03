@@ -1,4 +1,7 @@
+import os
 import Foundation
+
+fileprivate let logger = Logger(subsystem: "de.wfco.URLGuard", category: "Network")
 
 class URLRequestManager {
     private var lastResponses: [UUID: Data] = [:]
@@ -35,19 +38,6 @@ class URLRequestManager {
     
     // MARK: - Private Request Methods
     
-    /// Gemeinsame Request-Vorbereitung für HEAD und GET Requests
-    private func prepareRequest(for item: URLItem, method: String) -> URLRequest {
-        var request = URLRequest(url: item.url)
-        request.httpMethod = method
-        
-        // ETag aus vorherigem Request hinzufügen
-        if let etag = lastETags[item.id] {
-            request.setValue(etag, forHTTPHeaderField: "If-None-Match")
-        }
-        
-        return request
-    }
-    
     /// Gemeinsame Response-Verarbeitung für HTTP Responses
     private func processHTTPResponse(_ httpResponse: HTTPURLResponse, for item: URLItem) {
         // ETag aus Response extrahieren
@@ -73,107 +63,118 @@ class URLRequestManager {
         return (.success, nil)
     }
     
-    private func performHEADRequest(item: URLItem, onComplete: @escaping (URLItem.Status, Int?, Int?, Double?, String?) -> Void) {
-        let request = prepareRequest(for: item, method: "HEAD")
-        let startTime = Date()
+    private func performRequest(for item: URLItem, method: String, onComplete: @escaping (Data?, URLResponse?, Error?) -> Void) {
+        logger.debug("\(method) \(item.url)")
         
-        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+        var request = URLRequest(url: item.url)
+        request.httpMethod = method
+        
+        // ETag aus vorherigem Request hinzufügen
+        if let etag = lastETags[item.id] {
+            request.setValue(etag, forHTTPHeaderField: "If-None-Match")
+        }
+        
+        let delegate = RedirectHandler()
+        let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
+
+        session.dataTask(with: request) { data, response, error in
             DispatchQueue.main.async {
-                guard let self = self else { return }
-                
-                var status: URLItem.Status = .error
-                var httpStatusCode: Int? = nil
-                var responseTime: Double? = nil
-                
-                responseTime = Date().timeIntervalSince(startTime)
-                
-                if let httpResponse = response as? HTTPURLResponse {
-                    httpStatusCode = httpResponse.statusCode
-                    self.processHTTPResponse(httpResponse, for: item)
-                    
-                    if let statusCode = httpStatusCode {
-                        // Prüfe zuerst, ob ETag identisch ist (Content unverändert)
-                        if let currentETag = httpResponse.value(forHTTPHeaderField: "ETag"),
-                           let lastETag = self.lastETags[item.id],
-                           currentETag == lastETag {
-                            // ETag identisch - Content unverändert, auch wenn Status != 304
-                            status = .success
-                        } else {
-                            // ETag unterschiedlich oder nicht vorhanden - prüfe Status-Code
-                            switch statusCode {
-                            case 200...299:
-                                // Content hat sich geändert - GET Request für vollständigen Inhalt
-                                self.performGETRequest(item: item, onComplete: onComplete)
-                                return
-                                
-                            case 304:
-                                // Content unverändert
-                                status = .success
-                                
-                            default:
-                                // Andere Status-Codes - GET Request für vollständige Prüfung
-                                self.performGETRequest(item: item, onComplete: onComplete)
-                                return
-                            }
-                        }
-                    } else {
-                        // Kein HTTP Status Code - GET Request für vollständige Prüfung
-                        self.performGETRequest(item: item, onComplete: onComplete)
-                        return
-                    }
-                } else {
-                    // Fallback zu GET Request
-                    self.performGETRequest(item: item, onComplete: onComplete)
-                    return
-                }
-                
-                onComplete(status, httpStatusCode, data?.count, responseTime, nil)
+                onComplete(data, response, error)
             }
         }.resume()
     }
     
-    private func performGETRequest(item: URLItem, onComplete: @escaping (URLItem.Status, Int?, Int?, Double?, String?) -> Void) {
-        guard URL(string: item.url.absoluteString) != nil else {
-            onComplete(.error, nil, nil, nil, nil)
-            return
-        }
-
-        let request = prepareRequest(for: item, method: "GET")
+    private func performHEADRequest(item: URLItem, onComplete: @escaping (URLItem.Status, Int?, Int?, Double?, String?) -> Void) {
         let startTime = Date()
-
-        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
-            DispatchQueue.main.async {
-                guard let self = self else { return }
-
-                var status: URLItem.Status = .error
-                var httpStatusCode: Int? = nil
-                var diff: String? = nil
-                var responseTime: Double? = nil
-
-                responseTime = Date().timeIntervalSince(startTime)
-
-                if let httpResponse = response as? HTTPURLResponse {
-                    httpStatusCode = httpResponse.statusCode
-                    self.processHTTPResponse(httpResponse, for: item)
-
-                    if let data = data, error == nil {
-                        let (contentStatus, contentDiff) = self.processContent(data, for: item)
-                        status = contentStatus
-                        diff = contentDiff
-                    } else if httpStatusCode == 304 {
-                        // 304 Not Modified - Content unverändert
+        
+        performRequest(for: item, method: "HEAD") { [weak self] data, response, error in
+            guard let self = self else { return }
+            
+            var status: URLItem.Status = .error
+            var httpStatusCode: Int? = nil
+            var responseTime: Double? = nil
+            
+            responseTime = Date().timeIntervalSince(startTime)
+            
+            if let httpResponse = response as? HTTPURLResponse {
+                httpStatusCode = httpResponse.statusCode
+                self.processHTTPResponse(httpResponse, for: item)
+                
+                if let statusCode = httpStatusCode {
+                    // Prüfe zuerst, ob ETag identisch ist (Content unverändert)
+                    if let currentETag = httpResponse.value(forHTTPHeaderField: "ETag"),
+                       let lastETag = self.lastETags[item.id],
+                       currentETag == lastETag {
+                        // ETag identisch - Content unverändert, auch wenn Status != 304
                         status = .success
+                    } else {
+                        // ETag unterschiedlich oder nicht vorhanden - prüfe Status-Code
+                        switch statusCode {
+                        case 200...299:
+                            // Content hat sich geändert - GET Request für vollständigen Inhalt
+                            self.performGETRequest(item: item, onComplete: onComplete)
+                            return
+                            
+                        case 304:
+                            // Content unverändert
+                            status = .success
+                            
+                        default:
+                            // Andere Status-Codes - GET Request für vollständige Prüfung
+                            self.performGETRequest(item: item, onComplete: onComplete)
+                            return
+                        }
                     }
-                } else if let data = data, error == nil {
-                    // Non-HTTP response
+                } else {
+                    // Kein HTTP Status Code - GET Request für vollständige Prüfung
+                    self.performGETRequest(item: item, onComplete: onComplete)
+                    return
+                }
+            } else {
+                // Fallback zu GET Request
+                self.performGETRequest(item: item, onComplete: onComplete)
+                return
+            }
+            
+            onComplete(status, httpStatusCode, data?.count, responseTime, nil)
+        }
+    }
+    
+    
+    private func performGETRequest(item: URLItem, onComplete: @escaping (URLItem.Status, Int?, Int?, Double?, String?) -> Void) {
+        let startTime = Date()
+        
+        performRequest(for: item, method: "GET") { [weak self] data, response, error in
+            guard let self = self else { return }
+
+            var status: URLItem.Status = .error
+            var httpStatusCode: Int? = nil
+            var diff: String? = nil
+            var responseTime: Double? = nil
+
+            responseTime = Date().timeIntervalSince(startTime)
+
+            if let httpResponse = response as? HTTPURLResponse {
+                httpStatusCode = httpResponse.statusCode
+                self.processHTTPResponse(httpResponse, for: item)
+
+                if let data = data, error == nil {
                     let (contentStatus, contentDiff) = self.processContent(data, for: item)
                     status = contentStatus
                     diff = contentDiff
+                } else if httpStatusCode == 304 {
+                    // 304 Not Modified - Content unverändert
+                    status = .success
                 }
-
-                onComplete(status, httpStatusCode, data?.count, responseTime, diff)
+            } else if let data = data, error == nil {
+                // Non-HTTP response
+                let (contentStatus, contentDiff) = self.processContent(data, for: item)
+                status = contentStatus
+                diff = contentDiff
             }
-        }.resume()
+
+            onComplete(status, httpStatusCode, data?.count, responseTime, diff)
+        }
     }
     
     // MARK: - Helper Methods
@@ -279,3 +280,14 @@ class URLRequestManager {
         return diffLines.joined(separator: "\n")
     }
 } 
+
+fileprivate class RedirectHandler: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
+    func urlSession(_ session: URLSession,
+                    task: URLSessionTask,
+                    willPerformHTTPRedirection response: HTTPURLResponse,
+                    newRequest request: URLRequest,
+                    completionHandler: @escaping (URLRequest?) -> Void) {
+
+        completionHandler(nil)
+    }
+}

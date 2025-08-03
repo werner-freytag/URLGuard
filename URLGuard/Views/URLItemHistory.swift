@@ -80,11 +80,14 @@ struct CountdownView: View {
 }
 
 
-func color(for status: URLItem.Status) -> Color {
-    switch status {
-    case .success: return .green
-    case .changed: return .blue
-    case .error: return .red
+
+private extension URLItem.HistoryEntry {
+    var statusColor: Color {
+        switch status {
+        case .success: return .green
+        case .changed: return .blue
+        case .error: return .red
+        }
     }
 }
 
@@ -97,10 +100,10 @@ struct HistoryEntryView: View {
             showPopover = true
         }) {
             RoundedRectangle(cornerRadius: 2)
-                .fill(color(for: entry.status))
+                .fill(entry.statusColor)
                 .frame(width: 10, height: 10)
         }
-        .buttonStyle(PlainButtonStyle())
+        .buttonStyle(.plain)
         .popover(isPresented: $showPopover, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom) {
             HistoryDetailView(entry: entry)
                 .frame(width: 400, height: entry.status == .changed ? 400 : 200)

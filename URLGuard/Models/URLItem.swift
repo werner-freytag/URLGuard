@@ -108,7 +108,7 @@ struct URLItem: Identifiable, Codable, Equatable {
     var history: [HistoryEntry]
     var enabledNotifications: Set<NotificationType>
     
-    init(id: UUID = UUID(), url: URL = URL(string: "https://")!, title: String? = nil, interval: Double = 5, isEnabled: Bool = true, history: [HistoryEntry] = [], enabledNotifications: Set<NotificationType> = []) {
+    init(id: UUID = UUID(), url: URL = URL(string: "https://")!, title: String? = nil, interval: Double = 10, isEnabled: Bool = true, history: [HistoryEntry] = [], enabledNotifications: Set<NotificationType> = []) {
         self.id = id
         self.url = url
         self.title = title
@@ -131,5 +131,23 @@ struct URLItem: Identifiable, Codable, Equatable {
             history: [],        // Keine Historie
             enabledNotifications: enabledNotifications
         )
+    }
+}
+
+extension URLItem {
+    var displayTitle: String {
+        if let title = title, !title.isEmpty {
+            return title
+        }
+        
+        if let host = url.host {
+            if !url.lastPathComponent.isEmpty {
+                return "\(host) – \(url.lastPathComponent)"
+            } else {
+                return host
+            }
+        }
+        
+        return url.absoluteString
     }
 }
