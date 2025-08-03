@@ -4,16 +4,16 @@ struct URLItemHeader: View {
     let item: URLItem
     let monitor: URLMonitor
     let onEdit: () -> Void
-    
+
     var body: some View {
         HStack {
             Button(action: {
                 guard monitor.items.contains(where: { $0.id == item.id }) else { return }
                 monitor.togglePause(for: item)
             }) {
-                Image(systemName: item.isEnabled ? "pause.circle.fill" : "play.circle.fill")
+                Image(systemName: item.isEnabled ? "checkmark.square.fill" : "square")
+                    .symbolRenderingMode(.multicolor)
                     .font(.title)
-                    .foregroundColor(.blue)
             }
             .buttonStyle(PlainButtonStyle())
             .help(item.isEnabled ? "Pause" : "Start")
@@ -87,19 +87,23 @@ struct URLItemHeader: View {
                 .font(.caption)
                 .foregroundColor(.secondary)
             }
-            .onTapGesture(count: 2) {
-                // Doppelklick zum Bearbeiten
-                onEdit()
-            }
             
             Spacer()
             
-            
-            URLItemActionButtons(item: item, monitor: monitor, onEdit: onEdit)
-            
+            VStack {
+                URLItemActionButtons(item: item, monitor: monitor, onEdit: onEdit)
+                Spacer()
+            }
+            .offset(x: 10, y: -6)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
+        .onTapGesture(count: 2) {
+            onEdit()
+        }
+        .onTapGesture {
+            monitor.togglePause(for: item)
+        }
     }
     
     private var notificationTypesText: String {
