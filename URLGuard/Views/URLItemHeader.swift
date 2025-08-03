@@ -96,37 +96,7 @@ struct URLItemHeader: View {
             Spacer()
             
             
-            // Bearbeiten-Button
-            Button(action: {
-                onEdit()
-            }) {
-                Text("Bearbeiten")
-                    .font(.caption)
-                    .foregroundColor(.blue)
-            }
-            .buttonStyle(.bordered)
-            
-            // Duplizieren-Button
-            Button(action: {
-                guard monitor.items.contains(where: { $0.id == item.id }) else { return }
-                monitor.duplicate(item: item)
-            }) {
-                Text("Duplizieren")
-                    .font(.caption)
-                    .foregroundColor(.green)
-            }
-            .buttonStyle(.bordered)
-            
-            // Löschen-Button
-            Button(action: {
-                guard monitor.items.contains(where: { $0.id == item.id }) else { return }
-                monitor.remove(item: item)
-            }) {
-                Text("Löschen")
-                    .font(.caption)
-                    .foregroundColor(.red)
-            }
-            .buttonStyle(.bordered)
+            URLItemActionButtons(item: item, monitor: monitor, onEdit: onEdit)
             
         }
         .padding(.horizontal, 16)

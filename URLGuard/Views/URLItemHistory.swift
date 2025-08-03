@@ -80,7 +80,6 @@ struct CountdownView: View {
 }
 
 
-
 private extension URLItem.HistoryEntry {
     var statusColor: Color {
         switch status {
