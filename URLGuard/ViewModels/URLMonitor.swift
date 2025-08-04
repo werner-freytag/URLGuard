@@ -9,8 +9,7 @@ class URLMonitor: ObservableObject {
     @AppStorage("URLMonitorGlobalPause") var isGlobalPaused: Bool = true
     @AppStorage("URLMonitorItemsData") private var savedItemsData: Data = Data()
     
-    private var timers: [UUID: Timer] = [:]
-    private var countdownTimers: [UUID: Timer] = [:]
+    private var timer: Timer?
     
     @Published private var remainingTimes: [UUID: Double] = [:]
     @Published private var pendingRequests: [UUID: Int] = [:]
@@ -49,27 +48,45 @@ class URLMonitor: ObservableObject {
         return getPendingRequests(for: itemID) > 0
     }
     
-    func startTimers() {
-        for item in items where item.isEnabled {
-            startTimer(for: item, resume: true)
+    func startTimer() {
+        stopTimer()
+        
+        guard !isGlobalPaused && items.contains(where: { $0.isEnabled }) else { return }
+        
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            self?.processCentralTimer()
         }
     }
     
-    func stopTimers() {
-        for (_, timer) in timers {
-            timer.invalidate()
+    func stopTimer() {
+        timer?.invalidate()
+        timer = nil
+    }
+    
+    private func processCentralTimer() {
+        guard !isGlobalPaused else { return }
+        
+        for item in items where item.isEnabled {
+            let currentTime = getRemainingTime(for: item.id)
+            
+            if currentTime > 0 {
+                setRemainingTime(currentTime - 1.0, for: item.id)
+            }
+            
+            if getRemainingTime(for: item.id) <= 0 {
+                check(itemID: item.id)
+                setRemainingTime(item.interval, for: item.id)
+            }
         }
-        timers.removeAll()
     }
     
     init() {
-        // Stelle sicher, dass der globale Pause-Status beim Start immer true ist
         isGlobalPaused = true
         
         load()
         
         if !isGlobalPaused {
-            startTimers()
+            startTimer()
         }
     }
     
@@ -77,69 +94,61 @@ class URLMonitor: ObservableObject {
         isGlobalPaused.toggle()
         
         if isGlobalPaused {
-            stopTimers()
+            stopTimer()
         } else {
-            startTimers()
+            startTimer()
         }
     }
     
     func startTimer(for item: URLItem, resume: Bool = false) {
-        cancel(item: item)
         guard item.isEnabled && !isGlobalPaused else { return }
         
-        // Restart
         if !resume || getRemainingTime(for: item.id) <= 0 {
             setRemainingTime(item.interval, for: item.id)
         }
         
-        timers[item.id] = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            guard let self = self else { return }
-            
-            DispatchQueue.main.async {
-                guard self.items.firstIndex(where: { $0.id == item.id }) != nil else { 
-                    self.timers[item.id]?.invalidate()
-                    self.timers.removeValue(forKey: item.id)
-                    return 
-                }
-                
-                // Countdown aktualisieren
-                let currentTime = self.getRemainingTime(for: item.id)
-                if currentTime > 0 {
-                    self.setRemainingTime(currentTime - 1.0, for: item.id)
-                }
-                
-                // Check auslösen wenn Countdown bei 0 ist
-                if self.getRemainingTime(for: item.id) <= 0 {
-                    self.check(itemID: item.id)
-                    // Countdown auf Intervall zurücksetzen
-                    self.setRemainingTime(item.interval, for: item.id)
-                }
-            }
+        if timer == nil {
+            startTimer()
         }
     }
     
     func cancel(item: URLItem) {
-        timers[item.id]?.invalidate()
-        timers.removeValue(forKey: item.id)
+        setRemainingTime(0, for: item.id)
+        
+        if !items.contains(where: { $0.isEnabled }) {
+            stopTimer()
+        }
     }
     
     func togglePause(for item: URLItem) {
         if let index = items.firstIndex(where: { $0.id == item.id }) {
             items[index].isEnabled.toggle()
             save()
+            
             if !items[index].isEnabled {
                 cancel(item: items[index])
             } else {
                 startTimer(for: items[index], resume: true)
             }
+            
+            if items.contains(where: { $0.isEnabled }) && !isGlobalPaused {
+                if timer == nil {
+                    startTimer()
+                }
+            } else {
+                stopTimer()
+            }
         }
     }
     
     func remove(item: URLItem) {
-        // Sicherer Remove mit Timer-Cleanup
         cancel(item: item)
         items.removeAll { $0.id == item.id }
         save()
+        
+        if !items.contains(where: { $0.isEnabled }) {
+            stopTimer()
+        }
     }
     
     @discardableResult
@@ -151,9 +160,9 @@ class URLMonitor: ObservableObject {
         
         // Neues Item erstellen
         var duplicatedItem = item
-        duplicatedItem.id = UUID() // Neue ID für das Duplikat
+        duplicatedItem.id = UUID()
         duplicatedItem.title = newTitle
-        duplicatedItem.isEnabled = false // Duplikat ist standardmäßig pausiert
+        duplicatedItem.isEnabled = false
         
         // Historie zurücksetzen
         duplicatedItem.history.removeAll()
