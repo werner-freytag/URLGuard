@@ -7,22 +7,14 @@ struct URLItemHeader: View {
 
     var body: some View {
         HStack {
-            Button(action: {
+            IconButton(
+                icon: item.isEnabled ? "play.circle.fill" : "pause.circle.fill",
+                color: item.isEnabled ? .green : .orange,
+                helpText: item.isEnabled ? "Pausieren" : "Starten",
+            ) {
                 guard monitor.items.contains(where: { $0.id == item.id }) else { return }
                 monitor.togglePause(for: item)
-            }) {
-                Image(systemName: item.isEnabled ? "play.circle.fill" : "pause.circle.fill")
-                    .font(.title3)
-                    .foregroundColor(item.isEnabled ? .green : .orange)
-                    .padding(6)
-                    .background(
-                        RoundedRectangle(cornerRadius: 20)
-                            .fill(item.isEnabled ? Color.green.opacity(0.1) : Color.orange.opacity(0.1))
-                            .stroke(item.isEnabled ? Color.green.opacity(0.3) : Color.orange.opacity(0.3), lineWidth: 1)
-                    )
             }
-            .buttonStyle(PlainButtonStyle())
-            .help(item.isEnabled ? "Pausieren" : "Starten")
             
             VStack(alignment: .leading, spacing: 4) {
                 // Haupttitel

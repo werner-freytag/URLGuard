@@ -35,7 +35,6 @@ struct URLItemHistory: View {
             
             Spacer()
             
-            // Reset-Button für Historie (nur Icon)
             Button(action: {
                 guard monitor.items.contains(where: { $0.id == item.id }) else { return }
                 monitor.resetHistory(for: item)
@@ -114,24 +113,7 @@ struct HistoryEntryView: View {
 
 #Preview {
     let monitor = URLMonitor()
-    let item = URLItem(
-        url: URL(string: "https://example.com")!,
-        interval: 10,
-        history: Array(0..<50).map { i in
-            let status: URLItem.Status = i % 3 == 0 ? .success : (i % 3 == 1 ? .changed : .error)
-            return URLItem.HistoryEntry(
-                date: Date().addingTimeInterval(-Double(i * 60)),
-                status: status,
-                httpStatusCode: status == .error ? 404 : 200,
-                diffInfo: status == .changed ? URLItem.DiffInfo(
-                    totalChangedLines: 2,
-                    previewLines: ["- Zeile 1: Alter Text", "+ Zeile 1: Neuer Text"]
-                ) : nil,
-                responseSize: 1024,
-                responseTime: 0.5
-            )
-        }
-    )
+    let item = URLItem(url: URL(string: "https://example.com")!, interval: 10)
     URLItemHistory(item: item, monitor: monitor)
         .frame(width: 600, height: 200)
 }

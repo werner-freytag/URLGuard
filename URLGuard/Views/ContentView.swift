@@ -17,22 +17,32 @@ struct ContentView: View {
     
     var body: some View {
         VStack {
-            // Hauptinhalt
             if filteredItems.isEmpty {
                 if !monitor.items.isEmpty {
-                    // Einträge vorhanden, aber Filter zeigt keine Ergebnisse
-                    NoSearchResultsView(searchText: searchText)
+                    EmptyStateView(
+                        icon: "magnifyingglass",
+                        title: "Keine Einträge gefunden",
+                        subtitle: "Für '\(searchText)' wurden keine Übereinstimmung gefunden"
+                    )
                 } else {
-                    // Keine Einträge vorhanden
-                    EmptyStateView(monitor: monitor, onNewItem: {
-                        editingItem = monitor.createNewItem()
-                    })
+                    EmptyStateView(
+                        icon: "plus.circle",
+                        title: "Keine Einträge vorhanden",
+                        subtitle: "Erstellen Sie Ihren ersten Eintrag, um URLs zu überwachen"
+                    ) {
+                        IconButton(
+                            icon: "plus",
+                            title: "Neuer Eintrag",
+                            color: .blue
+                        ) {
+                            editingItem = monitor.createNewItem()
+                        }
+                    }
                 }
             } else {
                 List {
                     ForEach(filteredItems) { item in
                         URLItemCard(item: item, monitor: monitor, onEdit: {
-                            // Verwende das aktuelle Item aus dem Monitor
                             if let currentItem = monitor.items.first(where: { $0.id == item.id }) {
                                 editingItem = currentItem
                             } else {
@@ -71,74 +81,4 @@ struct ContentView: View {
 
 #Preview {
     ContentView(monitor: URLMonitor())
-}
-
-struct EmptyStateView: View {
-    @ObservedObject var monitor: URLMonitor
-    var onNewItem: () -> Void
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            // Icon
-            Image(systemName: "plus.circle")
-                .font(.system(size: 60))
-                .foregroundColor(.secondary)
-            
-            // Text
-            VStack(spacing: 8) {
-                Text("Keine Einträge vorhanden")
-                    .font(.title2)
-                    .fontWeight(.medium)
-                    .foregroundColor(.primary)
-                
-                Text("Erstellen Sie Ihren ersten Eintrag, um URLs zu überwachen")
-                    .font(.body)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-            
-            
-            // Button
-            Button(action: {
-                onNewItem()
-            }) {
-                HStack(spacing: 6) {
-                    Image(systemName: "plus")
-                    Text("Neuer Eintrag")
-                }
-                .foregroundStyle(.blue)
-            }
-            .buttonStyle(.plain)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.controlBackgroundColor))
-    }
-}
-
-struct NoSearchResultsView: View {
-    let searchText: String
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            // Icon
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 60))
-                .foregroundColor(.secondary)
-            
-            // Text
-            VStack(spacing: 8) {
-                Text("Keine Einträge gefunden")
-                    .font(.title2)
-                    .fontWeight(.medium)
-                    .foregroundColor(.primary)
-                
-                Text("Für '\(searchText)' wurden keine Übereinstimmung gefunden")
-                    .font(.body)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.controlBackgroundColor))
-    }
 }

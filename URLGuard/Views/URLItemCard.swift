@@ -9,11 +9,8 @@ struct URLItemCard: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Header immer anzeigen
             URLItemHeader(item: item, monitor: monitor, onEdit: onEdit)
             
-            // Historie immer anzeigen
-            // Trennlinie zwischen Header und Historie
             Rectangle()
                 .fill(Color.secondary.opacity(0.2))
                 .frame(height: 1)

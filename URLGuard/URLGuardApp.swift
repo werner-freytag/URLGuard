@@ -14,20 +14,20 @@ struct URLGuardApp: App {
             ContentView(monitor: monitor)
                 .toolbar {
                     ToolbarItemGroup(placement: .primaryAction) {
-                        ToolbarButton(
+                        IconButton(
                             icon: monitor.isGlobalPaused ? "pause.circle.fill" : "play.circle.fill",
                             title: monitor.isGlobalPaused ? "Starten" : "Gestartet",
-                            color: monitor.isGlobalPaused ? .orange : .green
+                            color: monitor.isGlobalPaused ? .orange : .green,
+                            isDisabled: monitor.items.isEmpty
                         ) {
                             monitor.toggleGlobalPause()
                         }
                                                 
-                        ToolbarButton(
+                        IconButton(
                             icon: "plus.circle.fill",
                             title: "Neuer Eintrag",
                             color: .blue
                         ) {
-                            // Erstelle ein neues Item nur für den Editor, ohne es zur Liste hinzuzufügen
                             editingItem = URLItem()
                         }
                     }
@@ -35,7 +35,6 @@ struct URLGuardApp: App {
                 .toolbar(.visible, for: .windowToolbar)
                 .toolbar(.automatic, for: .windowToolbar)
                 .sheet(item: $editingItem) { item in
-                    // Prüfe ob es ein neues Item ist (nicht in der Liste vorhanden)
                     let isNewItem = !monitor.items.contains { $0.id == item.id }
                     
                     ModalEditorView(
@@ -44,7 +43,6 @@ struct URLGuardApp: App {
                         isNewItem: isNewItem,
                         onSave: { newItem in
                             if isNewItem {
-                                // Neues Item hinzufügen
                                 monitor.addItem(newItem)
                             }
                         }
