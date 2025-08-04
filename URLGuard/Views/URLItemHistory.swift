@@ -74,7 +74,7 @@ struct CountdownView: View {
                         .padding(.horizontal, 4)
                 }
                 .buttonStyle(.plain)
-                .help("Request jetzt ausführen")
+                .help("Klicken für sofortigen Request")
             }
         } else {
             Text("Angehalten")
@@ -111,7 +111,7 @@ struct HistoryEntryView: View {
         .buttonStyle(.plain)
         .popover(isPresented: $showPopover, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom) {
             HistoryDetailView(entry: entry)
-                .frame(width: 400, height: entry.status == .changed ? 400 : 200)
+                .frame(width: 400, height: calculatePopoverHeight(for: entry))
                 .presentationBackground(Color(.controlBackgroundColor))
                 .presentationCornerRadius(0)
         }
@@ -123,5 +123,23 @@ struct HistoryEntryView: View {
     let item = URLItem(url: URL(string: "https://example.com")!, interval: 10)
     URLItemHistory(item: item, monitor: monitor)
         .frame(width: 600, height: 200)
+}
+
+// Hilfsfunktionen für Popover-Größe
+private func calculatePopoverHeight(for entry: URLItem.HistoryEntry) -> CGFloat {
+    var height: CGFloat = 200 // Basis-Höhe für technische Details
+    
+    // Zusätzliche Höhe für Diff-Informationen
+    if entry.status == .changed {
+        height += 200
+    }
+    
+    // Zusätzliche Höhe für Header
+    if let headers = entry.headers, !headers.isEmpty {
+        let headerHeight = min(ceil(CGFloat(headers.count) / 2) * 35, 200)
+        height += headerHeight + 50
+    }
+    
+    return height
 }
 

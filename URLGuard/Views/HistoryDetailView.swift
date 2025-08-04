@@ -38,6 +38,30 @@ struct HistoryDetailView: View {
                 }
             }
             
+            // HTTP-Header Details
+            if let headers = entry.headers, !headers.isEmpty {
+                Divider()
+                
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("HTTP-Header")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                    
+                    ScrollView {
+                        LazyVGrid(columns: [
+                            GridItem(.flexible()),
+                            GridItem(.flexible())
+                        ], spacing: 8) {
+                            ForEach(Array(headers.enumerated()), id: \.offset) { _, header in
+                                HeaderRow(label: header.key, value: header.value)
+                            }
+                        }
+                        .padding(.trailing, 4) // Platz für Scrollbar
+                    }
+                    .frame(maxHeight: 200) // Maximale Höhe für Scrollbarkeit
+                }
+            }
+            
             // Diff-Informationen
             if let diffInfo = entry.diffInfo {
                 Divider()
@@ -177,6 +201,27 @@ struct DetailRow: View {
             Text(value ?? "-")
                 .font(.body)
                 .fontWeight(.medium)
+        }
+    }
+}
+
+struct HeaderRow: View {
+    let label: String
+    let value: String?
+    
+    var body: some View {
+        if let value = value, !value.isEmpty {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                Text(value)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .lineLimit(2)
+                    .truncationMode(.tail)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }

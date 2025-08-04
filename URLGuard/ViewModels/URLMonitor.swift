@@ -1,4 +1,5 @@
 import Foundation
+import OrderedCollections
 import Combine
 import SwiftUI
 
@@ -304,7 +305,7 @@ class URLMonitor: ObservableObject {
         // Pending Requests Counter erhöhen
         incrementPendingRequests(for: itemID)
         
-        requestManager.checkURL(for: item) { [weak self] status, httpStatusCode, responseSize, responseTime, diff, httpMethod in
+        requestManager.checkURL(for: item) { [weak self] status, httpStatusCode, responseSize, responseTime, diff, httpMethod, headers in
             guard let self = self else { return }
             guard let currentIndex = self.items.firstIndex(where: { $0.id == itemID }) else { return }
             
@@ -332,7 +333,8 @@ class URLMonitor: ObservableObject {
                 httpMethod: httpMethod,
                 diffInfo: diffInfo,
                 responseSize: responseSize,
-                responseTime: responseTime
+                responseTime: responseTime,
+                headers: headers
             ))
             
             let limit = maxHistoryItems.clamped(to: 1...999)

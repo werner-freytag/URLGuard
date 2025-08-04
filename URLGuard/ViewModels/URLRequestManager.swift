@@ -1,5 +1,6 @@
 import os
 import Foundation
+import OrderedCollections
 
 fileprivate let logger = Logger(subsystem: "de.wfco.URLGuard", category: "Network")
 
@@ -9,9 +10,9 @@ class URLRequestManager {
     
     // MARK: - Public Interface
     
-    func checkURL(for item: URLItem, onComplete: @escaping (URLItem.Status, Int?, Int?, Double?, String?, String?) -> Void) {
+    func checkURL(for item: URLItem, onComplete: @escaping (URLItem.Status, Int?, Int?, Double?, String?, String?, OrderedDictionary<String, String>) -> Void) {
         guard URL(string: item.url.absoluteString) != nil else { // Use item.url.absoluteString
-            onComplete(.error, nil, nil, nil, nil, nil)
+            onComplete(.error, nil, nil, nil, nil, nil, [:])
             return
         }
 
@@ -44,6 +45,40 @@ class URLRequestManager {
         if let etag = httpResponse.value(forHTTPHeaderField: "ETag") {
             lastETags[item.id] = etag
         }
+    }
+    
+    private let redirectHeaders = [
+        "Location",
+        "Refresh",
+    ]
+    
+    /// Array der HTTP-Header, die extrahiert werden sollen
+    private let trackedHeaders = [
+        "Content-Type",
+        "Last-Modified",
+    ]
+    
+    /// Extrahiert wichtige HTTP-Header aus der Response
+    private func extractHeaders(from httpResponse: HTTPURLResponse) -> OrderedDictionary<String, String> {
+        var headers = OrderedDictionary<String, String>()
+        
+        for headerName in redirectHeaders {
+            if let headerValue = httpResponse.value(forHTTPHeaderField: headerName) {
+                headers[headerName] = headerValue
+            }
+        }
+        
+        if (!headers.isEmpty) {
+            return headers
+        }
+        
+        for headerName in trackedHeaders {
+            if let headerValue = httpResponse.value(forHTTPHeaderField: headerName) {
+                headers[headerName] = headerValue
+            }
+        }
+        
+        return headers
     }
     
     /// Gemeinsame Content-Verarbeitung für GET Requests
@@ -84,7 +119,7 @@ class URLRequestManager {
         }.resume()
     }
     
-    private func performHEADRequest(item: URLItem, onComplete: @escaping (URLItem.Status, Int?, Int?, Double?, String?, String?) -> Void) {
+    private func performHEADRequest(item: URLItem, onComplete: @escaping (URLItem.Status, Int?, Int?, Double?, String?, String?, OrderedDictionary<String, String>) -> Void) {
         let startTime = Date()
         
         performRequest(for: item, method: "HEAD") { [weak self] data, response, error in
@@ -93,12 +128,14 @@ class URLRequestManager {
             var status: URLItem.Status = .error
             var httpStatusCode: Int? = nil
             var responseTime: Double? = nil
+            var headers: OrderedDictionary<String, String> = [:]
             
             responseTime = Date().timeIntervalSince(startTime)
             
             if let httpResponse = response as? HTTPURLResponse {
                 httpStatusCode = httpResponse.statusCode
                 self.processHTTPResponse(httpResponse, for: item)
+                headers = self.extractHeaders(from: httpResponse)
                 
                 if let statusCode = httpStatusCode {
                     // Prüfe zuerst, ob ETag identisch ist (Content unverändert)
@@ -136,12 +173,12 @@ class URLRequestManager {
                 return
             }
             
-            onComplete(status, httpStatusCode, data?.count, responseTime, nil, "HEAD")
+            onComplete(status, httpStatusCode, data?.count, responseTime, nil, "HEAD", headers)
         }
     }
     
     
-    private func performGETRequest(item: URLItem, onComplete: @escaping (URLItem.Status, Int?, Int?, Double?, String?, String?) -> Void) {
+    private func performGETRequest(item: URLItem, onComplete: @escaping (URLItem.Status, Int?, Int?, Double?, String?, String?, OrderedDictionary<String, String>) -> Void) {
         let startTime = Date()
         
         performRequest(for: item, method: "GET") { [weak self] data, response, error in
@@ -151,12 +188,15 @@ class URLRequestManager {
             var httpStatusCode: Int? = nil
             var diff: String? = nil
             var responseTime: Double? = nil
+            var headers: OrderedDictionary<String, String> = [:]
+            let httpMethod = "GET"
 
             responseTime = Date().timeIntervalSince(startTime)
 
             if let httpResponse = response as? HTTPURLResponse {
                 httpStatusCode = httpResponse.statusCode
                 self.processHTTPResponse(httpResponse, for: item)
+                headers = self.extractHeaders(from: httpResponse)
 
                 if let data = data, error == nil {
                     let (contentStatus, contentDiff) = self.processContent(data, for: item)
@@ -173,7 +213,7 @@ class URLRequestManager {
                 diff = contentDiff
             }
 
-            onComplete(status, httpStatusCode, data?.count, responseTime, diff, "GET")
+            onComplete(status, httpStatusCode, data?.count, responseTime, diff, "GET", headers)
         }
     }
     

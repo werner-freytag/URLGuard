@@ -1,4 +1,5 @@
 import Foundation
+import OrderedCollections
 
 struct URLItem: Identifiable, Codable, Equatable {
     enum Status: String, Codable {
@@ -90,7 +91,10 @@ struct URLItem: Identifiable, Codable, Equatable {
         let responseSize: Int? // Größe der Response in Bytes
         let responseTime: Double? // Response-Zeit in Sekunden
         
-        init(id: UUID = UUID(), date: Date, status: Status, httpStatusCode: Int? = nil, httpMethod: String? = nil, diffInfo: DiffInfo? = nil, responseSize: Int? = nil, responseTime: Double? = nil) {
+        // HTTP-Header Informationen
+        let headers: OrderedDictionary<String, String>? // Alle HTTP-Header als geordnetes Dictionary
+        
+        init(id: UUID = UUID(), date: Date, status: Status, httpStatusCode: Int? = nil, httpMethod: String? = nil, diffInfo: DiffInfo? = nil, responseSize: Int? = nil, responseTime: Double? = nil, headers: OrderedDictionary<String, String>? = nil) {
             self.id = id
             self.date = date
             self.status = status
@@ -99,6 +103,7 @@ struct URLItem: Identifiable, Codable, Equatable {
             self.diffInfo = diffInfo
             self.responseSize = responseSize
             self.responseTime = responseTime
+            self.headers = headers
         }
     }
     
