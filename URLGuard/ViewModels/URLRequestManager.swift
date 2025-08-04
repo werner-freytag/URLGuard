@@ -189,7 +189,6 @@ class URLRequestManager {
             var diff: String? = nil
             var responseTime: Double? = nil
             var headers: OrderedDictionary<String, String> = [:]
-            let httpMethod = "GET"
 
             responseTime = Date().timeIntervalSince(startTime)
 

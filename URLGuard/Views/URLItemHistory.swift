@@ -136,7 +136,7 @@ private func calculatePopoverHeight(for entry: URLItem.HistoryEntry) -> CGFloat 
     
     // Zusätzliche Höhe für Header
     if let headers = entry.headers, !headers.isEmpty {
-        let headerHeight = min(ceil(CGFloat(headers.count) / 2) * 35, 200)
+        let headerHeight = min(CGFloat(headers.count) * 17, 200)
         height += headerHeight + 50
     }
     

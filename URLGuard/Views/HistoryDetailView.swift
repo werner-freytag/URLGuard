@@ -30,7 +30,7 @@ struct HistoryDetailView: View {
                 HStack {
                     DetailRow(label: "HTTP Status", value: entry.httpStatusCode?.toString())
                     Spacer()
-                    DetailRow(label: "HTTP Methode", value: entry.httpMethod)
+                    DetailRow(label: "Methode", value: entry.httpMethod)
                     Spacer()
                     DetailRow(label: "Größe", value: entry.responseSize?.formattedBytes())
                     Spacer()
@@ -47,18 +47,15 @@ struct HistoryDetailView: View {
                         .font(.subheadline)
                         .fontWeight(.semibold)
                     
-                    ScrollView {
-                        LazyVGrid(columns: [
-                            GridItem(.flexible()),
-                            GridItem(.flexible())
-                        ], spacing: 8) {
-                            ForEach(Array(headers.enumerated()), id: \.offset) { _, header in
-                                HeaderRow(label: header.key, value: header.value)
-                            }
+                    LazyVGrid(columns: [
+                        GridItem(.fixed(80), alignment: .topLeading),
+                        GridItem(.flexible(), alignment: .leading),
+                    ]) {
+                        ForEach(Array(headers.enumerated()), id: \.offset) { _, header in
+                            HeaderRow(label: header.key, value: header.value)
                         }
-                        .padding(.trailing, 4) // Platz für Scrollbar
                     }
-                    .frame(maxHeight: 200) // Maximale Höhe für Scrollbarkeit
+                    .textSelection(.enabled)
                 }
             }
             
@@ -207,22 +204,17 @@ struct DetailRow: View {
 
 struct HeaderRow: View {
     let label: String
-    let value: String?
+    let value: String
     
     var body: some View {
-        if let value = value, !value.isEmpty {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(label)
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-                Text(value)
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .lineLimit(2)
-                    .truncationMode(.tail)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
+        Text("\(label):")
+            .font(.caption2)
+            .foregroundColor(.secondary)
+        Text(value)
+            .font(.caption)
+            .fontWeight(.medium)
+            .lineLimit(2)
+            .truncationMode(.tail)
     }
 }
 

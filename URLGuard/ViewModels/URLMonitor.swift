@@ -7,7 +7,7 @@ class URLMonitor: ObservableObject {
     @Published var items: [URLItem] = []
 
     @AppStorage("maxHistoryItems") var maxHistoryItems: Int = 200
-    @AppStorage("URLMonitorGlobalPause") var isGlobalPaused: Bool = true
+    @AppStorage("URLMonitorGlobalPause") var isGlobalPaused: Bool = false
     @AppStorage("URLMonitorItemsData") private var savedItemsData: Data = Data()
     
     private var timer: Timer?
@@ -82,8 +82,6 @@ class URLMonitor: ObservableObject {
     }
     
     init() {
-        isGlobalPaused = true
-        
         load()
         
         if !isGlobalPaused {
@@ -91,14 +89,14 @@ class URLMonitor: ObservableObject {
         }
     }
     
-    func toggleGlobalPause() {
-        isGlobalPaused.toggle()
-        
-        if isGlobalPaused {
-            stopTimer()
-        } else {
-            startTimer()
-        }
+    func pauseGlobal() {
+        isGlobalPaused = true
+        stopTimer()
+    }
+    
+    func startGlobal() {
+        isGlobalPaused = false
+        startTimer()
     }
     
     func startTimer(for item: URLItem, resume: Bool = false) {
@@ -183,7 +181,7 @@ class URLMonitor: ObservableObject {
     
     @discardableResult
     func createNewItem() -> URLItem {
-        let newItem = URLItem(url: URL(string: "https://")!, interval: 10, isEnabled: false)
+        let newItem = URLItem(url: URL(string: "https://")!)
         
         // Force UI Update
         objectWillChange.send()

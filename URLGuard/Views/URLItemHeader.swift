@@ -60,15 +60,10 @@ struct URLItemHeader: View {
                 
                 // URL und Intervall als Untertitel
                 HStack(spacing: 4) {
-                    if item.title != nil {
-                        Text(item.url.absoluteString)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                    } else {
-                        Text(item.url.absoluteString)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                    }
+                    Text(item.url.absoluteString)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .textSelection(.enabled)
                     
                     HStack(spacing: 2) {
                         Image(systemName: "clock")

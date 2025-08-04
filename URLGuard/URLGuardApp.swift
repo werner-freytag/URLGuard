@@ -14,25 +14,37 @@ struct URLGuardApp: App {
             ContentView(monitor: monitor)
                 .toolbar {
                     ToolbarItemGroup(placement: .primaryAction) {
-                        IconButton(
-                            icon: monitor.isGlobalPaused ? "pause.circle.fill" : "play.circle.fill",
-                            title: monitor.isGlobalPaused ? "Starten" : "Gestartet",
-                            color: monitor.isGlobalPaused ? .orange : .green,
-                            isDisabled: monitor.items.isEmpty
-                        ) {
-                            monitor.toggleGlobalPause()
-                        }
-                        .keyframeAnimator(initialValue: 1.0, repeating: true) { content, opacity in
-                            content
-                                .opacity(opacity)
-                        } keyframes: { _ in
-                            KeyframeTrack(\.self) {
-                                LinearKeyframe(1.0, duration: 5.0)
-                                LinearKeyframe(0.3, duration: 1.0, timingCurve: .easeInOut)
-                                LinearKeyframe(1.0, duration: 1.0, timingCurve: .easeInOut)
+                        if monitor.isGlobalPaused {
+                            IconButton(
+                                icon: "pause.circle.fill",
+                                title: "Pausiert",
+                                color: .orange,
+                                isDisabled: monitor.items.isEmpty
+                            ) {
+                                monitor.startGlobal()
+                            }
+                            .keyframeAnimator(initialValue: 1.0, repeating: true) { content, opacity in
+                                content
+                                    .opacity(opacity)
+                            } keyframes: { _ in
+                                KeyframeTrack(\.self) {
+                                    LinearKeyframe(1.0, duration: 3.0)
+                                    LinearKeyframe(0.3, duration: 0.75, timingCurve: .easeInOut)
+                                    LinearKeyframe(1.0, duration: 0.75, timingCurve: .easeInOut)
+                                }
                             }
                         }
-
+                        else {
+                            IconButton(
+                                icon: "play.circle.fill",
+                                title: "Gestartet",
+                                color: .green,
+                                isDisabled: monitor.items.isEmpty
+                            ) {
+                                monitor.pauseGlobal()
+                            }
+                        }
+                        
                         IconButton(
                             icon: "plus.circle.fill",
                             title: "Neuer Eintrag",
@@ -80,7 +92,7 @@ struct URLGuardApp: App {
             }
             CommandGroup(after: .newItem) {
                 Button("Monitoring pausieren/starten") {
-                    monitor.toggleGlobalPause()
+                    monitor.isGlobalPaused ? monitor.startGlobal() : monitor.pauseGlobal()
                 }
                 .keyboardShortcut("p", modifiers: [.command, .shift])
             }
@@ -98,12 +110,13 @@ struct URLGuardApp: App {
             }
             Divider()
             Button(monitor.isGlobalPaused ? "Monitoring starten" : "Monitoring pausieren") {
-                monitor.toggleGlobalPause()
+                monitor.isGlobalPaused ? monitor.startGlobal() : monitor.pauseGlobal()
             }
             
-            if !monitor.items.isEmpty {
-                Divider()
-                
+            Divider()
+            if monitor.items.isEmpty {
+                Text("Keine Einträge")
+            } else {
                 ForEach(monitor.items) { item in
                     let entry = item.history.last
 

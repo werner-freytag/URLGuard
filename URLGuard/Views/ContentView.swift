@@ -60,7 +60,7 @@ struct ContentView: View {
                 .listStyle(PlainListStyle())
             }
         }
-        .frame(minWidth: 600, minHeight: 400)
+        .frame(minWidth: 420, minHeight: 200)
         .searchable(text: $searchText, prompt: "URLs durchsuchen...")
         .sheet(item: $editingItem) { item in
             // Prüfe ob es ein neues Item ist (nicht in der Liste vorhanden)
