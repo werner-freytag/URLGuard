@@ -9,9 +9,9 @@ class URLRequestManager {
     
     // MARK: - Public Interface
     
-    func checkURL(for item: URLItem, onComplete: @escaping (URLItem.Status, Int?, Int?, Double?, String?) -> Void) {
+    func checkURL(for item: URLItem, onComplete: @escaping (URLItem.Status, Int?, Int?, Double?, String?, String?) -> Void) {
         guard URL(string: item.url.absoluteString) != nil else { // Use item.url.absoluteString
-            onComplete(.error, nil, nil, nil, nil)
+            onComplete(.error, nil, nil, nil, nil, nil)
             return
         }
 
@@ -84,7 +84,7 @@ class URLRequestManager {
         }.resume()
     }
     
-    private func performHEADRequest(item: URLItem, onComplete: @escaping (URLItem.Status, Int?, Int?, Double?, String?) -> Void) {
+    private func performHEADRequest(item: URLItem, onComplete: @escaping (URLItem.Status, Int?, Int?, Double?, String?, String?) -> Void) {
         let startTime = Date()
         
         performRequest(for: item, method: "HEAD") { [weak self] data, response, error in
@@ -136,12 +136,12 @@ class URLRequestManager {
                 return
             }
             
-            onComplete(status, httpStatusCode, data?.count, responseTime, nil)
+            onComplete(status, httpStatusCode, data?.count, responseTime, nil, "HEAD")
         }
     }
     
     
-    private func performGETRequest(item: URLItem, onComplete: @escaping (URLItem.Status, Int?, Int?, Double?, String?) -> Void) {
+    private func performGETRequest(item: URLItem, onComplete: @escaping (URLItem.Status, Int?, Int?, Double?, String?, String?) -> Void) {
         let startTime = Date()
         
         performRequest(for: item, method: "GET") { [weak self] data, response, error in
@@ -173,7 +173,7 @@ class URLRequestManager {
                 diff = contentDiff
             }
 
-            onComplete(status, httpStatusCode, data?.count, responseTime, diff)
+            onComplete(status, httpStatusCode, data?.count, responseTime, diff, "GET")
         }
     }
     

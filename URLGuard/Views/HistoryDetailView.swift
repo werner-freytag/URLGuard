@@ -32,7 +32,9 @@ struct HistoryDetailView: View {
                     Spacer()
                     DetailRow(label: "HTTP Status", value: entry.httpStatusCode?.toString())
                     Spacer()
-                    DetailRow(label: "Übertragungsdauer", value: entry.responseTime?.formattedDuration())
+                    DetailRow(label: "HTTP Methode", value: entry.httpMethod)
+                    Spacer()
+                    DetailRow(label: "Dauer", value: entry.responseTime?.formattedDuration())
                 }
             }
             

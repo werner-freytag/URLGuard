@@ -295,7 +295,7 @@ class URLMonitor: ObservableObject {
         // Pending Requests Counter erhöhen
         incrementPendingRequests(for: itemID)
         
-        requestManager.checkURL(for: item) { [weak self] status, httpStatusCode, responseSize, responseTime, diff in
+        requestManager.checkURL(for: item) { [weak self] status, httpStatusCode, responseSize, responseTime, diff, httpMethod in
             guard let self = self else { return }
             guard let currentIndex = self.items.firstIndex(where: { $0.id == itemID }) else { return }
             
@@ -320,6 +320,7 @@ class URLMonitor: ObservableObject {
                 date: Date(),
                 status: status,
                 httpStatusCode: httpStatusCode,
+                httpMethod: httpMethod,
                 diffInfo: diffInfo,
                 responseSize: responseSize,
                 responseTime: responseTime
