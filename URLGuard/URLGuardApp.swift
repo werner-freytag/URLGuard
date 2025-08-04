@@ -22,7 +22,17 @@ struct URLGuardApp: App {
                         ) {
                             monitor.toggleGlobalPause()
                         }
-                                                
+                        .keyframeAnimator(initialValue: 1.0, repeating: true) { content, opacity in
+                            content
+                                .opacity(opacity)
+                        } keyframes: { _ in
+                            KeyframeTrack(\.self) {
+                                LinearKeyframe(1.0, duration: 5.0)
+                                LinearKeyframe(0.3, duration: 1.0, timingCurve: .easeInOut)
+                                LinearKeyframe(1.0, duration: 1.0, timingCurve: .easeInOut)
+                            }
+                        }
+
                         IconButton(
                             icon: "plus.circle.fill",
                             title: "Neuer Eintrag",
