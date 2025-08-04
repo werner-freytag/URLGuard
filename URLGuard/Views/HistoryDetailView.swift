@@ -28,11 +28,11 @@ struct HistoryDetailView: View {
                     .fontWeight(.semibold)
                 
                 HStack {
-                    DetailRow(label: "Größe", value: entry.responseSize?.formattedBytes())
-                    Spacer()
                     DetailRow(label: "HTTP Status", value: entry.httpStatusCode?.toString())
                     Spacer()
                     DetailRow(label: "HTTP Methode", value: entry.httpMethod)
+                    Spacer()
+                    DetailRow(label: "Größe", value: entry.responseSize?.formattedBytes())
                     Spacer()
                     DetailRow(label: "Dauer", value: entry.responseTime?.formattedDuration())
                 }
@@ -155,11 +155,13 @@ private extension Int {
 
 private extension Double {
     func formattedDuration() -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = 2
-        return "\(formatter.string(from: NSNumber(value: self)) ?? String(format: "%.2f", self))s"
+        let measurement = Measurement(value: self, unit: UnitDuration.seconds)
+
+        let formatter = MeasurementFormatter()
+        formatter.unitStyle = .short
+        formatter.numberFormatter.maximumFractionDigits = 3
+
+        return formatter.string(from: measurement)
     }
 }
 
