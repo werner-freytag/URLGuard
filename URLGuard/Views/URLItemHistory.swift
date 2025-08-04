@@ -63,11 +63,18 @@ struct CountdownView: View {
                     .frame(width: 10, height: 10)
                     .padding(.horizontal, 2)
             } else if monitor.getRemainingTime(for: item.id) > 0 {
-                // Countdown zwischen Requests
-                Text("\(Int(monitor.getRemainingTime(for: item.id)))")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .padding(.horizontal, 4)
+                // Countdown zwischen Requests - klickbar für sofortigen Request
+                Button(action: {
+                    guard monitor.items.contains(where: { $0.id == item.id }) else { return }
+                    monitor.setRemainingTime(0, for: item.id)
+                }) {
+                    Text("\(Int(monitor.getRemainingTime(for: item.id)))")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 4)
+                }
+                .buttonStyle(.plain)
+                .help("Request jetzt ausführen")
             }
         } else {
             Text("Angehalten")
