@@ -1,10 +1,3 @@
-//
-//  URLGuardApp.swift
-//  URLGuard
-//
-//  Created by Freytag, Werner on 31.07.25.
-//
-
 import SwiftUI
 import SwiftData
 
@@ -21,36 +14,22 @@ struct URLGuardApp: App {
             ContentView(monitor: monitor)
                 .toolbar {
                     ToolbarItemGroup(placement: .primaryAction) {
-                        // Pause/Start Button
-                        Button(action: {
+                        ToolbarButton(
+                            icon: monitor.isGlobalPaused ? "pause.circle.fill" : "play.circle.fill",
+                            title: monitor.isGlobalPaused ? "Starten" : "Gestartet",
+                            color: monitor.isGlobalPaused ? .orange : .green
+                        ) {
                             monitor.toggleGlobalPause()
-                        }) {
-                            HStack(spacing: 6) {
-                                Image(systemName: monitor.isGlobalPaused ? "play.fill" : "pause.fill")
-                                Text(monitor.isGlobalPaused ? "Starten" : "Pausieren")
-                            }
-                            .foregroundColor(monitor.isGlobalPaused ? .white : .primary)
-                            .padding(.vertical, 6)
-                            .padding(.horizontal, 12)
-                            .background(monitor.isGlobalPaused ? Color.secondary : .clear)
-                            .cornerRadius(8)
                         }
-                        .buttonStyle(.plain)
-                        
-                        // Separator
-                        Divider()
-                            .frame(height: 20)
-                        
-                        Button(action: {
+                                                
+                        ToolbarButton(
+                            icon: "plus.circle.fill",
+                            title: "Neuer Eintrag",
+                            color: .blue
+                        ) {
                             // Erstelle ein neues Item nur für den Editor, ohne es zur Liste hinzuzufügen
                             editingItem = URLItem()
-                        }) {
-                            HStack(spacing: 6) {
-                                Image(systemName: "plus")
-                                Text("Neuer Eintrag")
-                            }
                         }
-                        .buttonStyle(.plain)
                     }
                 }
                 .toolbar(.visible, for: .windowToolbar)

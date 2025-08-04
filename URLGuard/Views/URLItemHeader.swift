@@ -11,12 +11,18 @@ struct URLItemHeader: View {
                 guard monitor.items.contains(where: { $0.id == item.id }) else { return }
                 monitor.togglePause(for: item)
             }) {
-                Image(systemName: item.isEnabled ? "checkmark.square.fill" : "square")
-                    .symbolRenderingMode(.multicolor)
-                    .font(.title)
+                Image(systemName: item.isEnabled ? "play.circle.fill" : "pause.circle.fill")
+                    .font(.title3)
+                    .foregroundColor(item.isEnabled ? .green : .orange)
+                    .padding(6)
+                    .background(
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(item.isEnabled ? Color.green.opacity(0.1) : Color.orange.opacity(0.1))
+                            .stroke(item.isEnabled ? Color.green.opacity(0.3) : Color.orange.opacity(0.3), lineWidth: 1)
+                    )
             }
             .buttonStyle(PlainButtonStyle())
-            .help(item.isEnabled ? "Pause" : "Start")
+            .help(item.isEnabled ? "Pausieren" : "Starten")
             
             VStack(alignment: .leading, spacing: 4) {
                 // Haupttitel
@@ -91,10 +97,35 @@ struct URLItemHeader: View {
             Spacer()
             
             VStack {
-                URLItemActionButtons(item: item, monitor: monitor, onEdit: onEdit)
-                Spacer()
+                HStack(spacing: 8) {
+                    ActionButton(
+                        icon: "pencil",
+                        title: "Bearbeiten",
+                        color: .blue,
+                    ) {
+                        onEdit()
+                    }
+                    
+                    ActionButton(
+                        icon: "plus.square.on.square",
+                        title: "Duplizieren",
+                        color: .secondary,
+                    ) {
+                        guard monitor.items.contains(where: { $0.id == item.id }) else { return }
+                        monitor.duplicate(item: item)
+                    }
+                    
+                    ActionButton(
+                        icon: "trash",
+                        title: "Löschen",
+                        color: .red,
+                    ) {
+                        guard monitor.items.contains(where: { $0.id == item.id }) else { return }
+                        monitor.remove(item: item)
+                    }
+                }
             }
-            .offset(x: 10, y: -6)
+            .offset(x: 8, y: -6)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
