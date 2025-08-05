@@ -27,7 +27,7 @@ struct URLGuardApp: App {
     }
 
     var body: some Scene {
-        Window("URL Guard", id: "main") {
+        Window("URL Guard", id: "MainWindow") {
             ContentView(monitor: monitor)
                 .toolbar {
                     ToolbarItemGroup(placement: .primaryAction) {
