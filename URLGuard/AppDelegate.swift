@@ -19,20 +19,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         if !flag {
-            openMainWindow()
+            NSApp.openMainWindow()
         }
         return true
-    }
-    
-    func openMainWindow() {
-        // App in den Vordergrund bringen
-        NSApp.activate(ignoringOtherApps: true)
-        
-        NSApp.windows.forEach { window in
-            if window.canBecomeKey {
-                window.makeKeyAndOrderFront(nil)
-            }
-        }
     }
     
     func setupNotifications() {

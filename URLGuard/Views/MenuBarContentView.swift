@@ -5,13 +5,7 @@ struct MenuBarContentView: View {
     
     var body: some View {
         Button("Öffnen") {
-            NSApp.activate(ignoringOtherApps: true)
-
-            NSApp.windows.forEach { window in
-                if window.canBecomeKey {
-                    window.makeKeyAndOrderFront(nil)
-                }
-            }
+            NSApp.openMainWindow()
         }
         Divider()
         Button(monitor.isGlobalPaused ? "Monitoring starten" : "Monitoring pausieren") {
