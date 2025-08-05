@@ -1,13 +1,32 @@
 import SwiftUI
+import Combine
 import SwiftData
 
 @main
 struct URLGuardApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    @StateObject private var monitor = URLMonitor()
+    private let monitor = URLMonitor()
     @State private var editingItem: URLItem? = nil
 
     @AppStorage("showStatusBarIcon") var showStatusBarIcon: Bool = true
+    
+    private var dockBadgeCancellable: AnyCancellable?
+    
+    init() {
+        let notificationManager = NotificationManager.shared
+        
+        dockBadgeCancellable = monitor.$items
+            .receive(on: DispatchQueue.main)
+            .sink { items in
+                let count = items.map { item in
+                    item.history.filter {
+                        notificationManager.notification(for: item, status: $0.status, httpStatusCode: $0.httpStatusCode) != nil
+                    }.count
+                }.reduce(0, +)
+
+                NSApp.dockTile.badgeLabel = count > 0 ? "\(count)" : nil
+            }
+    }
 
     var body: some Scene {
         Window("URL Guard", id: "main") {

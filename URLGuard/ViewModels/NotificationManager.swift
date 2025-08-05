@@ -4,6 +4,9 @@ import UserNotifications
 class NotificationManager: ObservableObject {
     static let shared = NotificationManager()
     
+    // Callback für das Öffnen des Popovers
+    var onNotificationTapped: ((UUID) -> Void)?
+    
     private init() {
         requestAuthorization()
     }
@@ -18,11 +21,10 @@ class NotificationManager: ObservableObject {
         }
     }
     
-    func sendNotification(title: String, body: String, url: String) {
+    func sendNotification(title: String, body: String, userInfo: [AnyHashable : Any]) {
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
-        // content.sound = .default  // Sound deaktiviert
         
         let request = UNNotificationRequest(
             identifier: UUID().uuidString,
@@ -37,12 +39,12 @@ class NotificationManager: ObservableObject {
         }
     }
     
-    func shouldNotify(for item: URLItem, status: URLItem.Status, httpStatusCode: Int? = nil) -> Bool {
+    func notification(for item: URLItem, status: URLItem.Status, httpStatusCode: Int?) -> URLItem.NotificationType? {
         // Prüfe zuerst HTTP-Code-Benachrichtigung (nur bei erfolgreichen Requests)
         if let httpCode = httpStatusCode, status == .success {
             for notification in item.enabledNotifications {
                 if case .httpCode(let notifyCode) = notification, httpCode == notifyCode {
-                    return true
+                    return notification
                 }
             }
         }
@@ -50,41 +52,31 @@ class NotificationManager: ObservableObject {
         // Dann prüfe Status-basierte Benachrichtigungen
         switch status {
         case .error:
-            return item.enabledNotifications.contains(.error)
+            return item.enabledNotifications.contains(.error) ? .error : nil
         case .changed:
-            return item.enabledNotifications.contains(.change)
+            return item.enabledNotifications.contains(.change) ? .change : nil
         case .success:
-            return item.enabledNotifications.contains(.success)
+            return item.enabledNotifications.contains(.success) ?.success : nil
         }
     }
     
     func notifyIfNeeded(for item: URLItem, status: URLItem.Status, httpStatusCode: Int?) {
-        guard shouldNotify(for: item, status: status, httpStatusCode: httpStatusCode) else { return }
-        
+        guard let notification = notification(for: item, status: status, httpStatusCode: httpStatusCode) else { return }
+
         let title = item.displayTitle
-        let body: String
-        
-        // Prüfe zuerst HTTP-Code-Benachrichtigung (nur bei erfolgreichen Requests)
-        if let httpCode = httpStatusCode, status == .success {
-            for notification in item.enabledNotifications {
-                if case .httpCode(let notifyCode) = notification, httpCode == notifyCode {
-                    body = "HTTP \(httpCode) empfangen"
-                    sendNotification(title: title, body: body, url: item.url.absoluteString)
-                    return
-                }
+        let body: String = { () in
+            switch notification {
+            case .httpCode(let httpCode):
+                return "HTTP status \(httpCode)"
+            case .error:
+                return "Fehler beim Abrufen der URL"
+            case .change:
+                return "Inhalt der URL hat sich geändert"
+            case .success:
+                return "URL erfolgreich abgerufen"
             }
-        }
+        }()
         
-        // Status-basierte Benachrichtigungen
-        switch status {
-        case .error:
-            body = "URL ist nicht erreichbar"
-        case .changed:
-            body = "Inhalt der URL hat sich geändert"
-        case .success:
-            body = "URL erfolgreich abgerufen"
-        }
-        
-        sendNotification(title: title, body: body, url: item.url.absoluteString)
+        sendNotification(title: title, body: body, userInfo: ["itemId": item.id.uuidString])
     }
-} 
+}

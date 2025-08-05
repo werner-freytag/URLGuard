@@ -39,8 +39,10 @@ struct URLItemHistory: View {
                 guard monitor.items.contains(where: { $0.id == item.id }) else { return }
                 monitor.resetHistory(for: item)
             }) {
-                Image(systemName: "arrow.clockwise")
+                Image(systemName: "xmark.circle.fill")
                     .font(.caption)
+                    .foregroundStyle(.gray)
+                    .opacity(0.5)
             }
             .buttonStyle(PlainButtonStyle())
             .help("Historie leeren")
