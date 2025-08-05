@@ -19,7 +19,7 @@ struct URLItemHistory: View {
                             HistoryEntryView(entry: entry)
                         }
 
-                        CountdownView(item: .constant(item), monitor: monitor)
+                        CountdownView(item: item, monitor: monitor)
                             .id("countdown")
                     }
                     .padding(.trailing, 8) // Abstand am Ende für bessere Optik
@@ -53,7 +53,7 @@ struct URLItemHistory: View {
 }
 
 struct CountdownView: View {
-    @Binding var item: URLItem
+    let item: URLItem
     @ObservedObject var monitor: URLMonitor
     
     var body: some View {

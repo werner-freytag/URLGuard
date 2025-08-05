@@ -20,7 +20,7 @@ struct URLItemCard: View {
         .background(
             RoundedRectangle(cornerRadius: 16)
                 .fill(item.isEnabled ? Color.white : Color.gray.opacity(0.05))
-                .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
+                .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 3)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16)
@@ -28,6 +28,15 @@ struct URLItemCard: View {
                     item.isEnabled ? Color.blue.opacity(0.1) : Color.gray.opacity(0.2), 
                     lineWidth: 1
                 )
+        )
+        .overlay(
+            // Highlighting Overlay
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(
+                    monitor.highlightedItemID == item.id ? Color.orange : Color.clear,
+                    lineWidth: 3
+                )
+                .animation(.easeInOut(duration: 0.3), value: monitor.highlightedItemID)
         )
         .padding(.horizontal, 16)
         .padding(.vertical, 8)

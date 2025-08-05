@@ -19,7 +19,10 @@ struct MenuBarContentView: View {
             ForEach(monitor.items) { item in
                 let entry = item.history.last
 
-                Button {} label: {
+                Button {
+                    NSApp.openMainWindow()
+                    monitor.highlightItem(item.id)
+                } label: {
                     Image(systemName: entry?.statusIconName ?? "circle.dashed")
                     Text(item.displayTitle)
                     if let entry {

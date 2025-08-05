@@ -5,6 +5,7 @@ import SwiftUI
 
 class URLMonitor: ObservableObject {
     @Published var items: [URLItem] = []
+    @Published var highlightedItemID: UUID? = nil
 
     @AppStorage("maxHistoryItems") var maxHistoryItems: Int = 200
     @AppStorage("URLMonitorGlobalPause") var isGlobalPaused: Bool = false
@@ -97,6 +98,17 @@ class URLMonitor: ObservableObject {
     func startGlobal() {
         isGlobalPaused = false
         startTimer()
+    }
+    
+    func highlightItem(_ itemID: UUID) {
+        highlightedItemID = itemID
+        
+        // Highlight nach 1 Sekunde automatisch entfernen
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            if self.highlightedItemID == itemID {
+                self.highlightedItemID = nil
+            }
+        }
     }
     
     func startTimer(for item: URLItem, resume: Bool = false) {
