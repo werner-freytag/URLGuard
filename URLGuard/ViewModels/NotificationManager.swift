@@ -25,6 +25,7 @@ class NotificationManager: ObservableObject {
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
+        content.userInfo = userInfo
         
         let request = UNNotificationRequest(
             identifier: UUID().uuidString,
@@ -39,9 +40,9 @@ class NotificationManager: ObservableObject {
         }
     }
     
-    func notification(for item: URLItem, status: URLItem.Status, httpStatusCode: Int?) -> URLItem.NotificationType? {
+    func notification(for item: URLItem, entry: URLItem.HistoryEntry) -> URLItem.NotificationType? {
         // Prüfe zuerst HTTP-Code-Benachrichtigung (nur bei erfolgreichen Requests)
-        if let httpCode = httpStatusCode, status == .success {
+        if let httpCode = entry.httpStatusCode, entry.status == .success {
             for notification in item.enabledNotifications {
                 if case .httpCode(let notifyCode) = notification, httpCode == notifyCode {
                     return notification
@@ -50,18 +51,18 @@ class NotificationManager: ObservableObject {
         }
         
         // Dann prüfe Status-basierte Benachrichtigungen
-        switch status {
+        switch entry.status {
         case .error:
             return item.enabledNotifications.contains(.error) ? .error : nil
         case .changed:
             return item.enabledNotifications.contains(.change) ? .change : nil
         case .success:
-            return item.enabledNotifications.contains(.success) ?.success : nil
+            return item.enabledNotifications.contains(.success) ? .success : nil
         }
     }
     
-    func notifyIfNeeded(for item: URLItem, status: URLItem.Status, httpStatusCode: Int?) {
-        guard let notification = notification(for: item, status: status, httpStatusCode: httpStatusCode) else { return }
+    func notifyIfNeeded(for item: URLItem, entry: URLItem.HistoryEntry) {
+        guard let notification = notification(for: item, entry: entry) else { return }
 
         let title = item.displayTitle
         let body: String = { () in

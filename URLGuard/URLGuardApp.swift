@@ -19,9 +19,7 @@ struct URLGuardApp: App {
             .receive(on: DispatchQueue.main)
             .sink { items in
                 let count = items.map { item in
-                    item.history.filter {
-                        notificationManager.notification(for: item, status: $0.status, httpStatusCode: $0.httpStatusCode) != nil
-                    }.count
+                    item.history.filter { notificationManager.notification(for: item, entry: $0) != nil }.count
                 }.reduce(0, +)
 
                 NSApp.dockTile.badgeLabel = count > 0 ? "\(count)" : nil

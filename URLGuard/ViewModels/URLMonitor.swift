@@ -324,7 +324,7 @@ class URLMonitor: ObservableObject {
             }
             
             // History-Eintrag erstellen
-            self.items[currentIndex].history.append(URLItem.HistoryEntry(
+            let historyEntry = URLItem.HistoryEntry(
                 date: Date(),
                 status: status,
                 httpStatusCode: httpStatusCode,
@@ -333,7 +333,9 @@ class URLMonitor: ObservableObject {
                 responseSize: responseSize,
                 responseTime: responseTime,
                 headers: headers
-            ))
+            )
+            
+            self.items[currentIndex].history.append(historyEntry)
             
             let limit = maxHistoryItems.clamped(to: 1...999)
             
@@ -342,7 +344,7 @@ class URLMonitor: ObservableObject {
             }
             
             // Notification senden
-            NotificationManager.shared.notifyIfNeeded(for: self.items[currentIndex], status: status, httpStatusCode: httpStatusCode)
+            NotificationManager.shared.notifyIfNeeded(for: self.items[currentIndex], entry: historyEntry)
         }
     }
     

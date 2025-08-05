@@ -74,6 +74,8 @@ struct URLItemHeader: View {
                         HStack(spacing: 2) {
                             Image(systemName: "bell")
                             Text(notificationTypesText)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
                         }
                     }
                 }
