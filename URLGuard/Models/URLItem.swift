@@ -71,16 +71,6 @@ struct URLItem: Identifiable, Codable, Equatable {
         }
     }
     
-    struct DiffInfo: Codable, Equatable {
-        let totalChangedLines: Int
-        let previewLines: [String] // Erste 20 Zeilen
-        
-        init(totalChangedLines: Int, previewLines: [String]) {
-            self.totalChangedLines = totalChangedLines
-            self.previewLines = previewLines
-        }
-    }
-    
     struct HistoryEntry: Codable, Equatable, Identifiable {
         let id: UUID
         let date: Date
@@ -137,7 +127,7 @@ struct URLItem: Identifiable, Codable, Equatable {
             title: title,
             interval: interval,
             isEnabled: isEnabled,
-            history: [],        // Keine Historie
+            history: [],
             enabledNotifications: enabledNotifications
         )
     }

@@ -7,23 +7,23 @@ private let logger = Logger(subsystem: "de.wfco.URLGuard", category: "Network")
 // MARK: - Response Structure
 
 struct URLCheckResponse {
-    let date: Date = Date()
+    let date: Date = .init()
     let httpMethod: String
     let responseTime: Double
     var responseSize: Int?
     var httpStatusCode: Int?
     var headers: OrderedDictionary<String, String>?
-    var diff: String?
+    var diffInfo: DiffInfo?
     var status: URLItem.Status
     var errorDescription: String?
 
-    init(httpMethod: String, responseTime: Double, responseSize: Int? = nil, httpStatusCode: Int? = nil, headers: OrderedDictionary<String, String>? = nil,  diff: String? = nil, status: URLItem.Status, error: String? = nil) {
+    init(httpMethod: String, responseTime: Double, responseSize: Int? = nil, httpStatusCode: Int? = nil, headers: OrderedDictionary<String, String>? = nil, diff: String? = nil, diffInfo: DiffInfo? = nil, status: URLItem.Status, error: String? = nil) {
         self.httpMethod = httpMethod
         self.responseTime = responseTime
         self.responseSize = responseSize
         self.httpStatusCode = httpStatusCode
         self.headers = headers
-        self.diff = diff
+        self.diffInfo = diffInfo
         self.status = status
         self.errorDescription = error
     }
@@ -71,7 +71,6 @@ class URLRequestManager {
     private let trackedHeaders = [
         "Content-Type",
         "Last-Modified",
-        "ETag",
     ]
     
     /// Extrahiert wichtige HTTP-Header aus der Response
@@ -184,7 +183,8 @@ class URLRequestManager {
                lastData != data,
                let lastContent = String(data: lastData, encoding: .utf8),
                let currentContent = String(data: data, encoding: .utf8) {
-                response.diff = createIntelligentDiff(from: lastContent, to: currentContent)
+                let diffInfo = DiffInfo(from: lastContent, to: currentContent)
+                response.diffInfo = diffInfo
                 response.status = .changed
             }
         }
@@ -193,109 +193,6 @@ class URLRequestManager {
         lastETags[item.id] = httpResponse.value(forHTTPHeaderField: "ETag")
 
         return response
-    }
-    
-    // MARK: - Helper Methods
-    
-    /// Erstellt einen Diff zwischen zwei Strings
-    private func createDiff(from oldContent: String, to newContent: String) -> String {
-        let oldLines = oldContent.components(separatedBy: .newlines)
-        let newLines = newContent.components(separatedBy: .newlines)
-        
-        var diffLines: [String] = []
-        diffLines.append("=== DIFF ===")
-        diffLines.append("Alte Version: \(oldLines.count) Zeilen")
-        diffLines.append("Neue Version: \(newLines.count) Zeilen")
-        diffLines.append("")
-        
-        // Einfacher Zeilen-für-Zeilen Vergleich
-        let maxLines = max(oldLines.count, newLines.count)
-        
-        for i in 0..<maxLines {
-            let oldLine = i < oldLines.count ? oldLines[i] : ""
-            let newLine = i < newLines.count ? newLines[i] : ""
-            
-            if oldLine != newLine {
-                diffLines.append("Zeile \(i + 1):")
-                if !oldLine.isEmpty {
-                    diffLines.append("- \(oldLine)")
-                }
-                if !newLine.isEmpty {
-                    diffLines.append("+ \(newLine)")
-                }
-                diffLines.append("")
-            }
-        }
-        
-        // Zusätzliche Statistiken
-        let addedLines = newLines.count - oldLines.count
-        if addedLines > 0 {
-            diffLines.append("📈 \(addedLines) Zeilen hinzugefügt")
-        } else if addedLines < 0 {
-            diffLines.append("📉 \(abs(addedLines)) Zeilen entfernt")
-        }
-        
-        let changedLines = zip(oldLines, newLines).filter { $0 != $1 }.count
-        if changedLines > 0 {
-            diffLines.append("🔄 \(changedLines) Zeilen geändert")
-        }
-        
-        return diffLines.joined(separator: "\n")
-    }
-
-    /// Erstellt einen intelligenten Diff mit begrenzter Datenmenge
-    private func createIntelligentDiff(from oldContent: String, to newContent: String) -> String {
-        let oldLines = oldContent.components(separatedBy: .newlines)
-        let newLines = newContent.components(separatedBy: .newlines)
-
-        var diffLines: [String] = []
-        diffLines.append("=== INTELLIGENTER DIFF ===")
-        diffLines.append("Alte Version: \(oldLines.count) Zeilen")
-        diffLines.append("Neue Version: \(newLines.count) Zeilen")
-        diffLines.append("")
-
-        // Intelligente Zeilen-für-Zeilen Analyse mit Begrenzung
-        let maxLines = max(oldLines.count, newLines.count)
-        var changedLinesCount = 0
-        let maxChangedLines = 20 // Maximale Anzahl zu analysierender Zeilen
-
-        for i in 0..<maxLines {
-            // Stoppe, wenn genug Unterschiede gefunden wurden
-            if changedLinesCount >= maxChangedLines {
-                diffLines.append("... (weitere Änderungen vorhanden)")
-                break
-            }
-
-            let oldLine = i < oldLines.count ? oldLines[i] : ""
-            let newLine = i < newLines.count ? newLines[i] : ""
-
-            if oldLine != newLine {
-                changedLinesCount += 1
-                diffLines.append("Zeile \(i + 1):")
-                if !oldLine.isEmpty {
-                    diffLines.append("- \(oldLine)")
-                }
-                if !newLine.isEmpty {
-                    diffLines.append("+ \(newLine)")
-                }
-                diffLines.append("")
-            }
-        }
-
-        // Zusätzliche Statistiken
-        let addedLines = newLines.count - oldLines.count
-        if addedLines > 0 {
-            diffLines.append("📈 \(addedLines) Zeilen hinzugefügt")
-        } else if addedLines < 0 {
-            diffLines.append("📉 \(abs(addedLines)) Zeilen entfernt")
-        }
-
-        let totalChangedLines = zip(oldLines, newLines).filter { $0 != $1 }.count
-        if totalChangedLines > 0 {
-            diffLines.append("🔄 \(totalChangedLines) Zeilen geändert (max. \(maxChangedLines) angezeigt)")
-        }
-
-        return diffLines.joined(separator: "\n")
     }
 }
 

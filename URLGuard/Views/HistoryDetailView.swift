@@ -60,43 +60,36 @@ struct HistoryDetailView: View {
             }
             
             // Diff-Informationen
-            if entry.status == .success, let diffInfo = entry.diffInfo {
+            if entry.status == .changed, let diffInfo = entry.diffInfo {
                 Divider()
                 
                 VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text("Änderungen")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                        Spacer()
-                        Text("\(diffInfo.totalChangedLines) Zeilen")
-                            .font(.caption)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 2)
-                            .background(Color.blue.opacity(0.1))
-                            .cornerRadius(4)
-                    }
+                    Text("Änderungen")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
                     
                     ScrollView {
                         VStack(alignment: .leading, spacing: 4) {
-                            ForEach(diffInfo.previewLines, id: \.self) { line in
-                                Text(line)
-                                    .font(.system(.caption, design: .monospaced))
-                                    .foregroundColor(diffLineColor(for: line))
-                                    .padding(EdgeInsets(top: 1, leading: 4, bottom: 1, trailing: 4))
-                                    .background(diffLineBackgroundColor(for: line))
-                                    .cornerRadius(2)
+                            ForEach(diffInfo.changedLines, id: \.lineNumber) { changedLine in
+                                ChangedLineView(changedLine: changedLine)
                             }
                             
-                            if diffInfo.totalChangedLines > 20 {
-                                Text("... und \(diffInfo.totalChangedLines - 20) weitere Änderungen")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                    .italic()
+                            if diffInfo.changedLines.count < diffInfo.totalChangedLines {
+                                if diffInfo.totalChangedLines - diffInfo.changedLines.count == 1 {
+                                    Text("... und 1 weitere Änderung")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                        .italic()
+                                } else {
+                                    Text("... und \(diffInfo.totalChangedLines - diffInfo.changedLines.count) weitere Änderungen")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                        .italic()
+                                }
                             }
                         }
                     }
-                    .frame(maxHeight: .infinity)
+                    .frame(maxHeight: 200)
                 }
             } else if entry.status == .success {
                 Divider()
@@ -121,28 +114,8 @@ struct HistoryDetailView: View {
                         .lineLimit(2)
                 }
             }
-         }
+        }
         .padding(20)
-    }
-}
-
-private func diffLineColor(for line: String) -> Color {
-    if line.hasPrefix("+") {
-        return .green
-    } else if line.hasPrefix("-") {
-        return .red
-    } else {
-        return .primary
-    }
-}
-
-private func diffLineBackgroundColor(for line: String) -> Color {
-    if line.hasPrefix("+") {
-        return Color.green.opacity(0.1)
-    } else if line.hasPrefix("-") {
-        return Color.red.opacity(0.1)
-    } else {
-        return Color.clear
     }
 }
 
@@ -244,22 +217,42 @@ struct HeaderRow: View {
 }
 
 #Preview("HistoryDetailView - Änderung") {
-    let diffInfo = URLItem.DiffInfo(
-        totalChangedLines: 25,
-        previewLines: [
-            "- <title>Alte Seite</title>",
-            "+ <title>Neue Seite</title>",
-            "- <meta name=\"description\" content=\"Alte Beschreibung\">",
-            "+ <meta name=\"description\" content=\"Neue Beschreibung\">",
-            "- <div class=\"old-content\">",
-            "+ <div class=\"new-content\">",
-            "  <p>Gemeinsamer Inhalt</p>",
-            "-  <p>Entfernter Text</p>",
-            "+  <p>Hinzugefügter Text</p>",
-            "  <p>Weiterer gemeinsamer Inhalt</p>",
-            "- </div>",
-            "+ </div>"
-        ]
+    let changedLines = [
+        ChangedLine(
+            lineNumber: 1,
+            oldContent: "<title>Alte Seite</title>",
+            newContent: "<title>Neue Seite</title>",
+            changeType: .modified
+        ),
+        ChangedLine(
+            lineNumber: 2,
+            oldContent: "<meta name=\"description\" content=\"Alte Beschreibung\">",
+            newContent: "<meta name=\"description\" content=\"Neue Beschreibung\">",
+            changeType: .modified
+        ),
+        ChangedLine(
+            lineNumber: 3,
+            oldContent: "<div class=\"old-content\">",
+            newContent: "<div class=\"new-content\">",
+            changeType: .modified
+        ),
+        ChangedLine(
+            lineNumber: 5,
+            oldContent: "  <p>Entfernter Text</p>",
+            newContent: "",
+            changeType: .removed
+        ),
+        ChangedLine(
+            lineNumber: 6,
+            oldContent: "",
+            newContent: "  <p>Hinzugefügter Text</p>",
+            changeType: .added
+        )
+    ]
+    
+    let diffInfo = DiffInfo(
+        totalChangedLines: 5,
+        changedLines: changedLines
     )
     
     let changedEntry = URLItem.HistoryEntry(
@@ -271,7 +264,7 @@ struct HeaderRow: View {
         responseTime: 1.23
     )
     
-    return HistoryDetailView(entry: changedEntry)
+    HistoryDetailView(entry: changedEntry)
         .frame(width: 400, height: 400)
 }
 
@@ -281,7 +274,7 @@ struct HeaderRow: View {
         status: .error
     )
     
-    return HistoryDetailView(entry: errorEntry)
+    HistoryDetailView(entry: errorEntry)
         .frame(width: 400, height: 250)
 }
 
@@ -297,14 +290,24 @@ struct HeaderRow: View {
         )
         
         // Änderung
-        let diffInfo = URLItem.DiffInfo(
-            totalChangedLines: 8,
-            previewLines: [
-                "- <title>Alte Seite</title>",
-                "+ <title>Neue Seite</title>",
-                "- <meta name=\"description\" content=\"Alte Beschreibung\">",
-                "+ <meta name=\"description\" content=\"Neue Beschreibung\">"
-            ]
+        let changedLines = [
+            ChangedLine(
+                lineNumber: 1,
+                oldContent: "<title>Alte Seite</title>",
+                newContent: "<title>Neue Seite</title>",
+                changeType: .modified
+            ),
+            ChangedLine(
+                lineNumber: 2,
+                oldContent: "<meta name=\"description\" content=\"Alte Beschreibung\">",
+                newContent: "<meta name=\"description\" content=\"Neue Beschreibung\">",
+                changeType: .modified
+            )
+        ]
+        
+        let diffInfo = DiffInfo(
+            totalChangedLines: 2,
+            changedLines: changedLines
         )
         
         let changedEntry = URLItem.HistoryEntry(
@@ -357,5 +360,91 @@ struct HeaderRow: View {
             }
         }
         .padding()
+    }
+}
+
+// MARK: - Helper Views
+
+struct ChangedLineView: View {
+    let changedLine: ChangedLine
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack {
+                Text(lineNumberText)
+                    .font(.caption2)
+                    .fontWeight(.medium)
+                    .foregroundColor(.secondary)
+            }
+            
+            if changedLine.changeType == .added {
+                ForEach(changedLine.newContent.components(separatedBy: .newlines), id: \.self) { line in
+                    if !line.isEmpty {
+                        Text("+ \(line)")
+                            .font(.system(.caption, design: .monospaced))
+                            .foregroundColor(.green)
+                            .padding(.leading, 8)
+                    }
+                }
+            } else if changedLine.changeType == .removed {
+                ForEach(changedLine.oldContent.components(separatedBy: .newlines), id: \.self) { line in
+                    if !line.isEmpty {
+                        Text("- \(line)")
+                            .font(.system(.caption, design: .monospaced))
+                            .foregroundColor(.red)
+                            .padding(.leading, 8)
+                    }
+                }
+            } else {
+                VStack(alignment: .leading, spacing: 1) {
+                    ForEach(changedLine.oldContent.components(separatedBy: .newlines), id: \.self) { line in
+                        if !line.isEmpty {
+                            Text("- \(line)")
+                                .font(.system(.caption, design: .monospaced))
+                                .foregroundColor(.red)
+                                .padding(.leading, 8)
+                        }
+                    }
+                    ForEach(changedLine.newContent.components(separatedBy: .newlines), id: \.self) { line in
+                        if !line.isEmpty {
+                            Text("+ \(line)")
+                                .font(.system(.caption, design: .monospaced))
+                                .foregroundColor(.green)
+                                .padding(.leading, 8)
+                        }
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(.gray.opacity(0.05))
+        .cornerRadius(4)
+    }
+    
+    private var lineNumberText: String {
+        let oldLines = changedLine.oldContent.components(separatedBy: .newlines).filter { !$0.isEmpty }
+        let newLines = changedLine.newContent.components(separatedBy: .newlines).filter { !$0.isEmpty }
+        
+        if oldLines.count > 1 || newLines.count > 1 {
+            // Mehrere Zeilen - zeige Bereich an
+            let lastLineNumber = changedLine.lineNumber + max(oldLines.count, newLines.count) - 1
+            return "Zeilen \(changedLine.lineNumber)-\(lastLineNumber)"
+        } else {
+            // Einzelne Zeile
+            return "Zeile \(changedLine.lineNumber)"
+        }
+    }
+    
+    private var changeTypeColor: Color {
+        switch changedLine.changeType {
+        case .added:
+            return .green
+        case .removed:
+            return .red
+        case .modified:
+            return .orange
+        }
     }
 }

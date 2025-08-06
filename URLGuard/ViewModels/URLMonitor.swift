@@ -296,26 +296,13 @@ class URLMonitor: ObservableObject {
                 // Pending Requests Counter verringern
                 self.decrementPendingRequests(for: itemID)
                 
-                // DiffInfo erstellen falls Diff vorhanden
-                var diffInfo: URLItem.DiffInfo? = nil
-                if let diff = response.diff {
-                    let changedLines = diff.components(separatedBy: .newlines).filter { line in
-                        line.hasPrefix("+") || line.hasPrefix("-")
-                    }
-                    let previewLines = Array(changedLines.prefix(20))
-                    diffInfo = URLItem.DiffInfo(
-                        totalChangedLines: changedLines.count,
-                        previewLines: previewLines
-                    )
-                }
-                
                 // History-Eintrag erstellen
                 let historyEntry = URLItem.HistoryEntry(
                     date: response.date,
                     status: response.status,
                     httpStatusCode: response.httpStatusCode,
                     httpMethod: response.httpMethod,
-                    diffInfo: diffInfo,
+                    diffInfo: response.diffInfo,
                     responseSize: response.responseSize,
                     responseTime: response.responseTime,
                     headers: response.headers,
