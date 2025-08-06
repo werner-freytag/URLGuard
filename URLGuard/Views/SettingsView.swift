@@ -25,7 +25,7 @@ struct SettingsView: View {
                 
                 HStack {
                     Text("Maximale Lönge der Historie")
-                    Stepper(value: $maxHistoryEntries, in: 1...999, step: 1) {
+                    Stepper(value: $maxHistoryEntries, in: 1...1000, step: 1) {
                         TextField("", value: $maxHistoryEntries, formatter: NumberFormatter())
                             .frame(width: 60)
                     }
@@ -43,7 +43,9 @@ struct SettingsView: View {
         .padding()
         .frame(width: 300, height: 200)
         .onChange(of: maxHistoryEntries) { oldValue, newValue in
-            maxHistoryEntries = newValue.clamped(to: 1...999)
+            if (newValue < 1 || newValue > 1000) {
+                maxHistoryEntries = oldValue
+            }
         }
         .onChange(of: showStatusBarIcon) { oldValue, newValue in
             // Benachrichtige den AppDelegate über die Änderung

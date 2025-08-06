@@ -218,34 +218,6 @@ class URLMonitor: ObservableObject {
         save()
     }
     
-    func testURL(_ urlString: String, completion: @escaping (Bool, String?) -> Void) {
-        guard let url = URL(string: urlString) else {
-            completion(false, "Ungültige URL")
-            return
-        }
-        
-        var request = URLRequest(url: url)
-        request.timeoutInterval = 10.0 // 10 Sekunden Timeout
-        request.httpMethod = "HEAD" // Nur Header abrufen, nicht den ganzen Inhalt
-        
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
-            DispatchQueue.main.async {
-                if let error = error {
-                    completion(false, "URL nicht erreichbar: \(error.localizedDescription)")
-                } else if let httpResponse = response as? HTTPURLResponse {
-                    if httpResponse.statusCode >= 200 && httpResponse.statusCode < 400 {
-                        completion(true, nil)
-                    } else {
-                        completion(false, "HTTP-Fehler: \(httpResponse.statusCode)")
-                    }
-                } else {
-                    completion(false, "Keine Antwort von der URL")
-                }
-            }
-        }
-        task.resume()
-    }
-    
     func confirmEditingWithValues(for item: URLItem, urlString: String, title: String?, interval: Double, isEnabled: Bool, enabledNotifications: Set<URLItem.NotificationType>? = nil) {
         if let index = items.firstIndex(where: { $0.id == item.id }) {
             
@@ -349,7 +321,7 @@ class URLMonitor: ObservableObject {
             
             self.items[currentIndex].history.append(historyEntry)
             
-            let limit = maxHistoryItems.clamped(to: 1...999)
+            let limit = maxHistoryItems.clamped(to: 1...1000)
             
             if self.items[currentIndex].history.count > limit {
                 self.items[currentIndex].history.removeFirst()
