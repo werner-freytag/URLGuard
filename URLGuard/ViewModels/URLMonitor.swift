@@ -311,14 +311,15 @@ class URLMonitor: ObservableObject {
                 
                 // History-Eintrag erstellen
                 let historyEntry = URLItem.HistoryEntry(
-                    date: Date(),
+                    date: response.date,
                     status: response.status,
                     httpStatusCode: response.httpStatusCode,
                     httpMethod: response.httpMethod,
                     diffInfo: diffInfo,
                     responseSize: response.responseSize,
                     responseTime: response.responseTime,
-                    headers: response.headers
+                    headers: response.headers,
+                    errorDescription: response.errorDescription
                 )
                 
                 self.items[currentIndex].history.append(historyEntry)

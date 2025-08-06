@@ -7,6 +7,7 @@ private let logger = Logger(subsystem: "de.wfco.URLGuard", category: "Network")
 // MARK: - Response Structure
 
 struct URLCheckResponse {
+    let date: Date = Date()
     let httpMethod: String
     let responseTime: Double
     var responseSize: Int?
@@ -14,7 +15,7 @@ struct URLCheckResponse {
     var headers: OrderedDictionary<String, String>?
     var diff: String?
     var status: URLItem.Status
-    var error: String?
+    var errorDescription: String?
 
     init(httpMethod: String, responseTime: Double, responseSize: Int? = nil, httpStatusCode: Int? = nil, headers: OrderedDictionary<String, String>? = nil,  diff: String? = nil, status: URLItem.Status, error: String? = nil) {
         self.httpMethod = httpMethod
@@ -24,7 +25,7 @@ struct URLCheckResponse {
         self.headers = headers
         self.diff = diff
         self.status = status
-        self.error = error
+        self.errorDescription = error
     }
 }
 

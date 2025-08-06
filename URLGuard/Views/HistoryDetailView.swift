@@ -49,7 +49,7 @@ struct HistoryDetailView: View {
                     
                     LazyVGrid(columns: [
                         GridItem(.fixed(80), alignment: .topLeading),
-                        GridItem(.flexible(), alignment: .leading),
+                        GridItem(.flexible(), alignment: .leading)
                     ]) {
                         ForEach(Array(headers.enumerated()), id: \.offset) { _, header in
                             HeaderRow(label: header.key, value: header.value)
@@ -60,7 +60,7 @@ struct HistoryDetailView: View {
             }
             
             // Diff-Informationen
-            if let diffInfo = entry.diffInfo {
+            if entry.status == .success, let diffInfo = entry.diffInfo {
                 Divider()
                 
                 VStack(alignment: .leading, spacing: 8) {
@@ -102,14 +102,26 @@ struct HistoryDetailView: View {
                 Divider()
                 
                 HStack {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.green)
+                    Image(systemName: entry.statusIconName)
+                        .foregroundColor(entry.statusColor)
                     Text("Inhalt nicht geändert")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
+            } else if entry.status == .error, let errorDescription = entry.errorDescription {
+                Divider()
+                
+                HStack {
+                    Image(systemName: entry.statusIconName)
+                        .foregroundColor(entry.statusColor)
+                    Text(errorDescription)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .lineLimit(2)
+                }
             }
-        }
+         }
         .padding(20)
     }
 }
@@ -266,7 +278,7 @@ struct HeaderRow: View {
 #Preview("HistoryDetailView - Fehler") {
     let errorEntry = URLItem.HistoryEntry(
         date: Date().addingTimeInterval(-600),
-        status: .error,
+        status: .error
     )
     
     return HistoryDetailView(entry: errorEntry)

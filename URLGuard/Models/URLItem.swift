@@ -86,15 +86,16 @@ struct URLItem: Identifiable, Codable, Equatable {
         let date: Date
         let status: Status
         let httpStatusCode: Int?
-        let httpMethod: String? // HTTP-Methode (GET/HEAD)
-        let diffInfo: DiffInfo? // Optimierte Diff-Informationen
-        let responseSize: Int? // Größe der Response in Bytes
-        let responseTime: Double? // Response-Zeit in Sekunden
+        let httpMethod: String?
+        let diffInfo: DiffInfo?
+        let responseSize: Int?
+        let responseTime: Double?
+        let errorDescription: String?
         
         // HTTP-Header Informationen
         let headers: OrderedDictionary<String, String>? // Alle HTTP-Header als geordnetes Dictionary
         
-        init(id: UUID = UUID(), date: Date, status: Status, httpStatusCode: Int? = nil, httpMethod: String? = nil, diffInfo: DiffInfo? = nil, responseSize: Int? = nil, responseTime: Double? = nil, headers: OrderedDictionary<String, String>? = nil) {
+        init(id: UUID = UUID(), date: Date, status: Status, httpStatusCode: Int? = nil, httpMethod: String? = nil, diffInfo: DiffInfo? = nil, responseSize: Int? = nil, responseTime: Double? = nil, headers: OrderedDictionary<String, String>? = nil, errorDescription: String? = nil) {
             self.id = id
             self.date = date
             self.status = status
@@ -104,6 +105,7 @@ struct URLItem: Identifiable, Codable, Equatable {
             self.responseSize = responseSize
             self.responseTime = responseTime
             self.headers = headers
+            self.errorDescription = errorDescription
         }
     }
     
