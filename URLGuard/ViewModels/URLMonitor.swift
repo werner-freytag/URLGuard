@@ -287,48 +287,51 @@ class URLMonitor: ObservableObject {
         // Pending Requests Counter erhöhen
         incrementPendingRequests(for: itemID)
         
-        requestManager.checkURL(for: item) { [weak self] status, httpStatusCode, responseSize, responseTime, diff, httpMethod, headers in
-            guard let self = self else { return }
-            guard let currentIndex = self.items.firstIndex(where: { $0.id == itemID }) else { return }
+        Task {
+            let response = await requestManager.checkURL(for: item)
             
-            // Pending Requests Counter verringern
-            self.decrementPendingRequests(for: itemID)
-            
-            // DiffInfo erstellen falls Diff vorhanden
-            var diffInfo: URLItem.DiffInfo? = nil
-            if let diff = diff {
-                let changedLines = diff.components(separatedBy: .newlines).filter { line in
-                    line.hasPrefix("+") || line.hasPrefix("-")
+            await MainActor.run {
+                guard let currentIndex = self.items.firstIndex(where: { $0.id == itemID }) else { return }
+                
+                // Pending Requests Counter verringern
+                self.decrementPendingRequests(for: itemID)
+                
+                // DiffInfo erstellen falls Diff vorhanden
+                var diffInfo: URLItem.DiffInfo? = nil
+                if let diff = response.diff {
+                    let changedLines = diff.components(separatedBy: .newlines).filter { line in
+                        line.hasPrefix("+") || line.hasPrefix("-")
+                    }
+                    let previewLines = Array(changedLines.prefix(20))
+                    diffInfo = URLItem.DiffInfo(
+                        totalChangedLines: changedLines.count,
+                        previewLines: previewLines
+                    )
                 }
-                let previewLines = Array(changedLines.prefix(20))
-                diffInfo = URLItem.DiffInfo(
-                    totalChangedLines: changedLines.count,
-                    previewLines: previewLines
+                
+                // History-Eintrag erstellen
+                let historyEntry = URLItem.HistoryEntry(
+                    date: Date(),
+                    status: response.status,
+                    httpStatusCode: response.httpStatusCode,
+                    httpMethod: response.httpMethod,
+                    diffInfo: diffInfo,
+                    responseSize: response.responseSize,
+                    responseTime: response.responseTime,
+                    headers: response.headers
                 )
+                
+                self.items[currentIndex].history.append(historyEntry)
+                
+                let limit = maxHistoryItems.clamped(to: 1...1000)
+                
+                if self.items[currentIndex].history.count > limit {
+                    self.items[currentIndex].history.removeFirst()
+                }
+                
+                // Notification senden
+                NotificationManager.shared.notifyIfNeeded(for: self.items[currentIndex], entry: historyEntry)
             }
-            
-            // History-Eintrag erstellen
-            let historyEntry = URLItem.HistoryEntry(
-                date: Date(),
-                status: status,
-                httpStatusCode: httpStatusCode,
-                httpMethod: httpMethod,
-                diffInfo: diffInfo,
-                responseSize: responseSize,
-                responseTime: responseTime,
-                headers: headers
-            )
-            
-            self.items[currentIndex].history.append(historyEntry)
-            
-            let limit = maxHistoryItems.clamped(to: 1...1000)
-            
-            if self.items[currentIndex].history.count > limit {
-                self.items[currentIndex].history.removeFirst()
-            }
-            
-            // Notification senden
-            NotificationManager.shared.notifyIfNeeded(for: self.items[currentIndex], entry: historyEntry)
         }
     }
     
