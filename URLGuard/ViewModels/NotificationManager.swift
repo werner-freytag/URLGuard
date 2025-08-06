@@ -70,11 +70,11 @@ class NotificationManager: ObservableObject {
             case .httpCode(let httpCode):
                 return "HTTP status \(httpCode)"
             case .error:
-                return "Fehler beim Abrufen der URL"
+                return "Fehler beim Abrufen"
             case .change:
-                return "Inhalt der URL hat sich geändert"
+                return "Geänderter Inhalt"
             case .success:
-                return "URL erfolgreich abgerufen"
+                return "Erfolgreich abgerufen"
             }
         }()
         
