@@ -55,8 +55,14 @@ class URLMonitor: ObservableObject {
         
         guard !isGlobalPaused && items.contains(where: { $0.isEnabled }) else { return }
         
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            self?.processCentralTimer()
+        // Timer auf Background Thread ausführen, um Main Thread Blockierung zu vermeiden
+        DispatchQueue.global(qos: .background).async { [weak self] in
+            self?.timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+                self?.processCentralTimer()
+            }
+            
+            // Run Loop für den Background Thread starten
+            RunLoop.current.run()
         }
     }
     
@@ -68,16 +74,21 @@ class URLMonitor: ObservableObject {
     private func processCentralTimer() {
         guard !isGlobalPaused else { return }
         
-        for item in items where item.isEnabled {
-            let currentTime = getRemainingTime(for: item.id)
+        // UI-Updates müssen auf den Main Thread
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
             
-            if currentTime > 0 {
-                setRemainingTime(currentTime - 1.0, for: item.id)
-            }
-            
-            if getRemainingTime(for: item.id) <= 0 {
-                check(item: item)
-                setRemainingTime(item.interval, for: item.id)
+            for item in self.items where item.isEnabled {
+                let currentTime = self.getRemainingTime(for: item.id)
+                
+                if currentTime > 0 {
+                    self.setRemainingTime(currentTime - 1.0, for: item.id)
+                }
+                
+                if self.getRemainingTime(for: item.id) <= 0 {
+                    self.check(item: item)
+                    self.setRemainingTime(item.interval, for: item.id)
+                }
             }
         }
     }
