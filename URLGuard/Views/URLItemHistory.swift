@@ -14,7 +14,7 @@ struct URLItemHistory: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 1) {
                         ForEach(Array(item.history.enumerated()), id: \.element.id) { index, entry in
-                            HistoryEntryView(entryIndex: index, monitor: monitor, item: item)
+                            HistoryEntryView(item: item, entryIndex: index, monitor: monitor)
                         }
 
                         CountdownView(item: item, monitor: monitor)
@@ -33,7 +33,7 @@ struct URLItemHistory: View {
 
             Spacer()
 
-            let unreadCount = item.history.filter { $0.isUnread && $0.hasNotification }.count
+            let unreadCount = item.history.filter(\.isMarked).count
 
             if unreadCount > 0 {
                 Button(action: {

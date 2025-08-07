@@ -76,7 +76,7 @@ class URLMonitor: ObservableObject {
             }
             
             if getRemainingTime(for: item.id) <= 0 {
-                check(itemID: item.id)
+                check(item: item)
                 setRemainingTime(item.interval, for: item.id)
             }
         }
@@ -132,23 +132,23 @@ class URLMonitor: ObservableObject {
     }
     
     func togglePause(for item: URLItem) {
-        if let index = items.firstIndex(where: { $0.id == item.id }) {
-            items[index].isEnabled.toggle()
-            save()
-            
-            if !items[index].isEnabled {
-                cancel(item: items[index])
-            } else {
-                startTimer(for: items[index], resume: true)
+        guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
+        
+        items[index].isEnabled.toggle()
+        save()
+        
+        if !items[index].isEnabled {
+            cancel(item: items[index])
+        } else {
+            startTimer(for: items[index], resume: true)
+        }
+        
+        if items.contains(where: { $0.isEnabled }) && !isGlobalPaused {
+            if timer == nil {
+                startTimer()
             }
-            
-            if items.contains(where: { $0.isEnabled }) && !isGlobalPaused {
-                if timer == nil {
-                    startTimer()
-                }
-            } else {
-                stopTimer()
-            }
+        } else {
+            stopTimer()
         }
     }
     
@@ -278,18 +278,9 @@ class URLMonitor: ObservableObject {
         guard let itemIndex = items.firstIndex(where: { $0.id == item.id }) else { return }
         
         items[itemIndex].history.enumerated().forEach { offset, element in
-            items[itemIndex].history[offset].markAsRead()
+            items[itemIndex].history[offset].isMarked = false
         }
         
-        save()
-    }
-    
-    func markAsRead(for item: URLItem, entryId: UUID) {
-        guard let itemIndex = items.firstIndex(where: { $0.id == item.id }),
-              let entryIndex = items[itemIndex].history.firstIndex(where: { $0.id == entryId })
-        else { return }
-        
-        items[itemIndex].history[entryIndex].markAsRead()
         save()
     }
     
@@ -298,26 +289,23 @@ class URLMonitor: ObservableObject {
         save()
     }
     
-    func check(itemID: UUID) {
-        guard let index = items.firstIndex(where: { $0.id == itemID }) else { return }
-        let item = items[index]
-        // URL ist bereits validiert, da es ein URL-Objekt ist
-        
+    func check(item: URLItem) {
+
         // Pending Requests Counter erhöhen
-        incrementPendingRequests(for: itemID)
+        incrementPendingRequests(for: item.id)
         
         Task {
             let requestResult = await requestManager.checkURL(for: item)
             
             await MainActor.run {
-                guard let currentIndex = self.items.firstIndex(where: { $0.id == itemID }) else { return }
+                guard let currentIndex = self.items.firstIndex(where: { $0.id == item.id }) else { return }
                 
                 // Pending Requests Counter verringern
-                self.decrementPendingRequests(for: itemID)
+                self.decrementPendingRequests(for: item.id)
                 
                 let historyEntry = URLItem.HistoryEntry(
                     requestResult: requestResult,
-                    hasNotification: self.items[currentIndex].notification(for: requestResult) != nil
+                    isMarked: self.items[currentIndex].notification(for: requestResult) != nil
                 )
                 
                 self.items[currentIndex].history.append(historyEntry)

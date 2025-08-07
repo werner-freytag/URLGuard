@@ -103,7 +103,7 @@ struct HistoryDetailView: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .lineLimit(2)
                 }
-            } else {
+            } else if entry.requestResult.status == .success(hasChanges: false) {
                 Divider()
                 
                 HStack {

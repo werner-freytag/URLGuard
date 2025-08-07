@@ -16,14 +16,10 @@ struct HistoryEntryView: View {
         }) {
             VStack(spacing: 2) {
                 Circle()
-                    .fill(entry.hasNotification && entry.isUnread ? Color.red : Color.clear)
+                    .fill(entry.isMarked ? Color.red : Color.clear)
                     .frame(width: 3, height: 3)
                 RoundedRectangle(cornerRadius: 2)
                     .fill(entry.statusColor)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 2)
-                            .stroke(entry.isUnread && entry.hasNotification ? .white : .clear, lineWidth: 1)
-                    )
                     .frame(width: 10, height: 10)
                 Spacer(minLength: 3)
             }
@@ -40,8 +36,12 @@ struct HistoryEntryView: View {
 
 // Hilfsfunktionen für Popover-Größe
 private func calculatePopoverHeight(for entry: RequestResult) -> CGFloat {
-    var height: CGFloat = 200 // Basis-Höhe für technische Details
+    var height: CGFloat = 156 // Basis-Höhe für technische Details
 
+    if entry.status == .success(hasChanges: false) {
+        height += 44
+    }
+    
     // Zusätzliche Höhe für Diff-Informationen
     if let diffInfo = entry.diffInfo, diffInfo.totalChangedLines > 0 {
         height += 200

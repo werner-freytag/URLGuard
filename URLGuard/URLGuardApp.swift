@@ -5,7 +5,7 @@ import SwiftData
 @main
 struct URLGuardApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    private let monitor = URLMonitor()
+    @StateObject private var monitor = URLMonitor()
     @State private var editingItem: URLItem? = nil
 
     @AppStorage("showStatusBarIcon") var showStatusBarIcon: Bool = true
@@ -17,7 +17,7 @@ struct URLGuardApp: App {
             .receive(on: DispatchQueue.main)
             .sink { items in
                 let count = items.map { item in
-                    item.history.filter { $0.isUnread && $0.hasNotification }.count
+                    item.history.filter(\.isMarked).count
                 }.reduce(0, +)
 
                 NSApp.dockTile.badgeLabel = count > 0 ? "\(count)" : nil

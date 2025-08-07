@@ -7,15 +7,17 @@ struct URLItemHeader: View {
 
     var body: some View {
         HStack {
-            IconButton(
-                icon: item.isEnabled ? "play.circle.fill" : "pause.circle.fill",
-                color: item.isEnabled ? .green : .orange,
-                helpText: item.isEnabled ? "Pausieren" : "Starten"
-            ) {
+            Button {
                 guard monitor.items.contains(where: { $0.id == item.id }) else { return }
                 monitor.togglePause(for: item)
+            } label: {
+                Image(systemName:  item.isEnabled ? "play.circle.fill" : "pause.circle.fill")
+                .foregroundColor(.secondary)
+                .font(.title2)
             }
-            
+            .buttonStyle(.plain)
+            .help(item.isEnabled ? "Pausieren" : "Starten")
+
             VStack(alignment: .leading, spacing: 4) {
                 // Haupttitel
                 if let title = item.title, !title.isEmpty {
@@ -186,31 +188,31 @@ struct URLItemHeader: View {
         interval: 10,
         isEnabled: true,
         history: [
-            URLItem.HistoryEntry(requestResult: RequestResult(
-                date: Date(),
-                method: "GET",
-                statusCode: 200
-            ),
-            isUnread: true,
-            hasNotification: true),
             URLItem.HistoryEntry(
-                requestResult: RequestResult(
+                requestResult: .init(
+                    date: Date(),
+                    method: "GET",
+                    statusCode: 200
+                ),
+                isMarked: true
+            ),
+            URLItem.HistoryEntry(
+                requestResult: .init(
                     date: Date().addingTimeInterval(-60),
                     method: "GET",
                     statusCode: 200,
                     diffInfo: DiffInfo(totalChangedLines: 5, changedLines: [])
                 ),
-                isUnread: true,
-                hasNotification: false
+                isMarked: false
             ),
             URLItem.HistoryEntry(
-                requestResult: RequestResult(
+                requestResult: .init(
                     date: Date().addingTimeInterval(-120),
                     method: "GET",
                     statusCode: 404,
                     errorDescription: "Not Found"
-                ), isUnread: true,
-                hasNotification: false
+                ),
+                isMarked: false,
             )
         ]
     )
