@@ -37,7 +37,7 @@ struct NotificationSettingsView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            ForEach(URLItem.NotificationType.allCases, id: \.self) { notificationType in
+            ForEach([URLItem.NotificationType.error, .change, .success, .httpCode(0)], id: \.self) { notificationType in
                 if case .httpCode = notificationType {
                     // HTTP-Code mit Picker direkt daneben
                     HStack(spacing: 0) {

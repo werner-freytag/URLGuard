@@ -119,28 +119,64 @@ struct HistoryDetailView: View {
     }
 }
 
-private extension URLItem.HistoryEntry {
+
+extension URLItem.HistoryEntry {
     var statusIconName: String {
         switch requestResult.status {
-        case .success: return "checkmark.circle.fill"
-        case .changed: return "arrow.trianglehead.2.clockwise.rotate.90.circle.fill"
-        case .error: return "exclamationmark.triangle.fill"
+        case .none:
+            return "questionmark.circle.dashed"
+        case .some(.informational):
+            return "info.square.fill"
+        case .some(.success(true)):
+            return "arrow.trianglehead.2.clockwise.rotate.90.circle.fill"
+        case .some(.success):
+            return "checkmark.circle.fill"
+        case .some(.redirection):
+            return "arrowshape.turn.up.forward.circle.fill"
+        case .some(.transferError), .some(.clientError), .some(.serverError):
+            return "exclamationmark.triangle.fill"
         }
     }
     
     var statusTitle: String {
         switch requestResult.status {
-        case .success: return "Erfolgreich"
-        case .changed: return "Geändert"
-        case .error: return "Fehler"
+        case .none:
+            return "Unbekannt"
+        case .some(.transferError):
+            return "Übertragungsfehler"
+        case .some(.clientError):
+            return "Clientfehler"
+        case .some(.serverError):
+            return "Serverfehler"
+        case .some(.informational):
+            return "Information"
+        case .some(.success(true)):
+            return "Inhalt geändert"
+        case .some(.success):
+            return "Erfolgreich"
+        case .some(.redirection):
+            return "Weiterleitung"
         }
     }
-    
+
     var statusColor: Color {
         switch requestResult.status {
-        case .success: return .green
-        case .changed: return .blue
-        case .error: return .red
+        case .none:
+            return .gray
+        case .some(.transferError):
+            return .red
+        case .some(.clientError):
+            return .purple
+        case .some(.serverError):
+            return .pink
+        case .some(.informational):
+            return .teal
+        case .some(.success(true)):
+            return .blue
+        case .some(.success):
+            return .green
+        case .some(.redirection):
+            return .brown
         }
     }
 }

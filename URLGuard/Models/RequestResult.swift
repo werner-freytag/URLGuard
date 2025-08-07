@@ -11,30 +11,40 @@ struct RequestResult: Codable, Equatable {
     let headers: OrderedDictionary<String, String>?
     let diffInfo: DiffInfo?
     
-    enum Status: String, Codable {
-        case success, changed, error
-    }
-
-    /// Status wird automatisch basierend auf den RequestResult-Daten bestimmt
-    var status: Status {
-        // Wenn ein Fehler aufgetreten ist
-        if let errorDescription, !errorDescription.isEmpty {
-            return .error
-        }
-        
-        // Wenn ein HTTP-Status-Code vorhanden ist, aber nicht im Erfolgsbereich liegt
-        if let statusCode,  statusCode >= 400 {
-            return .error
-        }
-        
-        // Wenn Diff-Informationen vorhanden sind, war es eine Änderung
-        if let diffInfo, diffInfo.totalChangedLines != 0 {
-            return .changed
-        }
-        
-        return .success
+    enum Status: Codable, Equatable {
+        case `informational`
+        case success(hasChanges: Bool)
+        case redirection
+        case transferError
+        case clientError
+        case serverError
     }
     
+    var status: Status? {
+        guard let statusCode
+        else {
+            return errorDescription?.isEmpty == false ? .transferError : nil
+        }
+        switch statusCode {
+        case 100...199:
+            return .informational
+        case 200...299:
+            return .success(hasChanges: diffInfo?.changedLines.isEmpty == false)
+        case 300...399:
+            return .redirection
+        case 400...499:
+            return .clientError
+        case 500...599:
+            return .serverError
+        default:
+            return nil
+        }
+    }
+
+    var isSuccessful: Bool {
+        return (100...399).contains(statusCode ?? 0)
+    }
+
     init(date: Date = Date(), method: String, statusCode: Int?, dataSize: Int? = nil, transferDuration: Double? = nil, errorDescription: String? = nil, headers: OrderedDictionary<String, String>? = nil, diffInfo: DiffInfo? = nil) {
         self.date = date
         self.method = method

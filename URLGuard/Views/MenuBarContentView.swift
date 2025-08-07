@@ -43,21 +43,3 @@ struct MenuBarContentView: View {
     }
 }
 
-
-private extension URLItem.HistoryEntry {
-    var statusIconName: String {
-        switch requestResult.status {
-        case .success: return "checkmark.circle.fill"
-        case .changed: return "arrow.trianglehead.2.clockwise.rotate.90.circle.fill"
-        case .error: return "exclamationmark.triangle.fill"
-        }
-    }
-        
-    var statusTitle: String {
-        switch requestResult.status {
-        case .success: return "Erfolgreich"
-        case .changed: return "Geändert"
-        case .error: return "Fehler"
-        }
-    }
-}

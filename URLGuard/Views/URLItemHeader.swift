@@ -141,6 +141,20 @@ struct URLItemHeader: View {
             
             Divider()
             
+            Button("URL kopieren") {
+                #if os(macOS)
+                    let pb = NSPasteboard.general
+                    pb.clearContents()
+                    pb.setString(item.url.absoluteString, forType: .URL)
+                    pb.setString(item.url.absoluteString, forType: .string)
+                #else
+                    UIPasteboard.general.url = item.url.absoluteString
+                    UIPasteboard.general.string = item.url.absoluteString
+                #endif
+            }
+            
+            Divider()
+            
             Button("Löschen") {
                 monitor.remove(item: item)
             }

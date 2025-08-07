@@ -1,5 +1,5 @@
-import SwiftUI
 import Combine
+import SwiftUI
 
 struct URLItemHistory: View {
     let item: URLItem
@@ -7,11 +7,9 @@ struct URLItemHistory: View {
     @State private var scrollToEnd = false
     @State private var selectedEntry: URLItem.HistoryEntry? = nil
     @State private var showingDetailPopover = false
-    
+
     var body: some View {
-
         HStack(alignment: .top, spacing: 12) {
-
             ScrollViewReader { proxy in
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 1) {
@@ -32,9 +30,9 @@ struct URLItemHistory: View {
                     }
                 }
             }
-            
+
             Spacer()
-            
+
             Button(action: {
                 guard monitor.items.contains(where: { $0.id == item.id }) else { return }
                 monitor.resetHistory(for: item)
@@ -55,7 +53,7 @@ struct URLItemHistory: View {
 struct CountdownView: View {
     let item: URLItem
     @ObservedObject var monitor: URLMonitor
-    
+
     var body: some View {
         if item.isEnabled {
             if monitor.isWaiting(for: item.id) {
@@ -87,33 +85,22 @@ struct CountdownView: View {
     }
 }
 
-
-private extension URLItem.HistoryEntry {
-    var statusColor: Color {
-        switch requestResult.status {
-        case .success: return .green
-        case .changed: return .blue
-        case .error: return .red
-        }
-    }
-}
-
 struct HistoryEntryView: View {
     @State var entry: URLItem.HistoryEntry
     @State private var showPopover = false
     @ObservedObject var monitor: URLMonitor
 
     var body: some View {
-                        Button(action: {
-                    showPopover = true
-                    // Mark as read when opened
-                    entry.markAsRead()
-                }) {
+        Button(action: {
+            showPopover = true
+            // Mark as read when opened
+            entry.markAsRead()
+        }) {
             ZStack {
                 RoundedRectangle(cornerRadius: 2)
                     .fill(entry.statusColor)
                     .frame(width: 10, height: 10)
-                
+
                 // Notification-Indikator
                 if entry.hasNotification {
                     Image(systemName: "bell.fill")
@@ -143,17 +130,17 @@ struct HistoryEntryView: View {
 // Hilfsfunktionen für Popover-Größe
 private func calculatePopoverHeight(for entry: RequestResult) -> CGFloat {
     var height: CGFloat = 200 // Basis-Höhe für technische Details
-    
+
     // Zusätzliche Höhe für Diff-Informationen
     if let diffInfo = entry.diffInfo, diffInfo.totalChangedLines > 0 {
         height += 200
     }
-    
+
     // Zusätzliche Höhe für Header
     if let headers = entry.headers, !headers.isEmpty {
         let headerHeight = min(CGFloat(headers.count) * 17, 200)
         height += headerHeight + 50
     }
-    
+
     return height
 }

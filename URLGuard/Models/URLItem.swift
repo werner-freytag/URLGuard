@@ -2,7 +2,7 @@ import Foundation
 import OrderedCollections
 
 struct URLItem: Identifiable, Codable, Equatable {
-    enum NotificationType: Codable, CaseIterable, Hashable {
+    enum NotificationType: Codable, Hashable {
         case error
         case change
         case success
@@ -60,11 +60,6 @@ struct URLItem: Identifiable, Codable, Equatable {
                 try container.encode(code, forKey: .httpCode)
             }
         }
-        
-        // Für CaseIterable - statische Varianten ohne assoziierte Werte
-        static var allCases: [NotificationType] {
-            return [.error, .change, .success, .httpCode(404)] // 404 als Beispiel
-        }
     }
         
     var id: UUID
@@ -109,7 +104,28 @@ struct URLItem: Identifiable, Codable, Equatable {
         self.enabledNotifications = enabledNotifications
     }
     
-    // MARK: - Persistierung ohne Historie
+    var orderedNotifications: [NotificationType] {
+        var orderedNotifications = [URLItem.NotificationType.error, .change, .success].filter(enabledNotifications.contains)
+        orderedNotifications.append(contentsOf: enabledNotifications.filter { if case .httpCode = $0 { return true } else { return false }})
+        return orderedNotifications
+    }
+    
+    func notification(for result: RequestResult) -> URLItem.NotificationType? {
+        return orderedNotifications.first { notification in
+            switch notification {
+            case .httpCode(let notifyCode) where result.statusCode == notifyCode:
+                return true
+            case .error where result.status == .clientError || result.status == .serverError || result.status == .transferError:
+                return true
+            case .change where result.diffInfo?.changedLines.isEmpty == false:
+                return true
+            case .success where result.isSuccessful:
+                return true
+            default:
+                return false
+            }
+        }
+    }
     
     /// Erstellt eine Kopie ohne Historie für die Persistierung
     var withoutHistory: URLItem {

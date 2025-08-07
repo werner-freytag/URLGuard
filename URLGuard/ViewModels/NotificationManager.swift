@@ -41,28 +41,8 @@ class NotificationManager: ObservableObject {
         }
     }
     
-    func notification(for item: URLItem, result: RequestResult) -> URLItem.NotificationType? {
-        
-        if let statusCode = result.statusCode, result.status == .success {
-            for notification in item.enabledNotifications {
-                if case .httpCode(let notifyCode) = notification, statusCode == notifyCode {
-                    return notification
-                }
-            }
-        }
-        
-        switch result.status {
-        case .error:
-            return item.enabledNotifications.contains(.error) ? .error : nil
-        case .changed:
-            return item.enabledNotifications.contains(.change) ? .change : nil
-        case .success:
-            return item.enabledNotifications.contains(.success) ? .success : nil
-        }
-    }
-    
     func notifyIfNeeded(for item: URLItem, result: RequestResult) {
-        guard let notification = notification(for: item, result: result) else { return }
+        guard let notification = item.notification(for: result) else { return }
 
         let title = item.displayTitle
         let body: String = { () in

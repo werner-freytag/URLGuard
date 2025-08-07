@@ -298,7 +298,7 @@ class URLMonitor: ObservableObject {
                 
                 let historyEntry = URLItem.HistoryEntry(
                     requestResult: requestResult,
-                    hasNotification: NotificationManager.shared.notification(for: self.items[currentIndex], result: requestResult) != nil
+                    hasNotification: self.items[currentIndex].notification(for: requestResult) != nil
                 )
                 
                 self.items[currentIndex].history.append(historyEntry)
