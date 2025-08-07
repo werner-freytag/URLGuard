@@ -44,7 +44,7 @@ struct MenuBarContentView: View {
 }
 
 
-private extension URLItem.HistoryEntry {
+private extension RequestResult {
     var statusIconName: String {
         switch status {
         case .success: return "checkmark.circle.fill"

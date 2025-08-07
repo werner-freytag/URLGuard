@@ -288,26 +288,13 @@ class URLMonitor: ObservableObject {
         incrementPendingRequests(for: itemID)
         
         Task {
-            let response = await requestManager.checkURL(for: item)
+            let historyEntry = await requestManager.checkURL(for: item)
             
             await MainActor.run {
                 guard let currentIndex = self.items.firstIndex(where: { $0.id == itemID }) else { return }
                 
                 // Pending Requests Counter verringern
                 self.decrementPendingRequests(for: itemID)
-                
-                // History-Eintrag erstellen
-                let historyEntry = URLItem.HistoryEntry(
-                    date: response.date,
-                    status: response.status,
-                    httpStatusCode: response.httpStatusCode,
-                    httpMethod: response.httpMethod,
-                    diffInfo: response.diffInfo,
-                    responseSize: response.responseSize,
-                    responseTime: response.responseTime,
-                    headers: response.headers,
-                    errorDescription: response.errorDescription
-                )
                 
                 self.items[currentIndex].history.append(historyEntry)
                 

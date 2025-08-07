@@ -1,6 +1,26 @@
 import Foundation
 
 struct DiffInfo: Codable, Equatable {
+    struct ChangedLine: Codable, Equatable {
+        let lineNumber: Int
+        let oldContent: String
+        let newContent: String
+        let changeType: ChangeType
+        
+        enum ChangeType: String, Codable, CaseIterable {
+            case added
+            case removed
+            case modified
+        }
+        
+        init(lineNumber: Int, oldContent: String, newContent: String, changeType: ChangeType) {
+            self.lineNumber = lineNumber
+            self.oldContent = oldContent
+            self.newContent = newContent
+            self.changeType = changeType
+        }
+    }
+
     let totalChangedLines: Int
     let changedLines: [ChangedLine]
     
@@ -43,13 +63,13 @@ struct DiffInfo: Codable, Equatable {
                     changeType = .modified
                 }
                 
-                let changedLine = ChangedLine(
+                let ChangedLine = ChangedLine(
                     lineNumber: i + 1,
                     oldContent: oldLine,
                     newContent: newLine,
                     changeType: changeType
                 )
-                allChanges.append(changedLine)
+                allChanges.append(ChangedLine)
             }
         }
         
@@ -122,25 +142,5 @@ struct DiffInfo: Codable, Equatable {
             newContent: newContent,
             changeType: changeType
         )
-    }
-}
-
-struct ChangedLine: Codable, Equatable {
-    let lineNumber: Int
-    let oldContent: String
-    let newContent: String
-    let changeType: ChangeType
-    
-    enum ChangeType: String, Codable, CaseIterable {
-        case added
-        case removed
-        case modified
-    }
-    
-    init(lineNumber: Int, oldContent: String, newContent: String, changeType: ChangeType) {
-        self.lineNumber = lineNumber
-        self.oldContent = oldContent
-        self.newContent = newContent
-        self.changeType = changeType
     }
 }

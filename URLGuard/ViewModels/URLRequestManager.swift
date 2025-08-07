@@ -6,36 +6,13 @@ private let logger = Logger(subsystem: "de.wfco.URLGuard", category: "Network")
 
 // MARK: - Response Structure
 
-struct URLCheckResponse {
-    let date: Date = .init()
-    let httpMethod: String
-    let responseTime: Double
-    var responseSize: Int?
-    var httpStatusCode: Int?
-    var headers: OrderedDictionary<String, String>?
-    var diffInfo: DiffInfo?
-    var status: URLItem.Status
-    var errorDescription: String?
-
-    init(httpMethod: String, responseTime: Double, responseSize: Int? = nil, httpStatusCode: Int? = nil, headers: OrderedDictionary<String, String>? = nil, diff: String? = nil, diffInfo: DiffInfo? = nil, status: URLItem.Status, error: String? = nil) {
-        self.httpMethod = httpMethod
-        self.responseTime = responseTime
-        self.responseSize = responseSize
-        self.httpStatusCode = httpStatusCode
-        self.headers = headers
-        self.diffInfo = diffInfo
-        self.status = status
-        self.errorDescription = error
-    }
-}
-
 class URLRequestManager {
     private var lastResponses: [UUID: Data] = [:]
     private var lastETags: [UUID: String] = [:]
     
     // MARK: - Public Interface
     
-    func checkURL(for item: URLItem) async -> URLCheckResponse {
+    func checkURL(for item: URLItem) async -> RequestResult {
         // Intelligente HEAD/GET-Strategie
         let hasInitialData = lastResponses[item.id] != nil
         let hasETag = lastETags[item.id] != nil
@@ -134,48 +111,44 @@ class URLRequestManager {
         return true
     }
     
-    private func performHEADRequest(item: URLItem) async -> URLCheckResponse {
+    private func performHEADRequest(item: URLItem) async -> RequestResult {
         let (data, httpResponse, error, responseTime) = await performRequest(for: item, method: "HEAD")
-
+        
         guard let httpResponse = httpResponse as? HTTPURLResponse,
               !hasModifiedData(httpResponse: httpResponse, item: item),
               let data,
               error == nil else {
             return await performGETRequest(item: item)
         }
-
-        return URLCheckResponse(
-            httpMethod: "HEAD",
-            responseTime: responseTime,
-            responseSize: data.count,
-            httpStatusCode: httpResponse.statusCode,
-            headers: extractHeaders(from: httpResponse),
+        
+        return RequestResult(
+            date: Date(),
             status: .success,
+            httpStatusCode: httpResponse.statusCode,
+            httpMethod: "HEAD",
+            responseSize: data.count,
+            responseTime: responseTime,
+            headers: extractHeaders(from: httpResponse)
         )
     }
     
-    private func performGETRequest(item: URLItem) async -> URLCheckResponse {
+    private func performGETRequest(item: URLItem) async -> RequestResult {
         let (data, httpResponse, error, responseTime) = await performRequest(for: item, method: "GET")
         
         guard let httpResponse = httpResponse as? HTTPURLResponse,
               let data,
               error == nil else {
-            return URLCheckResponse(
+            return RequestResult(
+                date: Date(),
+                status: .error,
                 httpMethod: "GET",
                 responseTime: responseTime,
-                status: .error,
-                error: error?.localizedDescription
+                errorDescription: error?.localizedDescription
             )
         }
         
-        var response = URLCheckResponse(
-            httpMethod: "GET",
-            responseTime: responseTime,
-            responseSize: data.count,
-            httpStatusCode: httpResponse.statusCode,
-            headers: extractHeaders(from: httpResponse),
-            status: .success
-        )
+        var status: URLItem.Status = .success
+        var diffInfo: DiffInfo? = nil
         
         if (lastResponses[item.id] == nil) || hasModifiedData(httpResponse: httpResponse, item: item) {
             // lastResponses wird automatisch gesetzt - kein separater Flag nötig
@@ -183,16 +156,24 @@ class URLRequestManager {
                lastData != data,
                let lastContent = String(data: lastData, encoding: .utf8),
                let currentContent = String(data: data, encoding: .utf8) {
-                let diffInfo = DiffInfo(from: lastContent, to: currentContent)
-                response.diffInfo = diffInfo
-                response.status = .changed
+                diffInfo = DiffInfo(from: lastContent, to: currentContent)
+                status = .changed
             }
         }
         
         lastResponses[item.id] = data
         lastETags[item.id] = httpResponse.value(forHTTPHeaderField: "ETag")
 
-        return response
+        return RequestResult(
+            date: Date(),
+            status: status,
+            httpStatusCode: httpResponse.statusCode,
+            httpMethod: "GET",
+            diffInfo: diffInfo,
+            responseSize: data.count,
+            responseTime: responseTime,
+            headers: extractHeaders(from: httpResponse)
+        )
     }
 }
 

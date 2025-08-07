@@ -173,9 +173,9 @@ struct URLItemHeader: View {
         interval: 10,
         isEnabled: true,
         history: [
-            URLItem.HistoryEntry(date: Date(), status: .success, httpStatusCode: 200),
-            URLItem.HistoryEntry(date: Date().addingTimeInterval(-60), status: .changed, httpStatusCode: 200),
-            URLItem.HistoryEntry(date: Date().addingTimeInterval(-120), status: .error, httpStatusCode: 404)
+            RequestResult(date: Date(), status: .success, httpStatusCode: 200),
+            RequestResult(date: Date().addingTimeInterval(-60), status: .changed, httpStatusCode: 200),
+            RequestResult(date: Date().addingTimeInterval(-120), status: .error, httpStatusCode: 404)
         ]
     )
     URLItemHeader(item: item, monitor: monitor, onEdit: {})

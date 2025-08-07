@@ -40,7 +40,7 @@ class NotificationManager: ObservableObject {
         }
     }
     
-    func notification(for item: URLItem, entry: URLItem.HistoryEntry) -> URLItem.NotificationType? {
+    func notification(for item: URLItem, entry: RequestResult) -> URLItem.NotificationType? {
         // Prüfe zuerst HTTP-Code-Benachrichtigung (nur bei erfolgreichen Requests)
         if let httpCode = entry.httpStatusCode, entry.status == .success {
             for notification in item.enabledNotifications {
@@ -61,7 +61,7 @@ class NotificationManager: ObservableObject {
         }
     }
     
-    func notifyIfNeeded(for item: URLItem, entry: URLItem.HistoryEntry) {
+    func notifyIfNeeded(for item: URLItem, entry: RequestResult) {
         guard let notification = notification(for: item, entry: entry) else { return }
 
         let title = item.displayTitle

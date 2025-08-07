@@ -5,7 +5,7 @@ struct URLItemHistory: View {
     let item: URLItem
     let monitor: URLMonitor
     @State private var scrollToEnd = false
-    @State private var selectedEntry: URLItem.HistoryEntry? = nil
+    @State private var selectedEntry: RequestResult? = nil
     @State private var showingDetailPopover = false
     
     var body: some View {
@@ -88,7 +88,7 @@ struct CountdownView: View {
 }
 
 
-private extension URLItem.HistoryEntry {
+private extension RequestResult {
     var statusColor: Color {
         switch status {
         case .success: return .green
@@ -99,7 +99,7 @@ private extension URLItem.HistoryEntry {
 }
 
 struct HistoryEntryView: View {
-    @State var entry: URLItem.HistoryEntry
+    @State var entry: RequestResult
     @State private var showPopover = false
 
     var body: some View {
@@ -128,7 +128,7 @@ struct HistoryEntryView: View {
 }
 
 // Hilfsfunktionen für Popover-Größe
-private func calculatePopoverHeight(for entry: URLItem.HistoryEntry) -> CGFloat {
+private func calculatePopoverHeight(for entry: RequestResult) -> CGFloat {
     var height: CGFloat = 200 // Basis-Höhe für technische Details
     
     // Zusätzliche Höhe für Diff-Informationen
@@ -144,4 +144,3 @@ private func calculatePopoverHeight(for entry: URLItem.HistoryEntry) -> CGFloat 
     
     return height
 }
-

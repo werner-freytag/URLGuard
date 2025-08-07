@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct HistoryDetailView: View {
-    let entry: URLItem.HistoryEntry
+    let entry: RequestResult
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -119,7 +119,7 @@ struct HistoryDetailView: View {
     }
 }
 
-private extension URLItem.HistoryEntry {
+private extension RequestResult {
     var statusIconName: String {
         switch status {
         case .success: return "checkmark.circle.fill"
@@ -204,7 +204,7 @@ struct HeaderRow: View {
 }
 
 #Preview("HistoryDetailView - Erfolg") {
-    let successEntry = URLItem.HistoryEntry(
+    let successEntry = RequestResult(
         date: Date(),
         status: .success,
         httpStatusCode: 200,
@@ -212,37 +212,37 @@ struct HeaderRow: View {
         responseTime: 0.85
     )
     
-    return HistoryDetailView(entry: successEntry)
+    HistoryDetailView(entry: successEntry)
         .frame(width: 400, height: 300)
 }
 
 #Preview("HistoryDetailView - Änderung") {
     let changedLines = [
-        ChangedLine(
+        DiffInfo.ChangedLine(
             lineNumber: 1,
             oldContent: "<title>Alte Seite</title>",
             newContent: "<title>Neue Seite</title>",
             changeType: .modified
         ),
-        ChangedLine(
+        DiffInfo.ChangedLine(
             lineNumber: 2,
             oldContent: "<meta name=\"description\" content=\"Alte Beschreibung\">",
             newContent: "<meta name=\"description\" content=\"Neue Beschreibung\">",
             changeType: .modified
         ),
-        ChangedLine(
+        DiffInfo.ChangedLine(
             lineNumber: 3,
             oldContent: "<div class=\"old-content\">",
             newContent: "<div class=\"new-content\">",
             changeType: .modified
         ),
-        ChangedLine(
+        DiffInfo.ChangedLine(
             lineNumber: 5,
             oldContent: "  <p>Entfernter Text</p>",
             newContent: "",
             changeType: .removed
         ),
-        ChangedLine(
+        DiffInfo.ChangedLine(
             lineNumber: 6,
             oldContent: "",
             newContent: "  <p>Hinzugefügter Text</p>",
@@ -255,7 +255,7 @@ struct HeaderRow: View {
         changedLines: changedLines
     )
     
-    let changedEntry = URLItem.HistoryEntry(
+    let changedEntry = RequestResult(
         date: Date().addingTimeInterval(-300),
         status: .changed,
         httpStatusCode: 200,
@@ -269,7 +269,7 @@ struct HeaderRow: View {
 }
 
 #Preview("HistoryDetailView - Fehler") {
-    let errorEntry = URLItem.HistoryEntry(
+    let errorEntry = RequestResult(
         date: Date().addingTimeInterval(-600),
         status: .error
     )
@@ -281,7 +281,7 @@ struct HeaderRow: View {
 #Preview("HistoryDetailView - Alle Szenarien") {
     VStack(spacing: 20) {
         // Erfolg
-        let successEntry = URLItem.HistoryEntry(
+        let successEntry = RequestResult(
             date: Date(),
             status: .success,
             httpStatusCode: 200,
@@ -291,13 +291,13 @@ struct HeaderRow: View {
         
         // Änderung
         let changedLines = [
-            ChangedLine(
+            DiffInfo.ChangedLine(
                 lineNumber: 1,
                 oldContent: "<title>Alte Seite</title>",
                 newContent: "<title>Neue Seite</title>",
                 changeType: .modified
             ),
-            ChangedLine(
+            DiffInfo.ChangedLine(
                 lineNumber: 2,
                 oldContent: "<meta name=\"description\" content=\"Alte Beschreibung\">",
                 newContent: "<meta name=\"description\" content=\"Neue Beschreibung\">",
@@ -310,7 +310,7 @@ struct HeaderRow: View {
             changedLines: changedLines
         )
         
-        let changedEntry = URLItem.HistoryEntry(
+        let changedEntry = RequestResult(
             date: Date().addingTimeInterval(-300),
             status: .changed,
             httpStatusCode: 200,
@@ -320,7 +320,7 @@ struct HeaderRow: View {
         )
         
         // Fehler
-        let errorEntry = URLItem.HistoryEntry(
+        let errorEntry = RequestResult(
             date: Date().addingTimeInterval(-600),
             status: .error,
             httpStatusCode: 404,
@@ -366,7 +366,7 @@ struct HeaderRow: View {
 // MARK: - Helper Views
 
 struct ChangedLineView: View {
-    let changedLine: ChangedLine
+    let changedLine: DiffInfo.ChangedLine
     
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
