@@ -91,8 +91,8 @@ class URLRequestManager {
         
         return await withCheckedContinuation { continuation in
             session.dataTask(with: request) { data, response, error in
-                let responseTime = Date().timeIntervalSince(startTime)
-                continuation.resume(returning: (data, response, error, responseTime))
+                let transferDuration = Date().timeIntervalSince(startTime)
+                continuation.resume(returning: (data, response, error, transferDuration))
             }.resume()
         }
     }
@@ -112,7 +112,7 @@ class URLRequestManager {
     }
     
     private func performHEADRequest(item: URLItem) async -> RequestResult {
-        let (data, httpResponse, error, responseTime) = await performRequest(for: item, method: "HEAD")
+        let (data, httpResponse, error, transferDuration) = await performRequest(for: item, method: "HEAD")
         
         guard let httpResponse = httpResponse as? HTTPURLResponse,
               !hasModifiedData(httpResponse: httpResponse, item: item),
@@ -122,32 +122,28 @@ class URLRequestManager {
         }
         
         return RequestResult(
-            date: Date(),
-            status: .success,
-            httpStatusCode: httpResponse.statusCode,
-            httpMethod: "HEAD",
-            responseSize: data.count,
-            responseTime: responseTime,
+            method: "HEAD",
+            statusCode: httpResponse.statusCode,
+            dataSize: data.count,
+            transferDuration: transferDuration,
             headers: extractHeaders(from: httpResponse)
         )
     }
     
     private func performGETRequest(item: URLItem) async -> RequestResult {
-        let (data, httpResponse, error, responseTime) = await performRequest(for: item, method: "GET")
+        let (data, httpResponse, error, transferDuration) = await performRequest(for: item, method: "GET")
         
         guard let httpResponse = httpResponse as? HTTPURLResponse,
               let data,
               error == nil else {
             return RequestResult(
-                date: Date(),
-                status: .error,
-                httpMethod: "GET",
-                responseTime: responseTime,
+                method: "GET",
+                statusCode: nil,
+                transferDuration: transferDuration,
                 errorDescription: error?.localizedDescription
             )
         }
         
-        var status: URLItem.Status = .success
         var diffInfo: DiffInfo? = nil
         
         if (lastResponses[item.id] == nil) || hasModifiedData(httpResponse: httpResponse, item: item) {
@@ -157,7 +153,6 @@ class URLRequestManager {
                let lastContent = String(data: lastData, encoding: .utf8),
                let currentContent = String(data: data, encoding: .utf8) {
                 diffInfo = DiffInfo(from: lastContent, to: currentContent)
-                status = .changed
             }
         }
         
@@ -165,14 +160,12 @@ class URLRequestManager {
         lastETags[item.id] = httpResponse.value(forHTTPHeaderField: "ETag")
 
         return RequestResult(
-            date: Date(),
-            status: status,
-            httpStatusCode: httpResponse.statusCode,
-            httpMethod: "GET",
+            method: "HEAD",
+            statusCode: httpResponse.statusCode,
+            dataSize: data.count,
+            transferDuration: transferDuration,
+            headers: extractHeaders(from: httpResponse),
             diffInfo: diffInfo,
-            responseSize: data.count,
-            responseTime: responseTime,
-            headers: extractHeaders(from: httpResponse)
         )
     }
 }

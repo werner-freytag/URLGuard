@@ -2,10 +2,6 @@ import Foundation
 import OrderedCollections
 
 struct URLItem: Identifiable, Codable, Equatable {
-    enum Status: String, Codable {
-        case success, changed, error
-    }
-    
     enum NotificationType: Codable, CaseIterable, Hashable {
         case error
         case change
@@ -76,10 +72,34 @@ struct URLItem: Identifiable, Codable, Equatable {
     var title: String?
     var interval: Double
     var isEnabled: Bool
-    var history: [RequestResult]
+    var history: [HistoryEntry]
     var enabledNotifications: Set<NotificationType>
     
-    init(id: UUID = UUID(), url: URL = URL(string: "https://")!, title: String? = nil, interval: Double = 10, isEnabled: Bool = true, history: [RequestResult] = [], enabledNotifications: Set<NotificationType> = []) {
+    struct HistoryEntry: Codable, Equatable, Identifiable {
+        let id: UUID
+        let requestResult: RequestResult
+        var isUnread: Bool
+        var hasNotification: Bool
+        
+        init(id: UUID = UUID(), requestResult: RequestResult, isUnread: Bool = true, hasNotification: Bool = false) {
+            self.id = id
+            self.requestResult = requestResult
+            self.isUnread = isUnread
+            self.hasNotification = hasNotification
+        }
+        
+        /// Markiert das Entry als gelesen
+        mutating func markAsRead() {
+            isUnread = false
+        }
+        
+        /// Markiert das Entry als ungelesen
+        mutating func markAsUnread() {
+            isUnread = true
+        }
+    }
+    
+    init(id: UUID = UUID(), url: URL = URL(string: "https://")!, title: String? = nil, interval: Double = 10, isEnabled: Bool = true, history: [HistoryEntry] = [], enabledNotifications: Set<NotificationType> = []) {
         self.id = id
         self.url = url
         self.title = title

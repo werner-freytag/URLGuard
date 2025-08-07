@@ -5,7 +5,7 @@ struct URLItemHistory: View {
     let item: URLItem
     let monitor: URLMonitor
     @State private var scrollToEnd = false
-    @State private var selectedEntry: RequestResult? = nil
+    @State private var selectedEntry: URLItem.HistoryEntry? = nil
     @State private var showingDetailPopover = false
     
     var body: some View {
@@ -16,7 +16,7 @@ struct URLItemHistory: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 1) {
                         ForEach(item.history) { entry in
-                            HistoryEntryView(entry: entry)
+                            HistoryEntryView(entry: entry, monitor: monitor)
                         }
 
                         CountdownView(item: item, monitor: monitor)
@@ -88,9 +88,9 @@ struct CountdownView: View {
 }
 
 
-private extension RequestResult {
+private extension URLItem.HistoryEntry {
     var statusColor: Color {
-        switch status {
+        switch requestResult.status {
         case .success: return .green
         case .changed: return .blue
         case .error: return .red
@@ -99,21 +99,34 @@ private extension RequestResult {
 }
 
 struct HistoryEntryView: View {
-    @State var entry: RequestResult
+    @State var entry: URLItem.HistoryEntry
     @State private var showPopover = false
+    @ObservedObject var monitor: URLMonitor
 
     var body: some View {
-        Button(action: {
-            showPopover = true
-        }) {
-            RoundedRectangle(cornerRadius: 2)
-                .fill(entry.statusColor)
-                .frame(width: 10, height: 10)
+                        Button(action: {
+                    showPopover = true
+                    // Mark as read when opened
+                    entry.markAsRead()
+                }) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(entry.statusColor)
+                    .frame(width: 10, height: 10)
+                
+                // Notification-Indikator
+                if entry.hasNotification {
+                    Image(systemName: "bell.fill")
+                        .font(.system(size: 6))
+                        .foregroundColor(.white)
+                        .offset(x: 3, y: -3)
+                }
+            }
         }
         .buttonStyle(.plain)
         .popover(isPresented: $showPopover, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom) {
             HistoryDetailView(entry: entry)
-                .frame(width: 400, height: calculatePopoverHeight(for: entry))
+                .frame(width: 400, height: calculatePopoverHeight(for: entry.requestResult))
                 .presentationBackground(Color(.controlBackgroundColor))
                 .presentationCornerRadius(0)
         }
@@ -132,7 +145,7 @@ private func calculatePopoverHeight(for entry: RequestResult) -> CGFloat {
     var height: CGFloat = 200 // Basis-Höhe für technische Details
     
     // Zusätzliche Höhe für Diff-Informationen
-    if entry.status == .changed {
+    if let diffInfo = entry.diffInfo, diffInfo.totalChangedLines > 0 {
         height += 200
     }
     

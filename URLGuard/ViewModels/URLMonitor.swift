@@ -288,7 +288,7 @@ class URLMonitor: ObservableObject {
         incrementPendingRequests(for: itemID)
         
         Task {
-            let historyEntry = await requestManager.checkURL(for: item)
+            let requestResult = await requestManager.checkURL(for: item)
             
             await MainActor.run {
                 guard let currentIndex = self.items.firstIndex(where: { $0.id == itemID }) else { return }
@@ -296,16 +296,16 @@ class URLMonitor: ObservableObject {
                 // Pending Requests Counter verringern
                 self.decrementPendingRequests(for: itemID)
                 
+                let historyEntry = URLItem.HistoryEntry(
+                    requestResult: requestResult,
+                    hasNotification: NotificationManager.shared.notification(for: self.items[currentIndex], result: requestResult) != nil
+                )
+                
                 self.items[currentIndex].history.append(historyEntry)
-                
-                let limit = maxHistoryItems.clamped(to: 1...1000)
-                
-                if self.items[currentIndex].history.count > limit {
-                    self.items[currentIndex].history.removeFirst()
-                }
+                self.items[currentIndex].history.removeFirst(max(0, self.items[currentIndex].history.count - maxHistoryItems))
                 
                 // Notification senden
-                NotificationManager.shared.notifyIfNeeded(for: self.items[currentIndex], entry: historyEntry)
+                NotificationManager.shared.notifyIfNeeded(for: self.items[currentIndex], result: requestResult)
             }
         }
     }

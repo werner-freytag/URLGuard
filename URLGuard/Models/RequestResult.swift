@@ -1,30 +1,48 @@
 import Foundation
 import OrderedCollections
 
-struct RequestResult: Codable, Equatable, Identifiable {
-    let id: UUID
+struct RequestResult: Codable, Equatable {
     let date: Date
-    let status: URLItem.Status
-    let httpStatusCode: Int?
-    let httpMethod: String?
-    let diffInfo: DiffInfo?
-    let responseSize: Int?
-    let responseTime: Double?
+    let method: String
+    let statusCode: Int?
+    let dataSize: Int?
+    let transferDuration: Double?
     let errorDescription: String?
+    let headers: OrderedDictionary<String, String>?
+    let diffInfo: DiffInfo?
     
-    // HTTP-Header Informationen
-    let headers: OrderedDictionary<String, String>? // Alle HTTP-Header als geordnetes Dictionary
+    enum Status: String, Codable {
+        case success, changed, error
+    }
+
+    /// Status wird automatisch basierend auf den RequestResult-Daten bestimmt
+    var status: Status {
+        // Wenn ein Fehler aufgetreten ist
+        if let errorDescription, !errorDescription.isEmpty {
+            return .error
+        }
+        
+        // Wenn ein HTTP-Status-Code vorhanden ist, aber nicht im Erfolgsbereich liegt
+        if let statusCode,  statusCode >= 400 {
+            return .error
+        }
+        
+        // Wenn Diff-Informationen vorhanden sind, war es eine Änderung
+        if let diffInfo, diffInfo.totalChangedLines != 0 {
+            return .changed
+        }
+        
+        return .success
+    }
     
-    init(id: UUID = UUID(), date: Date, status: URLItem.Status, httpStatusCode: Int? = nil, httpMethod: String? = nil, diffInfo: DiffInfo? = nil, responseSize: Int? = nil, responseTime: Double? = nil, headers: OrderedDictionary<String, String>? = nil, errorDescription: String? = nil) {
-        self.id = id
+    init(date: Date = Date(), method: String, statusCode: Int?, dataSize: Int? = nil, transferDuration: Double? = nil, errorDescription: String? = nil, headers: OrderedDictionary<String, String>? = nil, diffInfo: DiffInfo? = nil) {
         self.date = date
-        self.status = status
-        self.httpStatusCode = httpStatusCode
-        self.httpMethod = httpMethod
-        self.diffInfo = diffInfo
-        self.responseSize = responseSize
-        self.responseTime = responseTime
-        self.headers = headers
+        self.method = method
+        self.statusCode = statusCode
+        self.dataSize = dataSize
+        self.transferDuration = transferDuration
         self.errorDescription = errorDescription
+        self.headers = headers
+        self.diffInfo = diffInfo
     }
 }

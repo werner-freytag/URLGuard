@@ -28,8 +28,8 @@ struct MenuBarContentView: View {
                     if let entry {
                         Text([
                             entry.statusTitle ,
-                            entry.httpStatusCode != nil ? "Code \(entry.httpStatusCode!)" : "",
-                            entry.date.formatted(date: .numeric, time: .standard)
+                            entry.requestResult.statusCode != nil ? "Code \(entry.requestResult.statusCode!)" : "",
+                            entry.requestResult.date.formatted(date: .numeric, time: .standard)
                         ].filter { !$0.isEmpty }.joined(separator: " • "))
                     }
                 }
@@ -44,9 +44,9 @@ struct MenuBarContentView: View {
 }
 
 
-private extension RequestResult {
+private extension URLItem.HistoryEntry {
     var statusIconName: String {
-        switch status {
+        switch requestResult.status {
         case .success: return "checkmark.circle.fill"
         case .changed: return "arrow.trianglehead.2.clockwise.rotate.90.circle.fill"
         case .error: return "exclamationmark.triangle.fill"
@@ -54,7 +54,7 @@ private extension RequestResult {
     }
         
     var statusTitle: String {
-        switch status {
+        switch requestResult.status {
         case .success: return "Erfolgreich"
         case .changed: return "Geändert"
         case .error: return "Fehler"

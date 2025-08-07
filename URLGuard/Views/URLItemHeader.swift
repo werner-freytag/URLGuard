@@ -10,7 +10,7 @@ struct URLItemHeader: View {
             IconButton(
                 icon: item.isEnabled ? "play.circle.fill" : "pause.circle.fill",
                 color: item.isEnabled ? .green : .orange,
-                helpText: item.isEnabled ? "Pausieren" : "Starten",
+                helpText: item.isEnabled ? "Pausieren" : "Starten"
             ) {
                 guard monitor.items.contains(where: { $0.id == item.id }) else { return }
                 monitor.togglePause(for: item)
@@ -90,7 +90,7 @@ struct URLItemHeader: View {
                     ActionButton(
                         icon: "pencil",
                         title: "Bearbeiten",
-                        color: .blue,
+                        color: .blue
                     ) {
                         onEdit()
                     }
@@ -98,7 +98,7 @@ struct URLItemHeader: View {
                     ActionButton(
                         icon: "plus.square.on.square",
                         title: "Duplizieren",
-                        color: .secondary,
+                        color: .secondary
                     ) {
                         guard monitor.items.contains(where: { $0.id == item.id }) else { return }
                         monitor.duplicate(item: item)
@@ -107,7 +107,7 @@ struct URLItemHeader: View {
                     ActionButton(
                         icon: "trash",
                         title: "Löschen",
-                        color: .red,
+                        color: .red
                     ) {
                         guard monitor.items.contains(where: { $0.id == item.id }) else { return }
                         monitor.remove(item: item)
@@ -163,7 +163,6 @@ struct URLItemHeader: View {
         }
         return types.joined(separator: ", ")
     }
-
 }
 
 #Preview {
@@ -173,12 +172,34 @@ struct URLItemHeader: View {
         interval: 10,
         isEnabled: true,
         history: [
-            RequestResult(date: Date(), status: .success, httpStatusCode: 200),
-            RequestResult(date: Date().addingTimeInterval(-60), status: .changed, httpStatusCode: 200),
-            RequestResult(date: Date().addingTimeInterval(-120), status: .error, httpStatusCode: 404)
+            URLItem.HistoryEntry(requestResult: RequestResult(
+                date: Date(),
+                method: "GET",
+                statusCode: 200
+            ),
+            isUnread: true,
+            hasNotification: true),
+            URLItem.HistoryEntry(
+                requestResult: RequestResult(
+                    date: Date().addingTimeInterval(-60),
+                    method: "GET",
+                    statusCode: 200,
+                    diffInfo: DiffInfo(totalChangedLines: 5, changedLines: [])
+                ),
+                isUnread: true,
+                hasNotification: false
+            ),
+            URLItem.HistoryEntry(
+                requestResult: RequestResult(
+                    date: Date().addingTimeInterval(-120),
+                    method: "GET",
+                    statusCode: 404,
+                    errorDescription: "Not Found"
+                ), isUnread: true,
+                hasNotification: false
+            )
         ]
     )
     URLItemHeader(item: item, monitor: monitor, onEdit: {})
         .frame(width: 600)
 }
-

@@ -1,5 +1,6 @@
 import Foundation
 import UserNotifications
+import AppKit
 
 class NotificationManager: ObservableObject {
     static let shared = NotificationManager()
@@ -40,18 +41,17 @@ class NotificationManager: ObservableObject {
         }
     }
     
-    func notification(for item: URLItem, entry: RequestResult) -> URLItem.NotificationType? {
-        // Prüfe zuerst HTTP-Code-Benachrichtigung (nur bei erfolgreichen Requests)
-        if let httpCode = entry.httpStatusCode, entry.status == .success {
+    func notification(for item: URLItem, result: RequestResult) -> URLItem.NotificationType? {
+        
+        if let statusCode = result.statusCode, result.status == .success {
             for notification in item.enabledNotifications {
-                if case .httpCode(let notifyCode) = notification, httpCode == notifyCode {
+                if case .httpCode(let notifyCode) = notification, statusCode == notifyCode {
                     return notification
                 }
             }
         }
         
-        // Dann prüfe Status-basierte Benachrichtigungen
-        switch entry.status {
+        switch result.status {
         case .error:
             return item.enabledNotifications.contains(.error) ? .error : nil
         case .changed:
@@ -61,8 +61,8 @@ class NotificationManager: ObservableObject {
         }
     }
     
-    func notifyIfNeeded(for item: URLItem, entry: RequestResult) {
-        guard let notification = notification(for: item, entry: entry) else { return }
+    func notifyIfNeeded(for item: URLItem, result: RequestResult) {
+        guard let notification = notification(for: item, result: result) else { return }
 
         let title = item.displayTitle
         let body: String = { () in

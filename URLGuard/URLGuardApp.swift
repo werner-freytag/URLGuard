@@ -13,13 +13,11 @@ struct URLGuardApp: App {
     private var dockBadgeCancellable: AnyCancellable?
     
     init() {
-        let notificationManager = NotificationManager.shared
-        
         dockBadgeCancellable = monitor.$items
             .receive(on: DispatchQueue.main)
             .sink { items in
                 let count = items.map { item in
-                    item.history.filter { notificationManager.notification(for: item, entry: $0) != nil }.count
+                    item.history.filter { $0.isUnread && $0.hasNotification }.count
                 }.reduce(0, +)
 
                 NSApp.dockTile.badgeLabel = count > 0 ? "\(count)" : nil
