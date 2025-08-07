@@ -274,6 +274,25 @@ class URLMonitor: ObservableObject {
         }
     }
     
+    func markAllAsRead(for item: URLItem) {
+        guard let itemIndex = items.firstIndex(where: { $0.id == item.id }) else { return }
+        
+        items[itemIndex].history.enumerated().forEach { offset, element in
+            items[itemIndex].history[offset].markAsRead()
+        }
+        
+        save()
+    }
+    
+    func markAsRead(for item: URLItem, entryId: UUID) {
+        guard let itemIndex = items.firstIndex(where: { $0.id == item.id }),
+              let entryIndex = items[itemIndex].history.firstIndex(where: { $0.id == entryId })
+        else { return }
+        
+        items[itemIndex].history[entryIndex].markAsRead()
+        save()
+    }
+    
     func moveItems(from source: IndexSet, to destination: Int) {
         items.move(fromOffsets: source, toOffset: destination)
         save()

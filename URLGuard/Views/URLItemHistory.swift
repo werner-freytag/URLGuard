@@ -13,8 +13,8 @@ struct URLItemHistory: View {
             ScrollViewReader { proxy in
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 1) {
-                        ForEach(item.history) { entry in
-                            HistoryEntryView(entry: entry, monitor: monitor)
+                        ForEach(Array(item.history.enumerated()), id: \.element.id) { index, entry in
+                            HistoryEntryView(entryIndex: index, monitor: monitor, item: item)
                         }
 
                         CountdownView(item: item, monitor: monitor)
@@ -33,20 +33,34 @@ struct URLItemHistory: View {
 
             Spacer()
 
-            Button(action: {
-                guard monitor.items.contains(where: { $0.id == item.id }) else { return }
-                monitor.resetHistory(for: item)
-            }) {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.caption)
-                    .foregroundStyle(.gray)
-                    .opacity(0.5)
+            let unreadCount = item.history.filter { $0.isUnread && $0.hasNotification }.count
+
+            if unreadCount > 0 {
+                Button(action: {
+                    guard monitor.items.contains(where: { $0.id == item.id }) else { return }
+                    monitor.markAllAsRead(for: item)
+                }) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.red)
+                            .frame(width: 16, height: 16)
+
+                        Text("\(unreadCount)")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.white)
+                    }
+                }
+                .buttonStyle(PlainButtonStyle())
+                .help("Alle als gelesen markieren")
+            } else {
+                Rectangle()
+                    .fill(Color.clear)
+                    .frame(height: 16)
             }
-            .buttonStyle(PlainButtonStyle())
-            .help("Historie leeren")
         }
-        .padding(16)
-        .opacity(item.isEnabled ? 1.0 : 0.5)
+        .frame(height: 24)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
     }
 }
 
@@ -85,62 +99,9 @@ struct CountdownView: View {
     }
 }
 
-struct HistoryEntryView: View {
-    @State var entry: URLItem.HistoryEntry
-    @State private var showPopover = false
-    @ObservedObject var monitor: URLMonitor
-
-    var body: some View {
-        Button(action: {
-            showPopover = true
-            // Mark as read when opened
-            entry.markAsRead()
-        }) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(entry.statusColor)
-                    .frame(width: 10, height: 10)
-
-                // Notification-Indikator
-                if entry.hasNotification {
-                    Image(systemName: "bell.fill")
-                        .font(.system(size: 6))
-                        .foregroundColor(.white)
-                        .offset(x: 3, y: -3)
-                }
-            }
-        }
-        .buttonStyle(.plain)
-        .popover(isPresented: $showPopover, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom) {
-            HistoryDetailView(entry: entry)
-                .frame(width: 400, height: calculatePopoverHeight(for: entry.requestResult))
-                .presentationBackground(Color(.controlBackgroundColor))
-                .presentationCornerRadius(0)
-        }
-    }
-}
-
 #Preview {
     let monitor = URLMonitor()
     let item = URLItem(url: URL(string: "https://example.com")!, interval: 10)
     URLItemHistory(item: item, monitor: monitor)
         .frame(width: 600, height: 200)
-}
-
-// Hilfsfunktionen für Popover-Größe
-private func calculatePopoverHeight(for entry: RequestResult) -> CGFloat {
-    var height: CGFloat = 200 // Basis-Höhe für technische Details
-
-    // Zusätzliche Höhe für Diff-Informationen
-    if let diffInfo = entry.diffInfo, diffInfo.totalChangedLines > 0 {
-        height += 200
-    }
-
-    // Zusätzliche Höhe für Header
-    if let headers = entry.headers, !headers.isEmpty {
-        let headerHeight = min(CGFloat(headers.count) * 17, 200)
-        height += headerHeight + 50
-    }
-
-    return height
 }

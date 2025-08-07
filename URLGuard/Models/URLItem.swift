@@ -73,8 +73,8 @@ struct URLItem: Identifiable, Codable, Equatable {
     struct HistoryEntry: Codable, Equatable, Identifiable {
         let id: UUID
         let requestResult: RequestResult
+        let hasNotification: Bool
         var isUnread: Bool
-        var hasNotification: Bool
         
         init(id: UUID = UUID(), requestResult: RequestResult, isUnread: Bool = true, hasNotification: Bool = false) {
             self.id = id
@@ -86,11 +86,6 @@ struct URLItem: Identifiable, Codable, Equatable {
         /// Markiert das Entry als gelesen
         mutating func markAsRead() {
             isUnread = false
-        }
-        
-        /// Markiert das Entry als ungelesen
-        mutating func markAsUnread() {
-            isUnread = true
         }
     }
     
