@@ -296,53 +296,6 @@ class URLMonitor: ObservableObject {
         save()
     }
     
-    /// Intelligente History-Größenverwaltung: Entfernt zuerst Einträge ohne Notifications
-    private func manageHistorySize(for item: URLItem) {
-        guard let itemIndex = items.firstIndex(where: { $0.id == item.id }) else {
-            assertionFailure()
-            return
-        }
-        
-        var history = items[itemIndex].history
-        
-        while history.numberOfEntries > maxHistoryItems {
-            history = {
-                if maxHistoryItems == 0 {
-                    return []
-                }
-                
-                if maxHistoryItems == 1 {
-                    return history.suffix(1)
-                }
-                
-                if maxHistoryItems == 2 {
-                    return [.gap] + history.suffix(1)
-                }
-                
-                let indexToRemove: Int = {
-                    // Erster nicht-markierter Eintrag
-                    let indexToRemove = history.firstIndex { if case .requestResult(_, _, let isMarked) = $0 { return !isMarked }; return false }
-                    
-                    if let indexToRemove, indexToRemove < history.count - 1  {
-                        return indexToRemove
-                    }
-                    
-                    return history.firstIndex { if case .requestResult = $0 { return true }; return false }!
-                }()
-                
-                let insertGap = indexToRemove == 0 || history[indexToRemove - 1] != .gap
-                let removeLength = 1 + (indexToRemove < history.count - 1 && history[indexToRemove + 1] == .gap ? 1 : 0)
-                
-                return history[..<indexToRemove] + (insertGap ? [.gap] : []) + history[(indexToRemove + removeLength)...]
-            }()
-        }
-        
-        // Ersetze die History mit der neuen Liste
-        items[itemIndex].history = history
-        
-        save()
-    }
-    
     func moveItems(from source: IndexSet, to destination: Int) {
         items.move(fromOffsets: source, toOffset: destination)
         save()
@@ -363,16 +316,17 @@ class URLMonitor: ObservableObject {
                 self.decrementPendingRequests(for: item.id)
                 
                 let isMarked = self.items[currentIndex].notification(for: requestResult) != nil
-                let historyEntry = HistoryEntry.requestResult( 
+                let historyEntry = HistoryEntry.requestResult(
                     requestResult: requestResult,
                     isMarked: isMarked
                 )
                 
                 self.items[currentIndex].history.append(historyEntry)
-                self.manageHistorySize(for: self.items[currentIndex])
+                self.items[currentIndex].history = self.items[currentIndex].history.reducedToMaxSize(self.maxHistoryItems)
+                save()
                 
                 // Notification senden
-                NotificationManager.shared.notifyIfNeeded(for: self.items[currentIndex], result: requestResult)
+                NotificationManager.shared.notifyIfNeeded(for: item, result: requestResult)
             }
         }
     }
@@ -416,6 +370,91 @@ private extension HistoryEntry {
 private extension [HistoryEntry] {
     var numberOfEntries: Int {
         filter { if case .requestResult = $0 { return true }; return false }.count
+    }
+    
+    /// Reduziert die History auf die maximale Größe in einem Schritt
+    func reducedToMaxSize(_ maxSize: Int) -> [HistoryEntry] {
+        let currentEntryCount = numberOfEntries
+        
+        guard currentEntryCount > maxSize else {
+            return self
+        }
+        
+        let count = currentEntryCount - maxSize
+        
+        // Spezialfälle für kleine maxSize Werte
+        switch maxSize {
+        case 0:
+            return []
+        case 1:
+            return suffix(1)
+        case 2:
+            return [.gap] + suffix(1)
+        default:
+            break
+        }
+        
+        // Sammle alle nicht-markierten Indizes
+        let unmarkedIndices: [Int] = enumerated().compactMap { index, entry in
+            if case .requestResult(_, _, let isMarked) = entry, !isMarked {
+                return index
+            }
+            return nil
+        }
+        
+        // Entferne zuerst nicht-markierte Einträge
+        var indicesToRemove = Array<Int>(unmarkedIndices.prefix(count))
+        
+        // Falls nicht genug nicht-markierte Einträge vorhanden, fülle mit markierten auf
+        if indicesToRemove.count < count {
+            let remainingCount = count - indicesToRemove.count
+            let markedIndices: [Int] = enumerated().compactMap { index, entry in
+                if case .requestResult(_, _, let isMarked) = entry, isMarked {
+                    return index
+                }
+                return nil
+            }
+            let additionalIndices = Array<Int>(markedIndices.prefix(remainingCount))
+            indicesToRemove = (indicesToRemove + additionalIndices).sorted()
+        }
+        
+        return removeEntriesAtIndices(Array<Int>(indicesToRemove))
+    }
+    
+    /// Entfernt Einträge an mehreren Indizes und fügt Lücken hinzu
+    private func removeEntriesAtIndices(_ indices: Array<Int>) -> [HistoryEntry] {
+        guard !indices.isEmpty else { return self }
+        
+        var result = self
+        var offset = 0
+        
+        for index in indices.sorted() {
+            let adjustedIndex = index - offset
+            result = result.removeEntry(at: adjustedIndex)
+            offset += 1
+        }
+        
+        return result
+    }
+    
+    /// Entfernt einen Eintrag an der angegebenen Position und fügt bei Bedarf eine Lücke hinzu
+    private func removeEntry(at index: Int) -> [HistoryEntry] {
+        let shouldInsertGap = index == 0 || self[index - 1] != .gap
+        let removeLength = calculateRemoveLength(at: index)
+        
+        return self[..<index] + (shouldInsertGap ? [HistoryEntry.gap] : []) + self[(index + removeLength)...]
+    }
+    
+    /// Berechnet die Länge des zu entfernenden Bereichs (inkl. benachbarter Lücken)
+    private func calculateRemoveLength(at index: Int) -> Int {
+        var length = 1 // Der Eintrag selbst
+        
+        // Füge benachbarte Lücke hinzu, falls vorhanden
+        if index < count - 1 && self[index + 1] == .gap {
+            length += 1
+        }
+        
+        return length
     }
 }
 
