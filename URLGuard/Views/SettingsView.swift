@@ -17,20 +17,24 @@ struct SettingsTitle : View {
 struct SettingsView: View {
     @AppStorage("maxHistoryItems") private var maxHistoryEntries: Int = 200
     @AppStorage("showStatusBarIcon") private var showStatusBarIcon: Bool = true
+    @AppStorage("persistHistory") private var persistHistory: Bool = false
     
     var body: some View {
         Form {
             VStack(alignment: .leading) {
-                SettingsTitle("Darstellung")
+                SettingsTitle("Historie")
                 
                 HStack {
-                    Text("Maximale Lönge der Historie")
+                    Text("Maximale Länge der Historie")
                     Stepper(value: $maxHistoryEntries, in: 1...1000, step: 1) {
                         TextField("", value: $maxHistoryEntries, formatter: NumberFormatter())
                             .frame(width: 60)
                     }
                 }
-
+                
+                Toggle("Historie zwischen App-Starts speichern", isOn: $persistHistory)
+                    .help("Wenn aktiviert, werden alle History-Entries beim Beenden der App gespeichert und beim nächsten Start wieder geladen.")
+                
                 Divider()
                     .padding(.vertical, 18)
 
@@ -39,9 +43,9 @@ struct SettingsView: View {
                 Toggle("Statusbar-Icon anzeigen", isOn: $showStatusBarIcon)
             }
             .padding()
-            .frame(maxWidth: 400)        }
+        }
         .padding()
-        .frame(width: 300, height: 200)
+        .frame(width: 340, height: 200)
         .onChange(of: maxHistoryEntries) { oldValue, newValue in
             if (newValue < 1 || newValue > 1000) {
                 maxHistoryEntries = oldValue

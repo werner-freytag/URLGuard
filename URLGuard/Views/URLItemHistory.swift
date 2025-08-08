@@ -38,7 +38,7 @@ struct URLItemHistory: View {
             if unreadCount > 0 {
                 Button(action: {
                     guard monitor.items.contains(where: { $0.id == item.id }) else { return }
-                    monitor.markAllAsRead(for: item)
+                    monitor.unmarkAll(for: item)
                 }) {
                     ZStack {
                         Circle()

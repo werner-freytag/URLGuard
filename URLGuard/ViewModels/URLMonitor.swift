@@ -9,6 +9,7 @@ class URLMonitor: ObservableObject {
 
     @AppStorage("maxHistoryItems") var maxHistoryItems: Int = 200
     @AppStorage("URLMonitorGlobalPause") var isGlobalPaused: Bool = false
+    @AppStorage("persistHistory") var persistHistory: Bool = false
     @AppStorage("URLMonitorItemsData") private var savedItemsData: Data = Data()
     
     private var timer: Timer?
@@ -285,7 +286,7 @@ class URLMonitor: ObservableObject {
         }
     }
     
-    func markAllAsRead(for item: URLItem) {
+    func unmarkAll(for item: URLItem) {
         guard let itemIndex = items.firstIndex(where: { $0.id == item.id }) else { return }
         
         items[itemIndex].history.enumerated().forEach { offset, element in
@@ -314,9 +315,10 @@ class URLMonitor: ObservableObject {
                 // Pending Requests Counter verringern
                 self.decrementPendingRequests(for: item.id)
                 
+                let isMarked = self.items[currentIndex].notification(for: requestResult) != nil
                 let historyEntry = URLItem.HistoryEntry(
                     requestResult: requestResult,
-                    isMarked: self.items[currentIndex].notification(for: requestResult) != nil
+                    isMarked: isMarked
                 )
                 
                 self.items[currentIndex].history.append(historyEntry)
@@ -329,7 +331,7 @@ class URLMonitor: ObservableObject {
     }
     
     func save() {
-        let persistableItems = items.map(\.withoutHistory)
+        let persistableItems = persistHistory ? items : items.map(\.withoutHistory)
         
         guard let data = try? JSONEncoder().encode(persistableItems) else {
             print("Fehler beim Encoding der Daten.")
@@ -345,7 +347,6 @@ class URLMonitor: ObservableObject {
             return
         }
 
-        // Lade URLItems (ohne Historie, da sie beim Speichern entfernt wurde)
         if let decoded = try? JSONDecoder().decode([URLItem].self, from: savedItemsData) {
             self.items = decoded
         }
