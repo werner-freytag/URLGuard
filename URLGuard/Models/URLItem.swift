@@ -69,19 +69,7 @@ struct URLItem: Identifiable, Codable, Equatable {
     var isEnabled: Bool
     var history: [HistoryEntry]
     var enabledNotifications: Set<NotificationType>
-    
-    struct HistoryEntry: Codable, Equatable, Identifiable {
-        let id: UUID
-        let requestResult: RequestResult
-        var isMarked: Bool
-        
-        init(id: UUID = UUID(), requestResult: RequestResult, isMarked: Bool = false) {
-            self.id = id
-            self.requestResult = requestResult
-            self.isMarked = isMarked
-        }
-    }
-    
+  
     init(id: UUID = UUID(), url: URL = URL(string: "https://")!, title: String? = nil, interval: Double = 10, isEnabled: Bool = true, history: [HistoryEntry] = [], enabledNotifications: Set<NotificationType> = []) {
         self.id = id
         self.url = url

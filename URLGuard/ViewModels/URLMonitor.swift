@@ -290,8 +290,55 @@ class URLMonitor: ObservableObject {
         guard let itemIndex = items.firstIndex(where: { $0.id == item.id }) else { return }
         
         items[itemIndex].history.enumerated().forEach { offset, element in
-            items[itemIndex].history[offset].isMarked = false
+            items[itemIndex].history[offset].unmark()
         }
+        
+        save()
+    }
+    
+    /// Intelligente History-Größenverwaltung: Entfernt zuerst Einträge ohne Notifications
+    private func manageHistorySize(for item: URLItem) {
+        guard let itemIndex = items.firstIndex(where: { $0.id == item.id }) else {
+            assertionFailure()
+            return
+        }
+        
+        var history = items[itemIndex].history
+        
+        while history.numberOfEntries > maxHistoryItems {
+            history = {
+                if maxHistoryItems == 0 {
+                    return []
+                }
+                
+                if maxHistoryItems == 1 {
+                    return history.suffix(1)
+                }
+                
+                if maxHistoryItems == 2 {
+                    return [.gap] + history.suffix(1)
+                }
+                
+                let indexToRemove: Int = {
+                    // Erster nicht-markierter Eintrag
+                    let indexToRemove = history.firstIndex { if case .requestResult(_, _, let isMarked) = $0 { return !isMarked }; return false }
+                    
+                    if let indexToRemove, indexToRemove < history.count - 1  {
+                        return indexToRemove
+                    }
+                    
+                    return history.firstIndex { if case .requestResult = $0 { return true }; return false }!
+                }()
+                
+                let insertGap = indexToRemove == 0 || history[indexToRemove - 1] != .gap
+                let removeLength = 1 + (indexToRemove < history.count - 1 && history[indexToRemove + 1] == .gap ? 1 : 0)
+                
+                return history[..<indexToRemove] + (insertGap ? [.gap] : []) + history[(indexToRemove + removeLength)...]
+            }()
+        }
+        
+        // Ersetze die History mit der neuen Liste
+        items[itemIndex].history = history
         
         save()
     }
@@ -316,13 +363,13 @@ class URLMonitor: ObservableObject {
                 self.decrementPendingRequests(for: item.id)
                 
                 let isMarked = self.items[currentIndex].notification(for: requestResult) != nil
-                let historyEntry = URLItem.HistoryEntry(
+                let historyEntry = HistoryEntry.requestResult( 
                     requestResult: requestResult,
                     isMarked: isMarked
                 )
                 
                 self.items[currentIndex].history.append(historyEntry)
-                self.items[currentIndex].history.removeFirst(max(0, self.items[currentIndex].history.count - maxHistoryItems))
+                self.manageHistorySize(for: self.items[currentIndex])
                 
                 // Notification senden
                 NotificationManager.shared.notifyIfNeeded(for: self.items[currentIndex], result: requestResult)
@@ -352,3 +399,23 @@ class URLMonitor: ObservableObject {
         }
     }
 }
+
+
+private extension HistoryEntry {
+    mutating func unmark() {
+        switch self {
+        case .requestResult(let id, let requestResult, _):
+            self = .requestResult(id: id, requestResult: requestResult, isMarked: false)
+        case .gap:
+            break
+        }
+    }
+}
+
+
+private extension [HistoryEntry] {
+    var numberOfEntries: Int {
+        filter { if case .requestResult = $0 { return true }; return false }.count
+    }
+}
+

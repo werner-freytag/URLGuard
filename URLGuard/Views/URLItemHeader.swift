@@ -188,7 +188,7 @@ struct URLItemHeader: View {
         interval: 10,
         isEnabled: true,
         history: [
-            URLItem.HistoryEntry(
+            HistoryEntry.requestResult(
                 requestResult: .init(
                     date: Date(),
                     method: "GET",
@@ -196,7 +196,7 @@ struct URLItemHeader: View {
                 ),
                 isMarked: true
             ),
-            URLItem.HistoryEntry(
+            .requestResult(
                 requestResult: .init(
                     date: Date().addingTimeInterval(-60),
                     method: "GET",
@@ -205,7 +205,7 @@ struct URLItemHeader: View {
                 ),
                 isMarked: false
             ),
-            URLItem.HistoryEntry(
+            .requestResult(
                 requestResult: .init(
                     date: Date().addingTimeInterval(-120),
                     method: "GET",

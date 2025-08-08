@@ -1,6 +1,6 @@
-import SwiftUI
 import Combine
 import SwiftData
+import SwiftUI
 
 @main
 struct URLGuardApp: App {
@@ -9,17 +9,14 @@ struct URLGuardApp: App {
     @State private var editingItem: URLItem? = nil
 
     @AppStorage("showStatusBarIcon") var showStatusBarIcon: Bool = true
-    
+
     private var dockBadgeCancellable: AnyCancellable?
-    
+
     init() {
         dockBadgeCancellable = monitor.$items
             .receive(on: DispatchQueue.main)
             .sink { items in
-                let count = items.map { item in
-                    item.history.filter(\.isMarked).count
-                }.reduce(0, +)
-
+                let count = items.map(\.history.markedCount).reduce(0, +)
                 NSApp.dockTile.badgeLabel = count > 0 ? "\(count)" : nil
             }
     }
@@ -59,7 +56,7 @@ struct URLGuardApp: App {
                                 monitor.pauseGlobal()
                             }
                         }
-                        
+
                         IconButton(
                             icon: "plus.circle.fill",
                             title: "Neuer Eintrag",
@@ -73,10 +70,10 @@ struct URLGuardApp: App {
                 .toolbar(.automatic, for: .windowToolbar)
                 .sheet(item: $editingItem) { item in
                     let isNewItem = !monitor.items.contains { $0.id == item.id }
-                    
+
                     ModalEditorView(
-                        item: item, 
-                        monitor: monitor, 
+                        item: item,
+                        monitor: monitor,
                         isNewItem: isNewItem,
                         onSave: { newItem in
                             if isNewItem {
@@ -91,14 +88,14 @@ struct URLGuardApp: App {
         .defaultSize(width: 600, height: 400)
         .windowResizability(.contentSize)
         .commands {
-            CommandGroup(replacing: .newItem) { 
+            CommandGroup(replacing: .newItem) {
                 Button("Neuer Eintrag") {
                     editingItem = URLItem()
                 }
                 .keyboardShortcut("n", modifiers: .command)
             }
-            CommandGroup(replacing: .windowArrangement) { }
-            CommandGroup(replacing: .toolbar) { }
+            CommandGroup(replacing: .windowArrangement) {}
+            CommandGroup(replacing: .toolbar) {}
             CommandGroup(replacing: .windowSize) {
                 Button("Fenster schließen") {
                     NSApplication.shared.keyWindow?.close()

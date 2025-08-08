@@ -6,30 +6,46 @@ struct HistoryEntryView: View {
     @State private var showPopover = false
     @ObservedObject var monitor: URLMonitor
 
-    private var entry: URLItem.HistoryEntry {
+    private var entry: HistoryEntry {
         item.history[entryIndex]
     }
 
     var body: some View {
-        Button(action: {
-            showPopover = true
-        }) {
+        if case .gap = entry {
+            // Gap-Element anzeigen
             VStack(spacing: 2) {
                 Circle()
-                    .fill(entry.isMarked ? Color.red : Color.clear)
+                    .fill(Color.clear)
                     .frame(width: 3, height: 3)
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(entry.statusColor)
+                Text("…")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
                     .frame(width: 10, height: 10)
                 Spacer(minLength: 3)
             }
         }
-        .buttonStyle(.plain)
-        .popover(isPresented: $showPopover, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom) {
-            HistoryDetailView(entry: entry)
-                .frame(width: 400, height: calculatePopoverHeight(for: entry.requestResult))
-                .presentationBackground(Color(.controlBackgroundColor))
-                .presentationCornerRadius(0)
+        else if case .requestResult(_, let requestResult, let isMarked) = entry {
+            // Normaler History-Eintrag
+            Button(action: {
+                showPopover = true
+            }) {
+                VStack(spacing: 2) {
+                    Circle()
+                        .fill(isMarked ? Color.red : Color.clear)
+                        .frame(width: 3, height: 3)
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(requestResult.statusColor)
+                        .frame(width: 10, height: 10)
+                    Spacer(minLength: 3)
+                }
+            }
+            .buttonStyle(.plain)
+            .popover(isPresented: $showPopover, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom) {
+                HistoryDetailView(requestResult: requestResult)
+                    .frame(width: 400, height: calculatePopoverHeight(for: requestResult))
+                    .presentationBackground(Color(.controlBackgroundColor))
+                    .presentationCornerRadius(0)
+            }
         }
     }
 }

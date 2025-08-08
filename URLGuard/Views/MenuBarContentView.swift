@@ -17,19 +17,17 @@ struct MenuBarContentView: View {
             Text("Keine Einträge")
         } else {
             ForEach(monitor.items) { item in
-                let entry = item.history.last
-
                 Button {
                     NSApp.openMainWindow()
                     monitor.highlightItem(item.id)
                 } label: {
-                    Image(systemName: entry?.statusIconName ?? "circle.dashed")
+                    Image(systemName: item.history.lastRequestResult?.statusIconName ?? "circle.dashed")
                     Text(item.displayTitle)
-                    if let entry {
+                    if let requestResult = item.history.lastRequestResult {
                         Text([
-                            entry.statusTitle ,
-                            entry.requestResult.statusCode != nil ? "Code \(entry.requestResult.statusCode!)" : "",
-                            entry.requestResult.date.formatted(date: .numeric, time: .standard)
+                            requestResult.statusTitle ,
+                            requestResult.statusCode != nil ? "Code \(requestResult.statusCode!)" : "",
+                            requestResult.date.formatted(date: .numeric, time: .standard)
                         ].filter { !$0.isEmpty }.joined(separator: " • "))
                     }
                 }
@@ -42,4 +40,3 @@ struct MenuBarContentView: View {
         }
     }
 }
-

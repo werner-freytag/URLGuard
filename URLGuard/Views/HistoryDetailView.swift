@@ -1,52 +1,53 @@
 import SwiftUI
 
 struct HistoryDetailView: View {
-    let entry: URLItem.HistoryEntry
+    let requestResult: RequestResult
     
     var body: some View {
+        // Normaler History-Eintrag
         VStack(alignment: .leading, spacing: 16) {
             // Header mit Status und Datum
             HStack {
-                Image(systemName: entry.statusIconName)
+                Image(systemName: requestResult.statusIconName)
                     .font(.title2)
-                    .foregroundColor(entry.statusColor)
-                Text(entry.statusTitle)
+                    .foregroundColor(requestResult.statusColor)
+                Text(requestResult.statusTitle)
                     .font(.headline)
-                    .foregroundColor(entry.statusColor)
+                    .foregroundColor(requestResult.statusColor)
                 Spacer()
-                Text(entry.requestResult.date.formatted(date: .abbreviated, time: .standard))
+                Text(requestResult.date.formatted(date: .abbreviated, time: .standard))
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
-            
+        
             Divider()
-            
+        
             // Technische Details
             VStack(alignment: .leading, spacing: 12) {
                 Text("Technische Details")
                     .font(.subheadline)
                     .fontWeight(.semibold)
-                
+            
                 HStack {
-                    DetailRow(label: "HTTP Status", value: entry.requestResult.statusCode?.toString())
+                    DetailRow(label: "HTTP Status", value: requestResult.statusCode?.toString())
                     Spacer()
-                    DetailRow(label: "Methode", value: entry.requestResult.method)
+                    DetailRow(label: "Methode", value: requestResult.method)
                     Spacer()
-                    DetailRow(label: "Größe", value: entry.requestResult.dataSize?.formattedBytes())
+                    DetailRow(label: "Größe", value: requestResult.dataSize?.formattedBytes())
                     Spacer()
-                    DetailRow(label: "Dauer", value: entry.requestResult.transferDuration?.formattedDuration())
+                    DetailRow(label: "Dauer", value: requestResult.transferDuration?.formattedDuration())
                 }
             }
-            
+        
             // HTTP-Header Details
-            if let headers = entry.requestResult.headers, !headers.isEmpty {
+            if let headers = requestResult.headers, !headers.isEmpty {
                 Divider()
-                
+            
                 VStack(alignment: .leading, spacing: 12) {
                     Text("HTTP-Header")
                         .font(.subheadline)
                         .fontWeight(.semibold)
-                    
+                
                     LazyVGrid(columns: [
                         GridItem(.fixed(80), alignment: .topLeading),
                         GridItem(.flexible(), alignment: .leading)
@@ -58,22 +59,22 @@ struct HistoryDetailView: View {
                     .textSelection(.enabled)
                 }
             }
-            
+        
             // Diff-Informationen
-            if let diffInfo = entry.requestResult.diffInfo, diffInfo.totalChangedLines > 0 {
+            if let diffInfo = requestResult.diffInfo, diffInfo.totalChangedLines > 0 {
                 Divider()
-                
+            
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Änderungen")
                         .font(.subheadline)
                         .fontWeight(.semibold)
-                    
+                
                     ScrollView {
                         VStack(alignment: .leading, spacing: 4) {
                             ForEach(diffInfo.changedLines, id: \.lineNumber) { changedLine in
                                 ChangedLineView(changedLine: changedLine)
                             }
-                            
+                        
                             if diffInfo.changedLines.count < diffInfo.totalChangedLines {
                                 if diffInfo.totalChangedLines - diffInfo.changedLines.count == 1 {
                                     Text("... und 1 weitere Änderung")
@@ -91,24 +92,24 @@ struct HistoryDetailView: View {
                     }
                     .frame(maxHeight: 200)
                 }
-            } else if let errorDescription = entry.requestResult.errorDescription, !errorDescription.isEmpty {
+            } else if let errorDescription = requestResult.errorDescription, !errorDescription.isEmpty {
                 Divider()
-                
+            
                 HStack {
-                    Image(systemName: entry.statusIconName)
-                        .foregroundColor(entry.statusColor)
+                    Image(systemName: requestResult.statusIconName)
+                        .foregroundColor(requestResult.statusColor)
                     Text(errorDescription)
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                         .lineLimit(2)
                 }
-            } else if entry.requestResult.status == .success(hasChanges: false) {
+            } else if requestResult.status == .success(hasChanges: false) {
                 Divider()
-                
+            
                 HStack {
-                    Image(systemName: entry.statusIconName)
-                        .foregroundColor(entry.statusColor)
+                    Image(systemName: requestResult.statusIconName)
+                        .foregroundColor(requestResult.statusColor)
                     Text("Inhalt nicht geändert")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
@@ -119,10 +120,9 @@ struct HistoryDetailView: View {
     }
 }
 
-
-extension URLItem.HistoryEntry {
+extension RequestResult {
     var statusIconName: String {
-        switch requestResult.status {
+        switch status {
         case .none:
             return "questionmark.circle.dashed"
         case .some(.informational):
@@ -139,7 +139,7 @@ extension URLItem.HistoryEntry {
     }
     
     var statusTitle: String {
-        switch requestResult.status {
+        switch status {
         case .none:
             return "Unbekannt"
         case .some(.transferError):
@@ -160,7 +160,7 @@ extension URLItem.HistoryEntry {
     }
 
     var statusColor: Color {
-        switch requestResult.status {
+        switch status {
         case .none:
             return .gray
         case .some(.transferError):
@@ -247,7 +247,7 @@ struct HeaderRow: View {
         transferDuration: 0.85
     )
     
-    HistoryDetailView(entry: .init(requestResult: result))
+    HistoryDetailView(requestResult: result)
         .frame(width: 400, height: 300)
 }
 
@@ -296,10 +296,10 @@ struct HeaderRow: View {
         statusCode: 200,
         dataSize: 18250,
         transferDuration: 1.23,
-        diffInfo: diffInfo,
+        diffInfo: diffInfo
     )
     
-    HistoryDetailView(entry: .init(requestResult: result))
+    HistoryDetailView(requestResult: result)
         .frame(width: 400, height: 400)
 }
 
@@ -311,7 +311,7 @@ struct HeaderRow: View {
         errorDescription: "Connection failed"
     )
     
-    HistoryDetailView(entry: .init(requestResult: result))
+    HistoryDetailView(requestResult: result)
         .frame(width: 400, height: 250)
 }
 
@@ -352,7 +352,7 @@ struct HeaderRow: View {
             statusCode: 200,
             dataSize: 18250,
             transferDuration: 1.23,
-            diffInfo: diffInfo,
+            diffInfo: diffInfo
         )
         
         // Fehler
@@ -375,7 +375,7 @@ struct HeaderRow: View {
                     Text("Erfolg")
                         .font(.caption)
                         .foregroundColor(.secondary)
-                    HistoryDetailView(entry: .init(requestResult: successResult))
+                    HistoryDetailView(requestResult: successResult)
                         .frame(width: 300, height: 200)
                 }
                 
@@ -383,7 +383,7 @@ struct HeaderRow: View {
                     Text("Änderung")
                         .font(.caption)
                         .foregroundColor(.secondary)
-                    HistoryDetailView(entry: .init(requestResult: changeResult))
+                    HistoryDetailView(requestResult: changeResult)
                         .frame(width: 300, height: 200)
                 }
                 
@@ -391,7 +391,7 @@ struct HeaderRow: View {
                     Text("Fehler")
                         .font(.caption)
                         .foregroundColor(.secondary)
-                    HistoryDetailView(entry: .init(requestResult: errorResult))
+                    HistoryDetailView(requestResult: errorResult)
                         .frame(width: 300, height: 200)
                 }
             }

@@ -5,7 +5,7 @@ struct URLItemHistory: View {
     let item: URLItem
     let monitor: URLMonitor
     @State private var scrollToEnd = false
-    @State private var selectedEntry: URLItem.HistoryEntry? = nil
+    @State private var selectedEntry: HistoryEntry? = nil
     @State private var showingDetailPopover = false
 
     var body: some View {
@@ -33,9 +33,9 @@ struct URLItemHistory: View {
 
             Spacer()
 
-            let unreadCount = item.history.filter(\.isMarked).count
+            let markedCount = item.history.markedCount
 
-            if unreadCount > 0 {
+            if markedCount > 0 {
                 Button(action: {
                     guard monitor.items.contains(where: { $0.id == item.id }) else { return }
                     monitor.unmarkAll(for: item)
@@ -45,7 +45,7 @@ struct URLItemHistory: View {
                             .fill(Color.red)
                             .frame(width: 16, height: 16)
 
-                        Text("\(unreadCount)")
+                        Text("\(markedCount)")
                             .font(.system(size: 10, weight: .bold))
                             .foregroundColor(.white)
                     }
@@ -104,4 +104,15 @@ struct CountdownView: View {
     let item = URLItem(url: URL(string: "https://example.com")!, interval: 10)
     URLItemHistory(item: item, monitor: monitor)
         .frame(width: 600, height: 200)
+}
+
+private extension HistoryEntry {
+    var id: UUID {
+        switch self {
+        case .requestResult(let id, _, _):
+            return id
+        case .gap:
+            return UUID() // Gap-Elemente haben keine echte ID
+        }
+    }
 }
