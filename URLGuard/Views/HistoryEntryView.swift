@@ -43,7 +43,7 @@ struct HistoryEntryView: View {
             .popover(isPresented: $showPopover, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom) {
                 HistoryDetailView(requestResult: requestResult)
                     .frame(width: 400, height: calculatePopoverHeight(for: requestResult))
-                    .presentationBackground(Color(.controlBackgroundColor))
+                    .presentationBackground(Color.controlBackgroundColor)
                     .presentationCornerRadius(0)
             }
         }

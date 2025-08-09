@@ -40,7 +40,7 @@ struct ModalEditorView: View {
                 Spacer()
             }
             .padding()
-            .background(Color(.controlBackgroundColor))
+            .background(Color.controlBackgroundColor)
             
             Divider()
             
@@ -110,7 +110,7 @@ struct ModalEditorView: View {
                 .keyboardShortcut(.return, modifiers: [])
             }
             .padding()
-            .background(Color(.controlBackgroundColor))
+            .background(Color.controlBackgroundColor)
         }
         .frame(minWidth: 600)
         .background(Color.white)

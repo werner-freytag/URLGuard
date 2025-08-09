@@ -4,24 +4,28 @@ import SwiftUI
 
 @main
 struct URLGuardApp: App {
+    #if os(macOS)
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @AppStorage("showStatusBarIcon") var showStatusBarIcon: Bool = true
+    private var dockBadgeCancellable: AnyCancellable?
+    #endif
+
     @StateObject private var monitor = URLMonitor()
     @State private var editingItem: URLItem? = nil
 
-    @AppStorage("showStatusBarIcon") var showStatusBarIcon: Bool = true
-
-    private var dockBadgeCancellable: AnyCancellable?
-
     init() {
+        #if os(macOS)
         dockBadgeCancellable = monitor.$items
             .receive(on: DispatchQueue.main)
             .sink { items in
                 let count = items.map(\.history.markedCount).reduce(0, +)
                 NSApp.dockTile.badgeLabel = count > 0 ? "\(count)" : nil
             }
+        #endif
     }
 
     var body: some Scene {
+        #if os(macOS)
         Window("URL Guard", id: "MainWindow") {
             ContentView(monitor: monitor)
                 .toolbar {
@@ -45,8 +49,7 @@ struct URLGuardApp: App {
                                     LinearKeyframe(1.0, duration: 0.75, timingCurve: .easeInOut)
                                 }
                             }
-                        }
-                        else {
+                        } else {
                             IconButton(
                                 icon: "play.circle.fill",
                                 title: "Gestartet",
@@ -117,5 +120,61 @@ struct URLGuardApp: App {
         Settings {
             SettingsView()
         }
+        #else
+        WindowGroup {
+            NavigationStack {
+                ContentView(monitor: monitor)
+                    .navigationTitle("URL Guard")
+                    .toolbarTitleDisplayMode(.inlineLarge)
+                    .toolbar {
+                        if #available(iOS 16.0, *) {
+                            ToolbarItemGroup(placement: .topBarTrailing) {
+                                Button(action: {
+                                    monitor.isGlobalPaused ? monitor.startGlobal() : monitor.pauseGlobal()
+                                }) {
+                                    Image(systemName: monitor.isGlobalPaused ? "pause.circle.fill" : "play.circle.fill")
+                                }
+                                .disabled(monitor.items.isEmpty)
+                                .accessibilityLabel(monitor.isGlobalPaused ? "Monitoring starten" : "Monitoring pausieren")
+
+                                Button(action: { editingItem = URLItem() }) {
+                                    Image(systemName: "plus.circle.fill")
+                                }
+                                .accessibilityLabel("Neuer Eintrag")
+                            }
+                        } else {
+                            ToolbarItemGroup(placement: .navigationBarTrailing) {
+                                Button(action: {
+                                    monitor.isGlobalPaused ? monitor.startGlobal() : monitor.pauseGlobal()
+                                }) {
+                                    Image(systemName: monitor.isGlobalPaused ? "pause.circle.fill" : "play.circle.fill")
+                                }
+                                .disabled(monitor.items.isEmpty)
+                                .accessibilityLabel(monitor.isGlobalPaused ? "Monitoring starten" : "Monitoring pausieren")
+
+                                Button(action: { editingItem = URLItem() }) {
+                                    Image(systemName: "plus.circle.fill")
+                                }
+                                .accessibilityLabel("Neuer Eintrag")
+                            }
+                        }
+                    }
+            }
+            .sheet(item: $editingItem) { item in
+                    let isNewItem = !monitor.items.contains { $0.id == item.id }
+
+                    ModalEditorView(
+                        item: item,
+                        monitor: monitor,
+                        isNewItem: isNewItem,
+                        onSave: { newItem in
+                            if isNewItem {
+                                monitor.addItem(newItem)
+                            }
+                        }
+                    )
+            }
+        }
+        #endif
     }
 }

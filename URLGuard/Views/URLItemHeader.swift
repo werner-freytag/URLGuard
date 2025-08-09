@@ -150,7 +150,7 @@ struct URLItemHeader: View {
                     pb.setString(item.url.absoluteString, forType: .URL)
                     pb.setString(item.url.absoluteString, forType: .string)
                 #else
-                    UIPasteboard.general.url = item.url.absoluteString
+                    UIPasteboard.general.url = item.url
                     UIPasteboard.general.string = item.url.absoluteString
                 #endif
             }
