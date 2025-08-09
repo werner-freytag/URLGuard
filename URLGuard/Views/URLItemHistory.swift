@@ -9,7 +9,7 @@ struct URLItemHistory: View {
     @State private var showingDetailPopover = false
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: 4) {
             ScrollViewReader { proxy in
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 1) {
@@ -31,32 +31,29 @@ struct URLItemHistory: View {
                 }
             }
 
-            Spacer()
+            HStack {
+                let markedCount = item.history.markedCount
 
-            let markedCount = item.history.markedCount
-
-            if markedCount > 0 {
-                Button(action: {
-                    guard monitor.items.contains(where: { $0.id == item.id }) else { return }
-                    monitor.unmarkAll(for: item)
-                }) {
-                    ZStack {
-                        Circle()
-                            .fill(Color.red)
-                            .frame(width: 16, height: 16)
-
-                        Text("\(markedCount)")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(.white)
+                if markedCount > 0 {
+                    Button(action: {
+                        guard monitor.items.contains(where: { $0.id == item.id }) else { return }
+                        monitor.unmarkAll(for: item)
+                    }) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.red)
+                                .frame(width: 16, height: 16)
+                            
+                            Text("\(markedCount)")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(.white)
+                        }
                     }
+                    .buttonStyle(PlainButtonStyle())
+                    .help("Alle als gelesen markieren")
                 }
-                .buttonStyle(PlainButtonStyle())
-                .help("Alle als gelesen markieren")
-            } else {
-                Rectangle()
-                    .fill(Color.clear)
-                    .frame(height: 16)
             }
+            .frame(width: 16, height: 16)
         }
         .frame(height: 24)
         .padding(.horizontal, 16)

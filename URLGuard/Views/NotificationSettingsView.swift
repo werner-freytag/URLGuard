@@ -116,13 +116,13 @@ struct NotificationSettingsView: View {
     }
 }
 
-extension URLItem.NotificationType {
+private extension URLItem.NotificationType {
     var displayDescription: String {
         switch self {
         case .error:
             return "Bei Fehlern"
         case .change:
-            return "Bei Änderungen"
+            return "Bei Inhaltsänderungen"
         case .success:
             return "Bei Erfolg"
         case .httpCode:

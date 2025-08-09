@@ -28,7 +28,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		AD42F7C92E3B62BD005A5D21 /* URLGuard.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = URLGuard.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AD42F7C92E3B62BD005A5D21 /* URL Guard.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "URL Guard.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		AD42F7DA2E3B62BE005A5D21 /* URLGuardTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = URLGuardTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AD42F7E42E3B62BE005A5D21 /* URLGuardUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = URLGuardUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -106,7 +106,7 @@
 		AD42F7CA2E3B62BD005A5D21 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				AD42F7C92E3B62BD005A5D21 /* URLGuard.app */,
+				AD42F7C92E3B62BD005A5D21 /* URL Guard.app */,
 				AD42F7DA2E3B62BE005A5D21 /* URLGuardTests.xctest */,
 				AD42F7E42E3B62BE005A5D21 /* URLGuardUITests.xctest */,
 			);
@@ -136,7 +136,7 @@
 				3694A0B92E40D7AE00D42F82 /* OrderedCollections */,
 			);
 			productName = URLGuard;
-			productReference = AD42F7C92E3B62BD005A5D21 /* URLGuard.app */;
+			productReference = AD42F7C92E3B62BD005A5D21 /* URL Guard.app */;
 			productType = "com.apple.product-type.application";
 		};
 		AD42F7D92E3B62BE005A5D21 /* URLGuardTests */ = {
@@ -325,7 +325,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = de.wfco.URLGuard;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "URL Guard";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
@@ -367,7 +367,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = de.wfco.URLGuard;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "URL Guard";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";

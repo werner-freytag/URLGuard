@@ -13,7 +13,7 @@ struct URLItem: Identifiable, Codable, Equatable {
             case .error:
                 return "Bei Fehlern"
             case .change:
-                return "Bei Änderungen"
+                return "Bei Inhaltsänderungen"
             case .success:
                 return "Bei Erfolg"
             case .httpCode(let code):
