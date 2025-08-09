@@ -15,9 +15,9 @@ struct SettingsTitle : View {
 }
 
 struct SettingsView: View {
-    @AppStorage("maxHistoryItems") private var maxHistoryEntries: Int = 200
+    @AppStorage("maxHistoryItems") private var maxHistoryEntries: Int = 100
     @AppStorage("showStatusBarIcon") private var showStatusBarIcon: Bool = true
-    @AppStorage("persistHistory") private var persistHistory: Bool = false
+    @AppStorage("persistHistory") private var persistHistory: Bool = true
     
     var body: some View {
         Form {
