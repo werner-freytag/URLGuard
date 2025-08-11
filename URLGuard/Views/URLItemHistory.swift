@@ -5,8 +5,6 @@ struct URLItemHistory: View {
     let item: URLItem
     let monitor: URLMonitor
     @State private var scrollToEnd = false
-    @State private var selectedEntry: HistoryEntry? = nil
-    @State private var showingDetailPopover = false
 
     var body: some View {
         HStack(alignment: .top, spacing: 4) {
@@ -24,13 +22,18 @@ struct URLItemHistory: View {
                 }
                 .frame(height: 12)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .onAppear {
+                    // Beim App-Start zum neuesten Eintrag scrollen
+                    proxy.scrollTo("countdown", anchor: .trailing)
+                }
                 .onChange(of: item.history) { oldCount, newCount in
                     withAnimation(.easeInOut(duration: 0.3)) {
                         proxy.scrollTo("countdown", anchor: .trailing)
                     }
                 }
             }
-
+            .offset(y: 2)
+            
             HStack {
                 let markedCount = item.history.markedCount
 
@@ -39,21 +42,23 @@ struct URLItemHistory: View {
                         guard monitor.items.contains(where: { $0.id == item.id }) else { return }
                         monitor.unmarkAll(for: item)
                     }) {
-                        ZStack {
-                            Circle()
-                                .fill(Color.red)
-                                .frame(width: 16, height: 16)
-                            
-                            Text("\(markedCount)")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundColor(.white)
-                        }
+                        Text("\(markedCount)")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color.red)
+                            )
+                            .frame(height: 16)
+                            .fixedSize()
                     }
                     .buttonStyle(PlainButtonStyle())
                     .help("Alle Markierungen entfernen")
                 }
             }
-            .frame(width: 16, height: 16)
+            .frame(height: 16)
         }
         .frame(height: 24)
         .padding(.horizontal, 16)
