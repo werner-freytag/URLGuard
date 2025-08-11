@@ -7,22 +7,11 @@ struct URLGuardApp: App {
     #if os(macOS)
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @AppStorage("showStatusBarIcon") var showStatusBarIcon: Bool = true
-    private var dockBadgeCancellable: AnyCancellable?
+    @State private var dockBadgeCancellable: AnyCancellable?
     #endif
 
     @StateObject private var monitor = URLMonitor()
     @State private var editingItem: URLItem? = nil
-
-    init() {
-        #if os(macOS)
-        dockBadgeCancellable = monitor.$items
-            .receive(on: DispatchQueue.main)
-            .sink { items in
-                let count = items.map(\.history.markedCount).reduce(0, +)
-                NSApp.dockTile.badgeLabel = count > 0 ? "\(count)" : nil
-            }
-        #endif
-    }
 
     var body: some Scene {
         #if os(macOS)
@@ -84,6 +73,14 @@ struct URLGuardApp: App {
                             }
                         }
                     )
+                }
+                .onAppear {
+                    dockBadgeCancellable = monitor.$items
+                        .receive(on: DispatchQueue.main)
+                        .sink { items in
+                            let count = items.map { $0.history.markedCount }.reduce(0, +)
+                            NSApp.dockTile.badgeLabel = count > 0 ? "\(count)" : nil
+                        }
                 }
         }
         .windowStyle(.titleBar)
@@ -161,18 +158,18 @@ struct URLGuardApp: App {
                     }
             }
             .sheet(item: $editingItem) { item in
-                    let isNewItem = !monitor.items.contains { $0.id == item.id }
+                let isNewItem = !monitor.items.contains { $0.id == item.id }
 
-                    ModalEditorView(
-                        item: item,
-                        monitor: monitor,
-                        isNewItem: isNewItem,
-                        onSave: { newItem in
-                            if isNewItem {
-                                monitor.addItem(newItem)
-                            }
+                ModalEditorView(
+                    item: item,
+                    monitor: monitor,
+                    isNewItem: isNewItem,
+                    onSave: { newItem in
+                        if isNewItem {
+                            monitor.addItem(newItem)
                         }
-                    )
+                    }
+                )
             }
         }
         #endif
