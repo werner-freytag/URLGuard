@@ -68,7 +68,7 @@ struct HistoryEntryView: View {
 private func calculatePopoverHeight(for entry: RequestResult) -> CGFloat {
     var height: CGFloat = 156 // Basis-Höhe für technische Details
 
-    if entry.status == .success(hasChanges: false) {
+    if entry.status == .success(hasChanges: false) || entry.errorDescription != nil {
         height += 44
     }
     
