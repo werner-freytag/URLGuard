@@ -296,6 +296,13 @@ class URLMonitor: ObservableObject {
         save()
     }
     
+    func toggleHistoryEntryMark(for item: URLItem, at index: Int) {
+        guard let itemIndex = items.firstIndex(where: { $0.id == item.id }) else { return }
+        guard index < items[itemIndex].history.count else { return }
+        items[itemIndex].history[index].toggleIsMarked()
+        save()
+    }
+    
     func moveItems(from source: IndexSet, to destination: Int) {
         items.move(fromOffsets: source, toOffset: destination)
         save()
@@ -356,13 +363,13 @@ class URLMonitor: ObservableObject {
 
 
 private extension HistoryEntry {
+    mutating func toggleIsMarked(_ newValue: Bool? = nil) {
+        guard case let .requestResult(id, requestResult, isMarked) = self else { return }
+        self = .requestResult(id: id, requestResult: requestResult, isMarked: newValue ?? !isMarked)
+    }
+    
     mutating func unmark() {
-        switch self {
-        case .requestResult(let id, let requestResult, _):
-            self = .requestResult(id: id, requestResult: requestResult, isMarked: false)
-        case .gap:
-            break
-        }
+        toggleIsMarked(false)
     }
 }
 

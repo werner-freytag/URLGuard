@@ -2,7 +2,19 @@ import SwiftUI
 
 struct HistoryDetailView: View {
     let requestResult: RequestResult
+    let isMarked: Bool?
+    let markerAction: (() -> Void)?
     
+    init(
+        requestResult: RequestResult,
+        isMarked: Bool? = false,
+        markerAction: (() -> Void)? = nil
+    ) {
+        self.requestResult = requestResult
+        self.isMarked = isMarked
+        self.markerAction = markerAction
+    }
+
     var body: some View {
         // Normaler History-Eintrag
         VStack(alignment: .leading, spacing: 16) {
@@ -15,9 +27,29 @@ struct HistoryDetailView: View {
                     .font(.headline)
                     .foregroundColor(requestResult.statusColor)
                 Spacer()
-                Text(requestResult.date.formatted(date: .abbreviated, time: .standard))
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                HStack(spacing: 4) {
+                    Text(requestResult.date.formatted(date: .abbreviated, time: .standard))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    if let isMarked {
+                        if let markerAction {
+                            Button(action: {
+                                markerAction()
+                            }) {
+                                Image(systemName: "circle.fill")
+                                    .font(.caption)
+                                    .foregroundColor(isMarked ? .red : .gray.opacity(0.5))
+                            }
+                            .buttonStyle(.plain)
+                            .help(isMarked ? "Markiert – Klicken, um Markierung zu entfernen" : "Klicken, um Eintrag zu markieren")
+                        } else {
+                            Image(systemName: "circle.fill")
+                                .font(.caption)
+                                .foregroundColor(isMarked ? .red : .gray)
+                        }
+                    }
+                }
             }
         
             Divider()

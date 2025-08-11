@@ -123,9 +123,6 @@ struct URLItemHeader: View {
         .onTapGesture(count: 2) {
             onEdit()
         }
-        .onTapGesture {
-            monitor.togglePause(for: item)
-        }
         .contextMenu {
             Button(item.isEnabled ? "Pausieren" : "Starten") {
                 monitor.togglePause(for: item)

@@ -41,7 +41,7 @@ struct HistoryEntryView: View {
             }
             .buttonStyle(.plain)
             .popover(isPresented: $showPopover, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom) {
-                HistoryDetailView(requestResult: requestResult)
+                HistoryDetailView(requestResult: requestResult, isMarked: isMarked, markerAction: { monitor.toggleHistoryEntryMark(for: item, at: entryIndex) })
                     .frame(width: 400, height: calculatePopoverHeight(for: requestResult))
                     .presentationBackground(Color.controlBackgroundColor)
                     .presentationCornerRadius(0)

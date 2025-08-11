@@ -50,7 +50,7 @@ struct URLItemHistory: View {
                         }
                     }
                     .buttonStyle(PlainButtonStyle())
-                    .help("Alle als gelesen markieren")
+                    .help("Alle Markierungen entfernen")
                 }
             }
             .frame(width: 16, height: 16)
