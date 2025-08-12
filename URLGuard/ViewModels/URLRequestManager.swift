@@ -4,16 +4,11 @@ import os
 
 private let logger = Logger(subsystem: "de.wfco.URLGuard", category: "Network")
 
-// MARK: - Response Structure
-
-class URLRequestManager {
+actor URLRequestManager: ObservableObject {
     private var lastResponses: [UUID: Data] = [:]
     private var lastETags: [UUID: String] = [:]
     
-    // MARK: - Public Interface
-    
     func checkURL(for item: URLItem) async -> RequestResult {
-        // Intelligente HEAD/GET-Strategie
         let hasInitialData = lastResponses[item.id] != nil
         let hasETag = lastETags[item.id] != nil
         
@@ -30,14 +25,6 @@ class URLRequestManager {
     }
     
     // MARK: - Private Request Methods
-    
-    /// Gemeinsame Response-Verarbeitung für HTTP Responses
-    private func processHTTPResponse(_ httpResponse: HTTPURLResponse, for item: URLItem) {
-        // ETag aus Response extrahieren
-        if let etag = httpResponse.value(forHTTPHeaderField: "ETag") {
-            lastETags[item.id] = etag
-        }
-    }
     
     private let redirectHeaders = [
         "Location",
@@ -98,13 +85,16 @@ class URLRequestManager {
     }
     
     private func hasModifiedData(httpResponse: HTTPURLResponse, item: URLItem) -> Bool {
+        if lastResponses[item.id] == nil {
+            return true
+        }
+        
         if httpResponse.statusCode == 304 {
             return false
         }
         
         if let currentETag = httpResponse.value(forHTTPHeaderField: "ETag"),
-           let lastETag = lastETags[item.id],
-           currentETag == lastETag {
+           let lastETag = lastETags[item.id], currentETag == lastETag {
             return false
         }
         
@@ -144,21 +134,21 @@ class URLRequestManager {
             )
         }
         
-        var diffInfo: DiffInfo? = nil
-        
-        if (lastResponses[item.id] == nil) || hasModifiedData(httpResponse: httpResponse, item: item) {
-            // lastResponses wird automatisch gesetzt - kein separater Flag nötig
-            if let lastData = lastResponses[item.id],
+        let diffInfo: DiffInfo? = {
+            if hasModifiedData(httpResponse: httpResponse, item: item),
+               let lastData = lastResponses[item.id],
                lastData != data,
                let lastContent = String(data: lastData, encoding: .utf8),
                let currentContent = String(data: data, encoding: .utf8) {
-                diffInfo = DiffInfo(from: lastContent, to: currentContent)
+                return DiffInfo(from: lastContent, to: currentContent)
             }
-        }
-        
+
+            return nil
+        }()
+
         lastResponses[item.id] = data
         lastETags[item.id] = httpResponse.value(forHTTPHeaderField: "ETag")
-
+        
         return RequestResult(
             method: "HEAD",
             statusCode: httpResponse.statusCode,

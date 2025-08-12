@@ -3,6 +3,7 @@ import OrderedCollections
 import Combine
 import SwiftUI
 
+@MainActor
 class URLMonitor: ObservableObject {
     @Published var items: [URLItem] = []
     @Published var highlightedItemID: UUID? = nil
@@ -56,14 +57,10 @@ class URLMonitor: ObservableObject {
         
         guard !isGlobalPaused && items.contains(where: { $0.isEnabled }) else { return }
         
-        // Timer auf Background Thread ausführen, um Main Thread Blockierung zu vermeiden
-        DispatchQueue.global(qos: .background).async { [weak self] in
-            self?.timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in
                 self?.processCentralTimer()
             }
-            
-            // Run Loop für den Background Thread starten
-            RunLoop.current.run()
         }
     }
     
@@ -280,7 +277,9 @@ class URLMonitor: ObservableObject {
             items[index].history.removeAll()
             
             // Request-Manager zurücksetzen
-            requestManager.resetHistory(for: item.id)
+            Task {
+                await requestManager.resetHistory(for: item.id)
+            }
             
             save()
         }
