@@ -20,42 +20,22 @@ struct URLGuardApp: App {
                 .toolbar {
                     ToolbarItemGroup(placement: .primaryAction) {
                         if monitor.isGlobalPaused {
-                            IconButton(
-                                icon: "pause.circle.fill",
-                                title: "Pausiert",
-                                color: .orange,
-                                isDisabled: monitor.items.isEmpty
-                            ) {
+                            Button("Starten", systemImage: "play.circle.fill") {
                                 monitor.startGlobal()
                             }
-                            .keyframeAnimator(initialValue: 1.0, repeating: true) { content, opacity in
-                                content
-                                    .opacity(opacity)
-                            } keyframes: { _ in
-                                KeyframeTrack(\.self) {
-                                    LinearKeyframe(1.0, duration: 3.0)
-                                    LinearKeyframe(0.3, duration: 0.75, timingCurve: .easeInOut)
-                                    LinearKeyframe(1.0, duration: 0.75, timingCurve: .easeInOut)
-                                }
-                            }
                         } else {
-                            IconButton(
-                                icon: "play.circle.fill",
-                                title: "Gestartet",
-                                color: .green,
-                                isDisabled: monitor.items.isEmpty
-                            ) {
+                            Button("Pausieren", systemImage: "pause.circle.fill") {
                                 monitor.pauseGlobal()
                             }
                         }
 
-                        IconButton(
-                            icon: "plus.circle.fill",
-                            title: "Neuer Eintrag",
-                            color: .blue
-                        ) {
+                        Spacer(minLength: 40)
+                        
+                        Button("Neuer Eintrag", systemImage: "plus.circle") {
                             editingItem = URLItem()
                         }
+                        
+                        Spacer(minLength: 40)
                     }
                 }
                 .toolbar(.visible, for: .windowToolbar)
@@ -73,6 +53,11 @@ struct URLGuardApp: App {
                             }
                         }
                     )
+                }
+                .onAppear {
+                    if let window = NSApplication.shared.windows.first {
+                        window.toolbar?.displayMode = .iconAndLabel
+                    }
                 }
                 .onAppear {
                     dockBadgeCancellable = monitor.$items

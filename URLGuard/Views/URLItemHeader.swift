@@ -11,7 +11,7 @@ struct URLItemHeader: View {
                 guard monitor.items.contains(where: { $0.id == item.id }) else { return }
                 monitor.togglePause(for: item)
             } label: {
-                Image(systemName:  item.isEnabled ? "play.circle.fill" : "pause.circle.fill")
+                Image(systemName:  item.isEnabled ? "pause.circle.fill" : "play.circle.fill")
                 .foregroundColor(.secondary)
                 .font(.title2)
             }
@@ -90,7 +90,7 @@ struct URLItemHeader: View {
             VStack {
                 HStack(spacing: 8) {
                     ActionButton(
-                        icon: "pencil",
+                        icon: "square.and.pencil",
                         title: "Bearbeiten",
                         color: .blue
                     ) {
@@ -116,7 +116,7 @@ struct URLItemHeader: View {
                     }
                 }
             }
-            .offset(x: 8, y: -6)
+            .offset(x: 4, y: -6)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
