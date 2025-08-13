@@ -24,14 +24,14 @@ struct HistoryEntryView: View {
         if case .gap = entry {
             // Gap-Element anzeigen
             VStack(spacing: 2) {
-                Circle()
-                    .fill(Color.clear)
-                    .frame(width: 3, height: 3)
+                Spacer()
+                    .frame(height: 3)
                 Text("…")
                     .font(.caption2)
                     .foregroundColor(.secondary)
-                    .frame(width: 10, height: 10)
-                Spacer(minLength: 3)
+                    .frame(height: 10)
+                Spacer()
+                    .frame(height: 3)
             }
         }
         else if case .requestResult(_, let requestResult, let isMarked) = entry {
@@ -47,7 +47,8 @@ struct HistoryEntryView: View {
                     RoundedRectangle(cornerRadius: 2)
                         .fill(requestResult.statusColor)
                         .frame(width: 10, height: 10)
-                    Spacer(minLength: 3)
+                    Spacer()
+                        .frame(height: 3)
                 }
             }
             .buttonStyle(.plain)

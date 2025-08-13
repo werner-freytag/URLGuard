@@ -13,7 +13,7 @@ struct URLItemHistory: View {
     }
     
     var body: some View {
-        let view = HStack(alignment: .top, spacing: 4) {
+        let view = HStack(alignment: .center, spacing: 12) {
             ScrollViewReader { proxy in
                 GeometryReader { geo in
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -21,13 +21,12 @@ struct URLItemHistory: View {
                             ForEach(Array(item.history.enumerated()), id: \.element.id) { index, entry in
                                 HistoryEntryView(item: item, entryIndex: index, monitor: monitor)
                             }
-                            
+
                             CountdownView(item: item, monitor: monitor)
                                 .id("countdown")
                         }
-                        .padding(.trailing, 8) // Abstand am Ende für bessere Optik
+                        .frame(height: 24)
                     }
-                    .frame(height: 12)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .onAppear {
                         proxy.scrollTo("countdown", anchor: .trailing)
@@ -41,7 +40,6 @@ struct URLItemHistory: View {
                             proxy.scrollTo("countdown", anchor: .trailing)
                     }
                 }
-                .offset(y: 2)
             }
             
             let markedCount = item.history.markedCount

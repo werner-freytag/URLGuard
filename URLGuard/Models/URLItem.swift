@@ -69,8 +69,9 @@ struct URLItem: Identifiable, Codable, Equatable {
     var isEnabled: Bool
     var history: [HistoryEntry]
     var enabledNotifications: Set<NotificationType>
+    var isExpanded: Bool
   
-    init(id: UUID = UUID(), url: URL = URL(string: "https://")!, title: String? = nil, interval: Double = 10, isEnabled: Bool = true, history: [HistoryEntry] = [], enabledNotifications: Set<NotificationType> = []) {
+    init(id: UUID = UUID(), url: URL = URL(string: "https://")!, title: String? = nil, interval: Double = 10, isEnabled: Bool = true, history: [HistoryEntry] = [], enabledNotifications: Set<NotificationType> = [], isExpanded: Bool = true) {
         self.id = id
         self.url = url
         self.title = title
@@ -78,6 +79,7 @@ struct URLItem: Identifiable, Codable, Equatable {
         self.isEnabled = isEnabled
         self.history = history
         self.enabledNotifications = enabledNotifications
+        self.isExpanded = isExpanded
     }
     
     var orderedNotifications: [NotificationType] {
@@ -112,7 +114,8 @@ struct URLItem: Identifiable, Codable, Equatable {
             interval: interval,
             isEnabled: isEnabled,
             history: [],
-            enabledNotifications: enabledNotifications
+            enabledNotifications: enabledNotifications,
+            isExpanded: isExpanded
         )
     }
 }
