@@ -7,8 +7,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem?
     
     func applicationDidFinishLaunching(_ notification: Notification) {
-        setupNotifications()
-        
         // AppDelegate als Delegate für Dock-Klicks registrieren
         NSApp.delegate = self
     }
@@ -22,16 +20,5 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             NSApp.openMainWindow()
         }
         return true
-    }
-    
-    func setupNotifications() {
-        UNUserNotificationCenter.current().delegate = self
-    }
-}
-
-extension AppDelegate: UNUserNotificationCenterDelegate {
-    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-        // Notifications auch anzeigen, wenn App im Vordergrund ist
-        completionHandler([.banner])
     }
 }

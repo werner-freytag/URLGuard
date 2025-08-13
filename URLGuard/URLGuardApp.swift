@@ -1,4 +1,5 @@
 import Combine
+import UserNotifications
 import SwiftData
 import SwiftUI
 
@@ -12,6 +13,7 @@ struct URLGuardApp: App {
 
     @StateObject private var monitor = URLMonitor()
     @State private var editingItem: URLItem? = nil
+    @State private var highlightCancellable: AnyCancellable?
 
     var body: some Scene {
         #if os(macOS)
@@ -65,6 +67,18 @@ struct URLGuardApp: App {
                         .sink { items in
                             let count = items.map { $0.history.markedCount }.reduce(0, +)
                             NSApp.dockTile.badgeLabel = count > 0 ? "\(count)" : nil
+                        }
+                }
+                .onAppear {
+                    // NotificationManager als Delegate für UserNotifications registrieren
+                    UNUserNotificationCenter.current().delegate = NotificationManager.shared
+                }
+                .onAppear {
+                    // NotificationManager-Subscription für Highlight-Requests
+                    highlightCancellable = NotificationManager.shared.highlightRequestPublisher
+                        .receive(on: DispatchQueue.main)
+                        .sink { itemId in
+                            monitor.highlightItem(itemId)
                         }
                 }
         }
@@ -155,6 +169,10 @@ struct URLGuardApp: App {
                         }
                     }
                 )
+            }
+            .onAppear {
+                // iOS-spezifischer UNUserNotificationCenterDelegate
+                UNUserNotificationCenter.current().delegate = NotificationManager.shared
             }
         }
         #endif

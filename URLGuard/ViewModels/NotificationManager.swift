@@ -1,13 +1,21 @@
 import Foundation
 import UserNotifications
+import Combine
+#if os(macOS)
+import AppKit
+#endif
 
-class NotificationManager: ObservableObject {
+class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationManager()
+    
+    // Combine-Publisher für Highlight-Requests (plattformübergreifend)
+    let highlightRequestPublisher = PassthroughSubject<UUID, Never>()
     
     // Callback für das Öffnen des Popovers
     var onNotificationTapped: ((UUID) -> Void)?
     
-    private init() {
+    private override init() {
+        super.init()
         requestAuthorization()
     }
     
@@ -58,5 +66,33 @@ class NotificationManager: ObservableObject {
         }()
         
         sendNotification(title: title, body: body, userInfo: ["itemId": item.id.uuidString])
+    }
+    
+    // MARK: - UNUserNotificationCenterDelegate
+    
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        // Notifications auch anzeigen, wenn App im Vordergrund ist
+        completionHandler([.banner])
+    }
+    
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+        // Notification wurde angeklickt
+        let userInfo = response.notification.request.content.userInfo
+        
+        if let itemIdString = userInfo["itemId"] as? String,
+           let itemId = UUID(uuidString: itemIdString) {
+            
+            // Main-Fenster öffnen (nur unter macOS)
+            #if os(macOS)
+            DispatchQueue.main.async {
+                NSApp.openMainWindow()
+            }
+            #endif
+            
+            // Item highlighten über Combine-Publisher (plattformübergreifend)
+            highlightRequestPublisher.send(itemId)
+        }
+        
+        completionHandler()
     }
 }
