@@ -5,12 +5,21 @@ struct URLItemCard: View {
     let monitor: URLMonitor
     let onEdit: () -> Void
     
-    @State private var isExpanded: Bool = true
     @Namespace private var ns
+    
+    private var isExpanded: Bool { item.isExpanded }
 
     var body: some View {
         VStack(alignment: .leading, spacing: isExpanded ? 4 : 0) {
-            URLItemHeader(item: item, monitor: monitor, onEdit: onEdit, isExpanded: $isExpanded, ns: ns)
+            URLItemHeader(item: item, monitor: monitor, onEdit: onEdit, isExpanded: Binding(
+                get: { item.isExpanded },
+                set: { newValue in
+                    if let index = monitor.items.firstIndex(where: { $0.id == item.id }) {
+                        monitor.items[index].isExpanded = newValue
+                        monitor.save()
+                    }
+                }
+            ), ns: ns)
             
             // Trennlinie nur anzeigen, wenn der Header ausgeklappt ist
             if isExpanded {
@@ -20,8 +29,9 @@ struct URLItemCard: View {
                     .transition(.opacity)
                 
                 URLItemHistory(item: item, monitor: monitor, ns: ns)
+                    .offset(isExpanded ? .zero : CGSize(width: 0, height: -16))
                     .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, isExpanded ? 8 : 0)
             }
         }
         .background(backgroundView)
@@ -86,7 +96,7 @@ struct URLItemCard: View {
 
 #Preview {
     let monitor = URLMonitor()
-            let item = URLItem(url: URL(string: "https://example.com")!, interval: 10, isEnabled: true)
+    let item = URLItem(url: URL(string: "https://example.com")!, interval: 10, isEnabled: true)
     return URLItemCard(item: item, monitor: monitor, onEdit: {})
         .frame(width: 600)
-} 
+}
