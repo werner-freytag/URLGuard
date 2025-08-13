@@ -376,11 +376,7 @@ private extension HistoryEntry {
 }
 
 
-private extension [HistoryEntry] {
-    var numberOfEntries: Int {
-        filter { if case .requestResult = $0 { return true }; return false }.count
-    }
-    
+extension [HistoryEntry] {
     /// Reduziert die History auf die maximale Größe in einem Schritt
     func reducedToMaxSize(_ maxSize: Int) -> [HistoryEntry] {
         let currentEntryCount = numberOfEntries
@@ -404,12 +400,7 @@ private extension [HistoryEntry] {
         }
         
         // Sammle alle nicht-markierten Indizes
-        let unmarkedIndices: [Int] = enumerated().compactMap { index, entry in
-            if case .requestResult(_, _, let isMarked) = entry, !isMarked {
-                return index
-            }
-            return nil
-        }
+        let unmarkedIndices: [Int] = indexesOfEntries(marked: false)
         
         // Entferne zuerst nicht-markierte Einträge
         var indicesToRemove = Array<Int>(unmarkedIndices.prefix(count))
@@ -417,17 +408,25 @@ private extension [HistoryEntry] {
         // Falls nicht genug nicht-markierte Einträge vorhanden, fülle mit markierten auf
         if indicesToRemove.count < count {
             let remainingCount = count - indicesToRemove.count
-            let markedIndices: [Int] = enumerated().compactMap { index, entry in
-                if case .requestResult(_, _, let isMarked) = entry, isMarked {
-                    return index
-                }
-                return nil
-            }
+            let markedIndices: [Int] = indexesOfEntries(marked: true)
             let additionalIndices = Array<Int>(markedIndices.prefix(remainingCount))
             indicesToRemove = (indicesToRemove + additionalIndices).sorted()
         }
         
         return removeEntriesAtIndices(Array<Int>(indicesToRemove))
+    }
+    
+    private func indexesOfEntries(marked: Bool) -> Array<Int> {
+        enumerated().compactMap { index, entry in
+           if case .requestResult(_, _, let isMarked) = entry, isMarked == marked {
+               return index
+           }
+           return nil
+       }
+    }
+    
+    private var numberOfEntries: Int {
+        filter { if case .requestResult = $0 { return true }; return false }.count
     }
     
     /// Entfernt Einträge an mehreren Indizes und fügt Lücken hinzu
