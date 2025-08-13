@@ -82,6 +82,28 @@ struct URLItem: Identifiable, Codable, Equatable {
         self.isExpanded = isExpanded
     }
     
+    // Benutzerdefinierte Decoding-Methode, die fehlende Properties auf Standardwerte setzt
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        // Erforderliche Properties
+        self.url = try container.decode(URL.self, forKey: .url)
+        
+        // Optionale Properties mit Standardwerten
+        self.id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        self.title = try container.decodeIfPresent(String.self, forKey: .title)
+        self.isExpanded = try container.decodeIfPresent(Bool.self, forKey: .isExpanded) ?? true
+        self.interval = try container.decodeIfPresent(Double.self, forKey: .interval) ?? 10
+        self.isEnabled = try container.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? true
+        self.history = try container.decodeIfPresent([HistoryEntry].self, forKey: .history) ?? []
+        self.enabledNotifications = try container.decodeIfPresent(Set<NotificationType>.self, forKey: .enabledNotifications) ?? []
+    }
+    
+    // CodingKeys für die benutzerdefinierte Decoding-Methode
+    private enum CodingKeys: String, CodingKey {
+        case id, url, title, interval, isEnabled, history, enabledNotifications, isExpanded
+    }
+    
     var orderedNotifications: [NotificationType] {
         var orderedNotifications = [URLItem.NotificationType.error, .change, .success].filter(enabledNotifications.contains)
         orderedNotifications.append(contentsOf: enabledNotifications.filter { if case .httpCode = $0 { return true } else { return false }})
