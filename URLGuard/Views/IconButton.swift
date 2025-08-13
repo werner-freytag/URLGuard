@@ -28,7 +28,7 @@ struct IconButton: View {
         Button(action: action) {
             HStack(spacing: title != nil ? 6 : 0) {
                 Image(systemName: icon)
-                if let title = title {
+                if let title {
                     Text(title)
                         .frame(minWidth: 60)
                 }

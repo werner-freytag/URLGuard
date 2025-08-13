@@ -248,7 +248,7 @@ class URLMonitor: ObservableObject {
             items[index].interval = interval
             items[index].isEnabled = isEnabled
             
-            if let enabledNotifications = enabledNotifications {
+            if let enabledNotifications {
                 items[index].enabledNotifications = enabledNotifications
             }
             

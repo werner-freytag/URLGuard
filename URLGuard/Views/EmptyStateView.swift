@@ -36,7 +36,7 @@ struct EmptyStateView: View {
                     .multilineTextAlignment(.center)
             }
             
-            if let content = content {
+            if let content {
                 content
             }
         }
