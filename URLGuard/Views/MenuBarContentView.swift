@@ -21,14 +21,16 @@ struct MenuBarContentView: View {
                     NSApp.openMainWindow()
                     monitor.highlightItem(item.id)
                 } label: {
-                    Image(systemName: item.history.lastRequestResult?.statusIconName ?? "circle.dashed")
                     Text(item.displayTitle)
-                    if let requestResult = item.history.lastRequestResult {
-                        Text([
-                            requestResult.statusTitle ,
-                            requestResult.statusCode != nil ? "Code \(requestResult.statusCode!)" : "",
-                            requestResult.date.formatted(date: .numeric, time: .standard)
-                        ].filter { !$0.isEmpty }.joined(separator: " • "))
+                    
+                    let markedCount = item.history.markedCount
+
+                    if markedCount > 0 {
+                        if markedCount == 1 {
+                            Text("1 Benachrichtigung")
+                        } else {
+                            Text("\(markedCount) Benachrichtigungen")
+                        }
                     }
                 }
                 .disabled(!item.isEnabled)
