@@ -62,6 +62,9 @@ class URLMonitor: ObservableObject {
                 self?.processCentralTimer()
             }
         }
+        
+        // Timer-Modus auf .common setzen, damit er auch bei UI-Blockaden läuft
+        RunLoop.main.add(timer!, forMode: .common)
     }
     
     func stopTimer() {
