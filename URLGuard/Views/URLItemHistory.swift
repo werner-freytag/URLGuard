@@ -3,66 +3,77 @@ import SwiftUI
 
 struct URLItemHistory: View {
     let item: URLItem
-    let monitor: URLMonitor
-    @State private var scrollToEnd = false
+    @ObservedObject var monitor: URLMonitor
+    let ns: Namespace.ID?
 
+    init(item: URLItem, monitor: URLMonitor, ns: Namespace.ID? = nil) {
+        self.item = item
+        self.monitor = monitor
+        self.ns = ns
+    }
+    
     var body: some View {
-        HStack(alignment: .top, spacing: 4) {
+        let view = HStack(alignment: .top, spacing: 4) {
             ScrollViewReader { proxy in
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 1) {
-                        ForEach(Array(item.history.enumerated()), id: \.element.id) { index, entry in
-                            HistoryEntryView(item: item, entryIndex: index, monitor: monitor)
+                GeometryReader { geo in
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 1) {
+                            ForEach(Array(item.history.enumerated()), id: \.element.id) { index, entry in
+                                HistoryEntryView(item: item, entryIndex: index, monitor: monitor)
+                            }
+                            
+                            CountdownView(item: item, monitor: monitor)
+                                .id("countdown")
                         }
-
-                        CountdownView(item: item, monitor: monitor)
-                            .id("countdown")
+                        .padding(.trailing, 8) // Abstand am Ende für bessere Optik
                     }
-                    .padding(.trailing, 8) // Abstand am Ende für bessere Optik
-                }
-                .frame(height: 12)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .onAppear {
-                    // Beim App-Start zum neuesten Eintrag scrollen
-                    proxy.scrollTo("countdown", anchor: .trailing)
-                }
-                .onChange(of: item.history) { oldCount, newCount in
-                    withAnimation(.easeInOut(duration: 0.3)) {
+                    .frame(height: 12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .onAppear {
                         proxy.scrollTo("countdown", anchor: .trailing)
                     }
-                }
-            }
-            .offset(y: 2)
-            
-            HStack {
-                let markedCount = item.history.markedCount
-
-                if markedCount > 0 {
-                    Button(action: {
-                        guard monitor.items.contains(where: { $0.id == item.id }) else { return }
-                        monitor.unmarkAll(for: item)
-                    }) {
-                        Text("\(markedCount)")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color.red)
-                            )
-                            .frame(height: 16)
-                            .fixedSize()
+                    .onChange(of: item.history) { oldCount, newCount in
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            proxy.scrollTo("countdown", anchor: .trailing)
+                        }
                     }
-                    .buttonStyle(PlainButtonStyle())
-                    .help("Alle Markierungen entfernen")
+                    .onChange(of: geo.size.width) {
+                            proxy.scrollTo("countdown", anchor: .trailing)
+                    }
                 }
+                .offset(y: 2)
             }
-            .frame(height: 16)
+            
+            let markedCount = item.history.markedCount
+
+            if markedCount > 0 {
+                Button(action: {
+                    guard monitor.items.contains(where: { $0.id == item.id }) else { return }
+                    monitor.unmarkAll(for: item)
+                }) {
+                    Text("\(markedCount)")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.red)
+                        )
+                        .frame(height: 16)
+                        .fixedSize()
+                }
+                .buttonStyle(PlainButtonStyle())
+                .help("Alle Markierungen entfernen")
+            }
         }
         .frame(height: 24)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
+
+        if let ns {
+            view.matchedGeometryEffect(id: "item history", in: ns)
+        } else {
+            view
+        }
     }
 }
 

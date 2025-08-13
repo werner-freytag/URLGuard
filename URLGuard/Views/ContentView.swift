@@ -49,9 +49,7 @@ struct ContentView: View {
                                 print("Item nicht im Monitor gefunden für Bearbeitung: \(item.id)")
                             }
                         })
-                        .listRowInsets(EdgeInsets())
                         .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
                     }
                     .onMove { from, to in
                         monitor.moveItems(from: from, to: to)
