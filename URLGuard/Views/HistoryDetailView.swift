@@ -42,7 +42,7 @@ struct HistoryDetailView: View {
                                     .foregroundColor(isMarked ? .red : .gray.opacity(0.5))
                             }
                             .buttonStyle(.plain)
-                            .help(isMarked ? "Markiert – Klicken, um Markierung zu entfernen" : "Klicken, um Eintrag zu markieren")
+                            .help(isMarked ? "Marked – Click to remove marking" : "Click to mark entry")
                         } else {
                             Image(systemName: "circle.fill")
                                 .font(.caption)
@@ -56,18 +56,18 @@ struct HistoryDetailView: View {
         
             // Technische Details
             VStack(alignment: .leading, spacing: 12) {
-                Text("Technische Details")
+                Text("Technical Details")
                     .font(.subheadline)
                     .fontWeight(.semibold)
             
                 HStack {
                     DetailRow(label: "HTTP Status", value: requestResult.statusCode?.toString())
                     Spacer()
-                    DetailRow(label: "Methode", value: requestResult.method)
+                    DetailRow(label: "Method", value: requestResult.method)
                     Spacer()
-                    DetailRow(label: "Größe", value: requestResult.dataSize?.formattedBytes())
+                    DetailRow(label: "Size", value: requestResult.dataSize?.formattedBytes())
                     Spacer()
-                    DetailRow(label: "Dauer", value: requestResult.transferDuration?.formattedDuration())
+                    DetailRow(label: "Duration", value: requestResult.transferDuration?.formattedDuration())
                 }
             }
         
@@ -76,7 +76,7 @@ struct HistoryDetailView: View {
                 Divider()
             
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("HTTP-Header")
+                    Text("HTTP Header")
                         .font(.subheadline)
                         .fontWeight(.semibold)
                 
@@ -97,7 +97,7 @@ struct HistoryDetailView: View {
                 Divider()
             
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Änderungen")
+                    Text("Changes")
                         .font(.subheadline)
                         .fontWeight(.semibold)
                 
@@ -109,12 +109,12 @@ struct HistoryDetailView: View {
                         
                             if diffInfo.changedLines.count < diffInfo.totalChangedLines {
                                 if diffInfo.totalChangedLines - diffInfo.changedLines.count == 1 {
-                                    Text("... und 1 weitere Änderung")
+                                    Text("... and 1 more change")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                         .italic()
                                 } else {
-                                    Text("... und \(diffInfo.totalChangedLines - diffInfo.changedLines.count) weitere Änderungen")
+                                    Text("... and \(diffInfo.totalChangedLines - diffInfo.changedLines.count) further changes")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                         .italic()
@@ -142,7 +142,7 @@ struct HistoryDetailView: View {
                 HStack {
                     Image(systemName: requestResult.statusIconName)
                         .foregroundColor(requestResult.statusColor)
-                    Text("Inhalt nicht geändert")
+                    Text("Content unchanged")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
@@ -173,21 +173,21 @@ extension RequestResult {
     var statusTitle: String {
         switch status {
         case .none:
-            return "Unbekannt"
+            return "Unknown"
         case .some(.transferError):
-            return "Übertragungsfehler"
+            return "Transmission Error"
         case .some(.clientError):
-            return "Clientfehler"
+            return "Client Error"
         case .some(.serverError):
-            return "Serverfehler"
+            return "Server Error"
         case .some(.informational):
             return "Information"
         case .some(.success(true)):
-            return "Inhalt geändert"
+            return "Content changed"
         case .some(.success):
-            return "Erfolgreich"
+            return "Success"
         case .some(.redirection):
-            return "Weiterleitung"
+            return "Redirection"
         }
     }
 
@@ -240,7 +240,7 @@ private extension Double {
 }
 
 struct DetailRow: View {
-    let label: String
+    let label: LocalizedStringKey
     let value: String?
     
     var body: some View {
@@ -281,155 +281,6 @@ struct HeaderRow: View {
     
     HistoryDetailView(requestResult: result)
         .frame(width: 400, height: 300)
-}
-
-#Preview("HistoryDetailView - Änderung") {
-    let changedLines = [
-        DiffInfo.ChangedLine(
-            lineNumber: 1,
-            oldContent: "<title>Alte Seite</title>",
-            newContent: "<title>Neue Seite</title>",
-            changeType: .modified
-        ),
-        DiffInfo.ChangedLine(
-            lineNumber: 2,
-            oldContent: "<meta name=\"description\" content=\"Alte Beschreibung\">",
-            newContent: "<meta name=\"description\" content=\"Neue Beschreibung\">",
-            changeType: .modified
-        ),
-        DiffInfo.ChangedLine(
-            lineNumber: 3,
-            oldContent: "<div class=\"old-content\">",
-            newContent: "<div class=\"new-content\">",
-            changeType: .modified
-        ),
-        DiffInfo.ChangedLine(
-            lineNumber: 5,
-            oldContent: "  <p>Entfernter Text</p>",
-            newContent: "",
-            changeType: .removed
-        ),
-        DiffInfo.ChangedLine(
-            lineNumber: 6,
-            oldContent: "",
-            newContent: "  <p>Hinzugefügter Text</p>",
-            changeType: .added
-        )
-    ]
-    
-    let diffInfo = DiffInfo(
-        totalChangedLines: 5,
-        changedLines: changedLines
-    )
-    
-    let result = RequestResult(
-        date: Date().addingTimeInterval(-300),
-        method: "GET",
-        statusCode: 200,
-        dataSize: 18250,
-        transferDuration: 1.23,
-        diffInfo: diffInfo
-    )
-    
-    HistoryDetailView(requestResult: result)
-        .frame(width: 400, height: 400)
-}
-
-#Preview("HistoryDetailView - Fehler") {
-    let result = RequestResult(
-        date: Date().addingTimeInterval(-600),
-        method: "GET",
-        statusCode: nil,
-        errorDescription: "Connection failed"
-    )
-    
-    HistoryDetailView(requestResult: result)
-        .frame(width: 400, height: 250)
-}
-
-#Preview("HistoryDetailView - Alle Szenarien") {
-    VStack(spacing: 20) {
-        // Erfolg
-        let successResult = RequestResult(
-            method: "GET",
-            statusCode: 200,
-            dataSize: 15420,
-            transferDuration: 0.85
-        )
-        
-        // Änderung
-        let changedLines = [
-            DiffInfo.ChangedLine(
-                lineNumber: 1,
-                oldContent: "<title>Alte Seite</title>",
-                newContent: "<title>Neue Seite</title>",
-                changeType: .modified
-            ),
-            DiffInfo.ChangedLine(
-                lineNumber: 2,
-                oldContent: "<meta name=\"description\" content=\"Alte Beschreibung\">",
-                newContent: "<meta name=\"description\" content=\"Neue Beschreibung\">",
-                changeType: .modified
-            )
-        ]
-        
-        let diffInfo = DiffInfo(
-            totalChangedLines: 2,
-            changedLines: changedLines
-        )
-        
-        let changeResult = RequestResult(
-            date: Date().addingTimeInterval(-300),
-            method: "GET",
-            statusCode: 200,
-            dataSize: 18250,
-            transferDuration: 1.23,
-            diffInfo: diffInfo
-        )
-        
-        // Fehler
-        let errorResult = RequestResult(
-            date: Date().addingTimeInterval(-600),
-            method: "GET",
-            statusCode: 404,
-            dataSize: 0,
-            transferDuration: 2.45,
-            errorDescription: "Not Found"
-        )
-        
-        VStack(spacing: 16) {
-            Text("HistoryDetailView - Alle Szenarien")
-                .font(.headline)
-                .padding(.bottom, 8)
-            
-            HStack(spacing: 16) {
-                VStack {
-                    Text("Erfolg")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    HistoryDetailView(requestResult: successResult)
-                        .frame(width: 300, height: 200)
-                }
-                
-                VStack {
-                    Text("Änderung")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    HistoryDetailView(requestResult: changeResult)
-                        .frame(width: 300, height: 200)
-                }
-                
-                VStack {
-                    Text("Fehler")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    HistoryDetailView(requestResult: errorResult)
-                        .frame(width: 300, height: 200)
-                }
-            }
-        }
-        .padding()
-    }
 }
 
 // MARK: - Helper Views
@@ -499,10 +350,10 @@ struct ChangedLineView: View {
         if oldLines.count > 1 || newLines.count > 1 {
             // Mehrere Zeilen - zeige Bereich an
             let lastLineNumber = changedLine.lineNumber + max(oldLines.count, newLines.count) - 1
-            return "Zeilen \(changedLine.lineNumber)-\(lastLineNumber)"
+            return "Lines \(changedLine.lineNumber)-\(lastLineNumber)"
         } else {
             // Einzelne Zeile
-            return "Zeile \(changedLine.lineNumber)"
+            return "Line \(changedLine.lineNumber)"
         }
     }
     

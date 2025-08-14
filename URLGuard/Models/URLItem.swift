@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUICore
 import OrderedCollections
 
 struct URLItem: Identifiable, Codable, Equatable {
@@ -8,16 +9,16 @@ struct URLItem: Identifiable, Codable, Equatable {
         case success
         case httpCode(Int)
         
-        var description: String {
+        var description: LocalizedStringKey {
             switch self {
             case .error:
-                return "Bei Fehlern"
+                return "On errors"
             case .change:
-                return "Bei Inhaltsänderungen"
+                return "On content changes"
             case .success:
-                return "Bei Erfolg"
+                return "On success"
             case .httpCode(let code):
-                return "Bei HTTP Code \(code)"
+                return "On HTTP code \(code)"
             }
         }
         
@@ -149,7 +150,7 @@ extension URLItem {
         }
         
         if let host = url.host {
-            if !url.lastPathComponent.isEmpty {
+            if !url.lastPathComponent.isEmpty && url.lastPathComponent != "/" {
                 return "\(host) – \(url.lastPathComponent)"
             } else {
                 return host

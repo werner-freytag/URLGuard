@@ -40,23 +40,23 @@ struct URLItemCard: View {
         .padding(.vertical, 8)
         .opacity(monitor.isGlobalPaused ? 0.5 : 1.0)
         .contextMenu {
-            Button(item.isEnabled ? "Pausieren" : "Starten") {
+            Button(item.isEnabled ? "Pause" : "Start") {
                 monitor.togglePause(for: item)
             }
             
             Divider()
             
-            Button("Bearbeiten") {
+            Button("Edit") {
                 onEdit()
             }
             
-            Button("Duplizieren") {
+            Button("Duplicate") {
                 monitor.duplicate(item: item)
             }
             
             Divider()
             
-            Button("URL kopieren") {
+            Button("Copy URL") {
                 #if os(macOS)
                     let pb = NSPasteboard.general
                     pb.clearContents()
@@ -70,7 +70,7 @@ struct URLItemCard: View {
             
             Divider()
             
-            Button("Löschen") {
+            Button("Delete") {
                 monitor.remove(item: item)
             }
             .foregroundColor(.red)

@@ -62,7 +62,7 @@ struct URLItemHistory: View {
                         .fixedSize()
                 }
                 .buttonStyle(PlainButtonStyle())
-                .help("Alle Markierungen entfernen")
+                .help("Remove all markings")
             }
         }
         .frame(height: 24)
@@ -106,7 +106,7 @@ struct CountdownView: View {
                         .foregroundColor(.secondary)
                 }
                 .buttonStyle(.plain)
-                .help("Klicken für sofortigen Request")
+                .help("Click for immediate request")
             }
         } else {
             Image(systemName: "pause.fill")
@@ -114,13 +114,6 @@ struct CountdownView: View {
                 .opacity(0.5)
         }
     }
-}
-
-#Preview {
-    let monitor = URLMonitor()
-    let item = URLItem(url: URL(string: "https://example.com")!, interval: 10)
-    URLItemHistory(item: item, monitor: monitor)
-        .frame(width: 600, height: 200)
 }
 
 private extension HistoryEntry {

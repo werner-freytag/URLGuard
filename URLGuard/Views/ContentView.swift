@@ -39,20 +39,20 @@ struct ContentView: View {
             if filteredItems.isEmpty {
                 if !monitor.items.isEmpty {
                     EmptyStateView(
-                        title: "Keine Einträge gefunden",
-                        subtitle: "Leider wurden keine Übereinstimmung gefunden"
+                        title: "No entries found",
+                        subtitle: "Unfortunately, no matches were found."
                     )
                 } else {
                     EmptyStateView(
-                        title: "Keine Einträge vorhanden",
-                        subtitle: "Erstellen Sie Ihren ersten Eintrag, um URLs zu überwachen"
+                        title: "No Entries Present",
+                        subtitle: "Create your first entry to monitor URLs"
                     ) {
                         Button {
                             editingItem = monitor.createNewItem()
                         } label: {
                             HStack(spacing: 6) {
                                 Image(systemName: "plus.circle")
-                                Text("Neuer Eintrag")
+                                Text("New Entry")
                             }
                             .padding(6)
                         }

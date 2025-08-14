@@ -52,18 +52,7 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
         guard let notification = item.notification(for: result) else { return }
 
         let title = item.displayTitle
-        let body: String = { () in
-            switch notification {
-            case .httpCode(let httpCode):
-                return "HTTP status \(httpCode)"
-            case .error:
-                return "Fehler beim Abrufen"
-            case .change:
-                return "Geänderter Inhalt"
-            case .success:
-                return "Erfolgreich abgerufen"
-            }
-        }()
+        let body: String = notification.messsageBody
         
         sendNotification(title: title, body: body, userInfo: ["itemId": item.id.uuidString])
     }
@@ -94,5 +83,20 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
         }
         
         completionHandler()
+    }
+}
+
+extension URLItem.NotificationType {
+    var messsageBody: String {
+        switch self {
+        case .httpCode(let httpCode):
+            return .init(localized: "HTTP status \(httpCode)")
+        case .error:
+            return .init(localized: "Error retrieving")
+        case .change:
+            return .init(localized: "Content changed")
+        case .success:
+            return .init(localized: "Retrieved successfully")
+        }
     }
 }

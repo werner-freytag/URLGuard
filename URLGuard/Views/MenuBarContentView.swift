@@ -4,17 +4,17 @@ struct MenuBarContentView: View {
     @ObservedObject var monitor: URLMonitor
     
     var body: some View {
-        Button("Öffnen") {
+        Button("Open") {
             NSApp.openMainWindow()
         }
         Divider()
-        Button(monitor.isGlobalPaused ? "Monitoring starten" : "Monitoring pausieren") {
+        Button(monitor.isGlobalPaused ? "Start Monitoring" : "Pause Monitoring") {
             monitor.isGlobalPaused ? monitor.startGlobal() : monitor.pauseGlobal()
         }
         
         Divider()
         if monitor.items.isEmpty {
-            Text("Keine Einträge")
+            Text("No entries")
         } else {
             ForEach(monitor.items) { item in
                 Button {
@@ -27,9 +27,9 @@ struct MenuBarContentView: View {
 
                     if markedCount > 0 {
                         if markedCount == 1 {
-                            Text("1 markierter Eintrag")
+                            Text("1 marked entry")
                         } else {
-                            Text("\(markedCount) markierte Einträge")
+                            Text("\(markedCount) marked entries")
                         }
                     }
                 }
@@ -37,7 +37,7 @@ struct MenuBarContentView: View {
             }
         }
         Divider()
-        Button("Beenden") {
+        Button("Quit") {
             NSApp.terminate(nil)
         }
     }

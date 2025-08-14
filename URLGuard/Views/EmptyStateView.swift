@@ -2,14 +2,14 @@ import SwiftUI
 
 struct EmptyStateView: View {
     let icon: String?
-    let title: String
-    let subtitle: String?
+    let title: LocalizedStringKey
+    let subtitle: LocalizedStringKey?
     let content: AnyView?
     
     init(
         icon: String? = nil,
-        title: String,
-        subtitle: String? = nil,
+        title: LocalizedStringKey,
+        subtitle: LocalizedStringKey? = nil,
         @ViewBuilder content: () -> some View = { EmptyView() }
     ) {
         self.icon = icon

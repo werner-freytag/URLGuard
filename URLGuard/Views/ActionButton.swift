@@ -2,7 +2,7 @@ import SwiftUI
 
 struct ActionButton: View {
     let icon: String
-    let title: String
+    let title: LocalizedStringKey
     let color: Color
     let action: () -> Void
 

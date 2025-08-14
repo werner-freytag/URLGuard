@@ -117,16 +117,16 @@ struct NotificationSettingsView: View {
 }
 
 private extension URLItem.NotificationType {
-    var displayDescription: String {
+    var displayDescription: LocalizedStringKey {
         switch self {
         case .error:
-            return "Bei Fehlern"
+            return "On errors"
         case .change:
-            return "Bei Inhaltsänderungen"
+            return "On content changes"
         case .success:
-            return "Bei Erfolg"
+            return "On success"
         case .httpCode:
-            return "Bei HTTP Code"
+            return "On HTTP code"
         }
     }
 }

@@ -33,7 +33,7 @@ struct ModalEditorView: View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Text(isNewItem ? "Eintrag erstellen" : "Eintrag bearbeiten")
+                Text(isNewItem ? "Create entry" : "Edit entry")
                     .font(.headline)
                     .fontWeight(.medium)
                 
@@ -51,11 +51,11 @@ struct ModalEditorView: View {
                     VStack(alignment: .leading, spacing: 20) {
                         // Title Input
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Titel")
+                            Text("Title")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                             
-                            TextField("Titel (optional)", text: Binding(
+                            TextField("Title (optional)", text: Binding(
                                 get: { title ?? "" },
                                 set: { title = $0.isEmpty ? nil : $0 }
                             ))
@@ -72,14 +72,14 @@ struct ModalEditorView: View {
                         IntervalInputView(viewModel: intervalViewModel)
 
                         // Enabled Toggle
-                        Toggle("Starten", isOn: $isEnabled)
+                        Toggle("Execute", isOn: $isEnabled)
 
                     }
                     .frame(maxWidth: .infinity)
                     
                     // Rechte Spalte: Benachrichtigungen
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Benachrichtigungen")
+                        Text("Notifications")
                             .font(.caption)
                             .foregroundColor(.secondary)
 
@@ -98,12 +98,12 @@ struct ModalEditorView: View {
             HStack {
                 Spacer()
                 
-                Button("Abbrechen") {
+                Button("Cancel") {
                     dismiss()
                 }
                 .buttonStyle(.bordered)
                 
-                Button("Fertig") {
+                Button("Done") {
                     onSubmit()
                 }
                 .buttonStyle(.borderedProminent)
@@ -166,13 +166,3 @@ struct ModalEditorView: View {
     }
 }
 
-#Preview {
-    let monitor = URLMonitor()
-    let item = URLItem(url: URL(string: "https://example.com")!, interval: 10)
-    return ModalEditorView(
-        item: item, 
-        monitor: monitor, 
-        isNewItem: false,
-        onSave: { _ in }
-    )
-} 

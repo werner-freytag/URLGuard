@@ -105,7 +105,7 @@ struct IntervalInputView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Intervall (Sekunden)")
+            Text("Interval (seconds)")
                 .font(.caption)
                 .foregroundColor(.secondary)
             
@@ -130,38 +130,3 @@ struct IntervalInputView: View {
     }
 }
 
-// MARK: - Previews
-
-#Preview("URLInputView - Valid") {
-    let viewModel = URLInputViewModel()
-    viewModel.urlString = "https://example.com"
-    
-    return URLInputView(viewModel: viewModel)
-        .padding()
-}
-
-#Preview("URLInputView - Invalid") {
-    let viewModel = URLInputViewModel()
-    viewModel.urlString = "invalid-url"
-    viewModel.performValidation()
-    
-    return URLInputView(viewModel: viewModel)
-        .padding()
-}
-
-#Preview("IntervalInputView - Valid") {
-    let viewModel = IntervalInputViewModel()
-    viewModel.interval = 60
-    
-    return IntervalInputView(viewModel: viewModel)
-        .padding()
-}
-
-#Preview("IntervalInputView - Invalid") {
-    let viewModel = IntervalInputViewModel()
-    viewModel.interval = 0.5
-    viewModel.performValidation()
-    
-    return IntervalInputView(viewModel: viewModel)
-        .padding()
-} 

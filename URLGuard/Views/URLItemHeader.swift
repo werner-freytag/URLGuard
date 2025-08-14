@@ -19,7 +19,7 @@ struct URLItemHeader: View {
             }
             .buttonStyle(.plain)
             .padding(6)
-            .help(item.isEnabled ? "Pausieren" : "Starten")
+            .help(item.isEnabled ? "Pause" : "Start")
 
             VStack(alignment: .leading, spacing: isExpanded ? 4 : 8) {
                 TitleView(item: item, isExpanded: $isExpanded)
@@ -37,7 +37,7 @@ struct URLItemHeader: View {
                 HStack(spacing: 8) {
                     ActionButton(
                         icon: "square.and.pencil",
-                        title: "Bearbeiten",
+                        title: "Edit",
                         color: .blue
                     ) {
                         onEdit()
@@ -45,7 +45,7 @@ struct URLItemHeader: View {
                     
                     ActionButton(
                         icon: "plus.square.on.square",
-                        title: "Duplizieren",
+                        title: "Duplicate",
                         color: .secondary
                     ) {
                         guard monitor.items.contains(where: { $0.id == item.id }) else { return }
@@ -54,7 +54,7 @@ struct URLItemHeader: View {
                     
                     ActionButton(
                         icon: "trash",
-                        title: "Löschen",
+                        title: "Delete",
                         color: .red
                     ) {
                         guard monitor.items.contains(where: { $0.id == item.id }) else { return }
@@ -91,7 +91,7 @@ private struct Title: View {
                     .fontWeight(.bold)
                     .foregroundColor(item.isEnabled ? .primary : .secondary)
                 
-                if !item.url.lastPathComponent.isEmpty {
+                if !item.url.lastPathComponent.isEmpty && item.url.lastPathComponent != "/" {
                     Text(" – ")
                         .font(.headline)
                         .fontWeight(.regular)
@@ -130,13 +130,25 @@ private struct TitleView: View {
                 .foregroundColor(.secondary)
                 .rotationEffect(.degrees(isExpanded ? 0 : -90))
                 .animation(.easeInOut(duration: 0.3), value: isExpanded)
-                .help(isExpanded ? "Einklappen" : "Ausklappen")
+                .help(isExpanded ? "Collapse" : "Expand")
         }
         .onTapGesture {
             withAnimation(.easeInOut(duration: 0.3)) {
                 isExpanded.toggle()
             }
         }
+    }
+}
+
+private extension Double {
+    func formattedDuration() -> String {
+        let measurement = Measurement(value: self, unit: UnitDuration.seconds)
+
+        let formatter = MeasurementFormatter()
+        formatter.unitStyle = .short
+        formatter.numberFormatter.maximumFractionDigits = 3
+
+        return formatter.string(from: measurement)
     }
 }
 
@@ -152,7 +164,7 @@ private struct SublineView: View {
             
             HStack(spacing: 2) {
                 Image(systemName: "clock")
-                Text("\(Int(item.interval))s")
+                Text(item.interval.formattedDuration())
             }
             
             let notificationTypesText = item.enabledNotifications.map(\.displayName).joined(separator: ", ")

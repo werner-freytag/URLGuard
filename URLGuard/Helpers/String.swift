@@ -61,4 +61,14 @@ extension String {
             nextNumber += 1
         }
     }
+    
+    /// Lokalisiert einen String-Key
+    var localized: String {
+        NSLocalizedString(self, comment: "")
+    }
+    
+    /// Lokalisiert einen String-Key mit Kommentar
+    func localized(comment: String) -> String {
+        NSLocalizedString(self, comment: comment)
+    }
 } 

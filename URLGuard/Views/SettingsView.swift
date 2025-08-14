@@ -1,9 +1,9 @@
 import SwiftUI
 
 struct SettingsTitle : View {
-    let title: String
+    let title: LocalizedStringKey
     
-    init(_ title: String) {
+    init(_ title: LocalizedStringKey) {
         self.title = title
     }
     
@@ -42,10 +42,10 @@ struct SettingsView: View {
     var body: some View {
         Form {
             VStack(alignment: .leading) {
-                SettingsTitle("Historie")
+                SettingsTitle("History")
                 
                 HStack {
-                    Text("Maximale Länge der Historie")
+                    Text("Maximum length of history")
                     Stepper(value: $maxHistoryEntries, in: 1...999, step: 1) {
                         TextField("", text: $tempMaxHistoryEntries)
                             .frame(width: 60)
@@ -76,15 +76,15 @@ struct SettingsView: View {
                     }
                 }
                 
-                Toggle("Historie zwischen App-Starts speichern", isOn: $persistHistory)
-                    .help("Wenn aktiviert, werden alle History-Entries beim Beenden der App gespeichert und beim nächsten Start wieder geladen.")
+                Toggle("Save history between app launches", isOn: $persistHistory)
+                    .help("When enabled, all history entries are saved when the app is closed and reloaded the next time it is started.")
                 
                 Divider()
                     .padding(.vertical, 18)
 
-                SettingsTitle("Allgemein")
+                SettingsTitle("General")
                 
-                Toggle("Statusbar-Icon anzeigen", isOn: $showStatusBarIcon)
+                Toggle("Show status bar icon", isOn: $showStatusBarIcon)
             }
             .padding()
         }

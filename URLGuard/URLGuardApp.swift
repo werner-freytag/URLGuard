@@ -22,18 +22,18 @@ struct URLGuardApp: App {
                 .toolbar {
                     ToolbarItemGroup(placement: .primaryAction) {
                         if monitor.isGlobalPaused {
-                            Button("Starten", systemImage: "play.circle.fill") {
+                            Button("Start", systemImage: "play.circle.fill") {
                                 monitor.startGlobal()
                             }
                         } else {
-                            Button("Pausieren", systemImage: "pause.circle.fill") {
+                            Button("Pause", systemImage: "pause.circle.fill") {
                                 monitor.pauseGlobal()
                             }
                         }
 
                         Spacer(minLength: 40)
                         
-                        Button("Neuer Eintrag", systemImage: "plus.circle") {
+                        Button("New Entry", systemImage: "plus.circle") {
                             editingItem = URLItem()
                         }
                         
@@ -88,7 +88,7 @@ struct URLGuardApp: App {
         .windowResizability(.contentSize)
         .commands {
             CommandGroup(replacing: .newItem) {
-                Button("Neuer Eintrag") {
+                Button("New Entry") {
                     editingItem = URLItem()
                 }
                 .keyboardShortcut("n", modifiers: .command)
@@ -96,13 +96,13 @@ struct URLGuardApp: App {
             CommandGroup(replacing: .windowArrangement) {}
             CommandGroup(replacing: .toolbar) {}
             CommandGroup(replacing: .windowSize) {
-                Button("Fenster schließen") {
+                Button("Close Window") {
                     NSApplication.shared.keyWindow?.close()
                 }
                 .keyboardShortcut("w", modifiers: .command)
             }
             CommandGroup(after: .newItem) {
-                Button(monitor.isGlobalPaused ? "Monitoring starten" : "Monitoring pausieren") {
+                Button(monitor.isGlobalPaused ? "Start Monitoring" : "Pause Monitoring") {
                     monitor.isGlobalPaused ? monitor.startGlobal() : monitor.pauseGlobal()
                 }
                 .keyboardShortcut("p", modifiers: [.command, .shift])
@@ -131,12 +131,12 @@ struct URLGuardApp: App {
                                     Image(systemName: monitor.isGlobalPaused ? "pause.circle.fill" : "play.circle.fill")
                                 }
                                 .disabled(monitor.items.isEmpty)
-                                .accessibilityLabel(monitor.isGlobalPaused ? "Monitoring starten" : "Monitoring pausieren")
+                                .accessibilityLabel(monitor.isGlobalPaused ? "Start Monitoring" : "Pause Monitoring")
 
                                 Button(action: { editingItem = URLItem() }) {
                                     Image(systemName: "plus.circle.fill")
                                 }
-                                .accessibilityLabel("Neuer Eintrag")
+                                .accessibilityLabel("New entry")
                             }
                         } else {
                             ToolbarItemGroup(placement: .navigationBarTrailing) {
@@ -146,12 +146,12 @@ struct URLGuardApp: App {
                                     Image(systemName: monitor.isGlobalPaused ? "pause.circle.fill" : "play.circle.fill")
                                 }
                                 .disabled(monitor.items.isEmpty)
-                                .accessibilityLabel(monitor.isGlobalPaused ? "Monitoring starten" : "Monitoring pausieren")
+                                .accessibilityLabel(monitor.isGlobalPaused ? "Start Monitoring" : "Pause Monitoring")
 
                                 Button(action: { editingItem = URLItem() }) {
                                     Image(systemName: "plus.circle.fill")
                                 }
-                                .accessibilityLabel("Neuer Eintrag")
+                                .accessibilityLabel("New entry")
                             }
                         }
                     }
