@@ -17,26 +17,28 @@ struct URLItemHistory: View {
     var body: some View {
         let view = HStack(alignment: .center, spacing: 12) {
             GeometryReader { geo in
-                HStack(spacing: 1) {
-                    ForEach(Array(visibleHistory.enumerated()), id: \.element.id) { index, entry in
-                        HistoryEntryView(item: item, entry: .constant(entry), monitor: monitor)
+                HStack(spacing: 4) {
+                    HStack(spacing: 1) {
+                        ForEach(Array(visibleHistory.enumerated()), id: \.element.id) { index, entry in
+                            HistoryEntryView(item: item, entry: .constant(entry), monitor: monitor)
+                        }
                     }
-
+                    
                     CountdownView(item: item, monitor: monitor)
                 }
                 .frame(height: 24)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .onAppear {
-                    visibleHistory = getVisibleHistory(geo.size.width)
+                    updateVisibleHistory(for: geo.size.width)
                 }
                 .onChange(of: geo.size.width) {
-                    visibleHistory = getVisibleHistory(geo.size.width)
+                    updateVisibleHistory(for: geo.size.width)
                 }
                 .onChange(of: item.history) {
-                    visibleHistory = getVisibleHistory(geo.size.width)
+                    updateVisibleHistory(for: geo.size.width)
                 }
                 .onChange(of: item.isEnabled) {
-                    visibleHistory = getVisibleHistory(geo.size.width)
+                    updateVisibleHistory(for: geo.size.width)
                 }
             }
             
@@ -72,13 +74,13 @@ struct URLItemHistory: View {
         }
     }
     
-    /// Gibt die sichtbare Historie zurück, basierend auf dem verfügbaren Platz
-    private func getVisibleHistory(_ width: CGFloat) -> [HistoryEntry] {
-        let availableWidth = width - 60
-        let entryWidth: CGFloat = 11
+    /// Aktualisiert die sichtbare Historie basierend auf der verfügbaren Breite
+    private func updateVisibleHistory(for width: CGFloat) {
+        let availableWidth = width - "\(Int(item.interval))".width(using: .caption) - 4
+        let entryWidth: CGFloat = 11 // Breite eines History-Eintrags
         let maxVisibleEntries = max(1, Int(availableWidth / entryWidth))
         
-        return item.history.reducedToMaxSizeIncludingGaps(maxVisibleEntries)
+        visibleHistory = item.history.reducedToMaxSizeIncludingGaps(maxVisibleEntries)
     }
 }
 
@@ -93,7 +95,6 @@ struct CountdownView: View {
                 ProgressView()
                     .scaleEffect(0.3)
                     .frame(width: 10, height: 10)
-                    .padding(.horizontal, 2)
             } else if monitor.getRemainingTime(for: item.id) > 0 {
                 // Countdown zwischen Requests - klickbar für sofortigen Request
                 Button(action: {
@@ -103,16 +104,14 @@ struct CountdownView: View {
                     Text("\(Int(monitor.getRemainingTime(for: item.id)))")
                         .font(.caption)
                         .foregroundColor(.secondary)
-                        .padding(.horizontal, 4)
                 }
                 .buttonStyle(.plain)
                 .help("Klicken für sofortigen Request")
             }
         } else {
-            Text("Pausiert")
+            Image(systemName: "pause.fill")
                 .font(.caption)
-                .foregroundColor(.secondary.opacity(0.5))
-                .padding(.horizontal, 4)
+                .opacity(0.5)
         }
     }
 }

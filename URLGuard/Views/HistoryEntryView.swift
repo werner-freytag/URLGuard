@@ -29,7 +29,7 @@ struct HistoryEntryView: View {
                 Text("…")
                     .font(.caption2)
                     .foregroundColor(.secondary)
-                    .frame(height: 10)
+                    .frame(width: 10, height: 10)
                 Spacer()
                     .frame(height: 3)
             }
