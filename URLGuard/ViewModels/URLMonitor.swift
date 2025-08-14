@@ -344,7 +344,7 @@ class URLMonitor: ObservableObject {
         let persistableItems = persistHistory ? items : items.map(\.withoutHistory)
         
         guard let data = try? JSONEncoder().encode(persistableItems) else {
-            print("Fehler beim Encoding der Daten.")
+            loggers[.app]?.error("Fehler beim Encoding der Daten.")
             return
         }
     
@@ -353,7 +353,7 @@ class URLMonitor: ObservableObject {
     
     func load() {
         guard !savedItemsData.isEmpty else {
-            print("Keine gespeicherten Daten vorhanden.")
+            loggers[.app]?.debug("Keine gespeicherten Daten vorhanden.")
             return
         }
 
@@ -378,7 +378,7 @@ private extension HistoryEntry {
 
 extension [HistoryEntry] {
     /// Reduziert die History auf die maximale Größe in einem Schritt
-    func reducedToMaxSize(_ maxSize: Int) -> [HistoryEntry] {
+    func reducedToMaxSize(_ maxSize: Int) -> Self {
         let currentEntryCount = numberOfEntries
         
         guard currentEntryCount > maxSize else {
@@ -416,6 +416,21 @@ extension [HistoryEntry] {
         return removeEntriesAtIndices(Array<Int>(indicesToRemove))
     }
     
+    /// Reduziert die History auf die maximale Größe, wobei Gaps mitgezählt werden
+    func reducedToMaxSizeIncludingGaps(_ maxSize: Int) -> Self {
+        var size = maxSize
+        
+        var result = reducedToMaxSize(maxSize)
+        if (maxSize <= 2) { return result }
+        
+        while result.count > maxSize {
+            size -= 1
+            result = reducedToMaxSize(size)
+        }
+        
+        return result
+    }
+    
     private func indexesOfEntries(marked: Bool) -> Array<Int> {
         enumerated().compactMap { index, entry in
            if case .requestResult(_, _, let isMarked) = entry, isMarked == marked {
@@ -433,24 +448,18 @@ extension [HistoryEntry] {
     private func removeEntriesAtIndices(_ indices: Array<Int>) -> [HistoryEntry] {
         guard !indices.isEmpty else { return self }
         
-        var result = self
-        var offset = 0
-        
-        for index in indices.sorted() {
-            let adjustedIndex = index - offset
-            result = result.removeEntry(at: adjustedIndex)
-            offset += 1
+        return enumerated().reduce(into: [HistoryEntry]()) { result, entry in
+            let (index, element) = entry
+            
+            if element == .gap || indices.contains(index) {
+                if result.last == .gap {
+                    return
+                }
+                result.append(.gap)
+            } else {
+                result.append(element)
+            }
         }
-        
-        return result
-    }
-    
-    /// Entfernt einen Eintrag an der angegebenen Position und fügt bei Bedarf eine Lücke hinzu
-    private func removeEntry(at index: Int) -> [HistoryEntry] {
-        let shouldInsertGap = index == 0 || self[index - 1] != .gap
-        let removeLength = calculateRemoveLength(at: index)
-        
-        return self[..<index] + (shouldInsertGap ? [HistoryEntry.gap] : []) + self[(index + removeLength)...]
     }
     
     /// Berechnet die Länge des zu entfernenden Bereichs (inkl. benachbarter Lücken)

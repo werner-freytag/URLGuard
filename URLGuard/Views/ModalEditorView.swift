@@ -159,7 +159,7 @@ struct ModalEditorView: View {
                 monitor.confirmEditingWithValues(for: currentItem, urlString: trimmedURL, title: title, interval: intervalViewModel.interval, isEnabled: isEnabled, enabledNotifications: enabledNotifications)
                 return true
             } else {
-                print("Fehler: Es wurde kein passendes Item im Monitor gefunden.")
+                loggers[.app]?.warning("Fehler: Es wurde kein passendes Item im Monitor gefunden.")
                 return false
             }
         }

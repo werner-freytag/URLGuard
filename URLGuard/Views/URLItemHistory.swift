@@ -5,6 +5,8 @@ struct URLItemHistory: View {
     let item: URLItem
     @ObservedObject var monitor: URLMonitor
     let ns: Namespace.ID?
+    
+    @State private var visibleHistory: [HistoryEntry] = []
 
     init(item: URLItem, monitor: URLMonitor, ns: Namespace.ID? = nil) {
         self.item = item
@@ -14,31 +16,24 @@ struct URLItemHistory: View {
     
     var body: some View {
         let view = HStack(alignment: .center, spacing: 12) {
-            ScrollViewReader { proxy in
-                GeometryReader { geo in
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 1) {
-                            ForEach(Array(item.history.enumerated()), id: \.element.id) { index, entry in
-                                HistoryEntryView(item: item, entryIndex: index, monitor: monitor)
-                            }
+            GeometryReader { geo in
+                HStack(spacing: 1) {
+                    ForEach(Array(visibleHistory.enumerated()), id: \.element.id) { index, entry in
+                        HistoryEntryView(item: item, entry: .constant(entry), monitor: monitor)
+                    }
 
-                            CountdownView(item: item, monitor: monitor)
-                                .id("countdown")
-                        }
-                        .frame(height: 24)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .onAppear {
-                        proxy.scrollTo("countdown", anchor: .trailing)
-                    }
-                    .onChange(of: item.history) { oldCount, newCount in
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            proxy.scrollTo("countdown", anchor: .trailing)
-                        }
-                    }
-                    .onChange(of: geo.size.width) {
-                            proxy.scrollTo("countdown", anchor: .trailing)
-                    }
+                    CountdownView(item: item, monitor: monitor)
+                }
+                .frame(height: 24)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .onAppear {
+                    visibleHistory = getVisibleHistory(geo.size.width)
+                }
+                .onChange(of: geo.size.width) {
+                    visibleHistory = getVisibleHistory(geo.size.width)
+                }
+                .onChange(of: item.history) {
+                    visibleHistory = getVisibleHistory(geo.size.width)
                 }
             }
             
@@ -72,6 +67,15 @@ struct URLItemHistory: View {
         } else {
             view
         }
+    }
+    
+    /// Gibt die sichtbare Historie zurück, basierend auf dem verfügbaren Platz
+    private func getVisibleHistory(_ width: CGFloat) -> [HistoryEntry] {
+        let availableWidth = width - 60 // Platz für Countdown, Badge und Spacing
+        let entryWidth: CGFloat = 11 // Breite eines History-Eintrags
+        let maxVisibleEntries = max(1, Int(availableWidth / entryWidth))
+        
+        return item.history.reducedToMaxSizeIncludingGaps(maxVisibleEntries)
     }
 }
 

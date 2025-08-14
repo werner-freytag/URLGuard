@@ -22,9 +22,9 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
     func requestAuthorization() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
             if granted {
-                print("Notification permission granted")
+                loggers[.app]?.debug("Notification permission granted")
             } else if let error {
-                print("Notification permission error: \(error)")
+                loggers[.app]?.debug("Notification permission error: \(error)")
             }
         }
     }
@@ -43,7 +43,7 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
         
         UNUserNotificationCenter.current().add(request) { error in
             if let error {
-                print("Notification error: \(error)")
+                loggers[.app]?.warning("Notification error: \(error)")
             }
         }
     }

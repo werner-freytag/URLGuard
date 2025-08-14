@@ -2,8 +2,6 @@ import Foundation
 import OrderedCollections
 import os
 
-private let logger = Logger(subsystem: "de.wfco.URLGuard", category: "Network")
-
 actor URLRequestManager: ObservableObject {
     private var lastResponses: [UUID: Data] = [:]
     private var lastETags: [UUID: String] = [:]
@@ -61,7 +59,7 @@ actor URLRequestManager: ObservableObject {
     }
     
     private func performRequest(for item: URLItem, method: String) async -> (Data?, URLResponse?, Error?, TimeInterval) {
-        logger.debug("\(method) \(item.url)")
+        loggers[.network]?.debug("\(method) \(item.url)")
         
         var request = URLRequest(url: item.url)
         request.httpMethod = method

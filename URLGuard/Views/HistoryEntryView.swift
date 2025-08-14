@@ -2,22 +2,22 @@ import SwiftUI
 
 struct HistoryEntryView: View {
     private let item: URLItem
-    private let entryIndex: Int
+    @Binding private var entry: HistoryEntry
     private let monitor: URLMonitor
 
     @State private var isPopoverOpen: Bool
     private let onPopoverChange: ((Bool) -> Void)?
 
-    init(item: URLItem, entryIndex: Int, monitor: URLMonitor, isPopoverOpen: Bool = false, onPopoverChange: ((Bool) -> Void)? = nil) {
+    init(item: URLItem, entry: Binding<HistoryEntry>, monitor: URLMonitor, isPopoverOpen: Bool = false, onPopoverChange: ((Bool) -> Void)? = nil) {
         self.item = item
-        self.entryIndex = entryIndex
+        self._entry = entry
         self.monitor = monitor
         self.isPopoverOpen = isPopoverOpen
         self.onPopoverChange = onPopoverChange
     }
-    
-    private var entry: HistoryEntry {
-        item.history[entryIndex]
+
+    private var entryIndex: Int? {
+        item.history.firstIndex(of: entry)
     }
 
     var body: some View {
@@ -34,7 +34,7 @@ struct HistoryEntryView: View {
                     .frame(height: 3)
             }
         }
-        else if case .requestResult(_, let requestResult, let isMarked) = entry {
+        else if case .requestResult(_, let requestResult, var isMarked) = entry {
             // Normaler History-Eintrag
             Button(action: {
                 isPopoverOpen = true
@@ -53,13 +53,17 @@ struct HistoryEntryView: View {
             }
             .buttonStyle(.plain)
             .popover(isPresented: $isPopoverOpen, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom) {
-                HistoryDetailView(requestResult: requestResult, isMarked: isMarked, markerAction: { monitor.toggleHistoryEntryMark(for: item, at: entryIndex) })
-                    .frame(width: 400, height: calculatePopoverHeight(for: requestResult))
-                    .presentationBackground(Color.controlBackgroundColor)
-                    .presentationCornerRadius(0)
-                    .onDisappear {
-                        onPopoverChange?(false)
+                HistoryDetailView(requestResult: requestResult, isMarked: isMarked, markerAction: {
+                    if let entryIndex {
+                        monitor.toggleHistoryEntryMark(for: item, at: entryIndex)
                     }
+                })
+                .frame(width: 400, height: calculatePopoverHeight(for: requestResult))
+                .presentationBackground(Color.controlBackgroundColor)
+                .presentationCornerRadius(0)
+                .onDisappear {
+                    onPopoverChange?(false)
+                }
             }
         }
     }
@@ -72,7 +76,7 @@ private func calculatePopoverHeight(for entry: RequestResult) -> CGFloat {
     if entry.status == .success(hasChanges: false) || entry.errorDescription != nil {
         height += 44
     }
-    
+
     // Zusätzliche Höhe für Diff-Informationen
     if let diffInfo = entry.diffInfo, diffInfo.totalChangedLines > 0 {
         height += 200

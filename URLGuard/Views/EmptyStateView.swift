@@ -45,28 +45,3 @@ struct EmptyStateView: View {
         .background(Color.controlBackgroundColor)
     }
 }
-
-#Preview {
-    VStack(spacing: 40) {
-        EmptyStateView(
-            icon: "plus.circle",
-            title: "Keine Einträge vorhanden",
-            subtitle: "Erstellen Sie Ihren ersten Eintrag, um URLs zu überwachen"
-        ) {
-            IconButton(
-                icon: "plus",
-                title: "Neuer Eintrag",
-                color: .blue
-            ) {
-                print("Neuer Eintrag")
-            }
-        }
-        
-        EmptyStateView(
-            icon: "magnifyingglass",
-            title: "Keine Einträge gefunden",
-            subtitle: "Für 'test' wurden keine Übereinstimmung gefunden"
-        )
-    }
-    .padding()
-} 
