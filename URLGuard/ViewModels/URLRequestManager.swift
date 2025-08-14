@@ -59,7 +59,7 @@ actor URLRequestManager: ObservableObject {
     }
     
     private func performRequest(for item: URLItem, method: String) async -> (Data?, URLResponse?, Error?, TimeInterval) {
-        loggers[.network]?.debug("\(method) \(item.url)")
+        LoggerManager.network.debug("\(method) \(item.url)")
         
         var request = URLRequest(url: item.url)
         request.httpMethod = method

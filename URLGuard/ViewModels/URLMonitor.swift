@@ -344,7 +344,7 @@ class URLMonitor: ObservableObject {
         let persistableItems = persistHistory ? items : items.map(\.withoutHistory)
         
         guard let data = try? JSONEncoder().encode(persistableItems) else {
-            loggers[.app]?.error("Fehler beim Encoding der Daten.")
+            LoggerManager.app.error("Fehler beim Encoding der Daten.")
             return
         }
     
@@ -353,7 +353,7 @@ class URLMonitor: ObservableObject {
     
     func load() {
         guard !savedItemsData.isEmpty else {
-            loggers[.app]?.debug("Keine gespeicherten Daten vorhanden.")
+            LoggerManager.app.debug("Keine gespeicherten Daten vorhanden.")
             return
         }
 

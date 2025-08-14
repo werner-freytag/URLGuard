@@ -46,7 +46,7 @@ struct ContentView: View {
                             if let currentItem = monitor.items.first(where: { $0.id == item.id }) {
                                 editingItem = currentItem
                             } else {
-                                loggers[.app]?.error("Item nicht im Monitor gefunden für Bearbeitung: \(item.id)")
+                                LoggerManager.app.error("Item nicht im Monitor gefunden für Bearbeitung: \(item.id)")
                             }
                         })
                         .listRowSeparator(.hidden)
