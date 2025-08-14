@@ -60,6 +60,9 @@ struct ContentView: View {
         }
         .frame(minWidth: 420, minHeight: 200)
         .searchable(text: $searchText, prompt: "URLs durchsuchen...")
+        .onChange(of: monitor.maxHistoryItems) {
+            monitor.trimAllHistories(to: monitor.maxHistoryItems)
+        }
         .sheet(item: $editingItem) { item in
             // Prüfe ob es ein neues Item ist (nicht in der Liste vorhanden)
             let isNewItem = !monitor.items.contains { $0.id == item.id }

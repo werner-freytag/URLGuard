@@ -361,6 +361,14 @@ class URLMonitor: ObservableObject {
             self.items = decoded
         }
     }
+    
+    /// Kürzt die Historie aller Items auf die angegebene maximale Größe
+    func trimAllHistories(to maxSize: Int) {
+        for index in items.indices {
+            items[index].history = items[index].history.reducedToMaxSizeIncludingGaps(maxSize)
+        }
+        save() // Änderungen speichern
+    }
 }
 
 
@@ -425,7 +433,7 @@ extension [HistoryEntry] {
         
         while result.count > maxSize {
             size -= 1
-            result = reducedToMaxSize(size)
+            result = result.reducedToMaxSize(size)
         }
         
         return result

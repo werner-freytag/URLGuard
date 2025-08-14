@@ -27,9 +27,9 @@ struct MenuBarContentView: View {
 
                     if markedCount > 0 {
                         if markedCount == 1 {
-                            Text("1 Benachrichtigung")
+                            Text("1 markierter Eintrag")
                         } else {
-                            Text("\(markedCount) Benachrichtigungen")
+                            Text("\(markedCount) markierte Einträge")
                         }
                     }
                 }

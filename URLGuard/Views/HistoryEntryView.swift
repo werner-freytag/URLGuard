@@ -34,7 +34,7 @@ struct HistoryEntryView: View {
                     .frame(height: 3)
             }
         }
-        else if case .requestResult(_, let requestResult, var isMarked) = entry {
+        else if case .requestResult(_, let requestResult, let isMarked) = entry {
             // Normaler History-Eintrag
             Button(action: {
                 isPopoverOpen = true

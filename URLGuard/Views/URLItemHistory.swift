@@ -35,6 +35,9 @@ struct URLItemHistory: View {
                 .onChange(of: item.history) {
                     visibleHistory = getVisibleHistory(geo.size.width)
                 }
+                .onChange(of: item.isEnabled) {
+                    visibleHistory = getVisibleHistory(geo.size.width)
+                }
             }
             
             let markedCount = item.history.markedCount
@@ -71,8 +74,8 @@ struct URLItemHistory: View {
     
     /// Gibt die sichtbare Historie zurück, basierend auf dem verfügbaren Platz
     private func getVisibleHistory(_ width: CGFloat) -> [HistoryEntry] {
-        let availableWidth = width - 60 // Platz für Countdown, Badge und Spacing
-        let entryWidth: CGFloat = 11 // Breite eines History-Eintrags
+        let availableWidth = width - 60
+        let entryWidth: CGFloat = 11
         let maxVisibleEntries = max(1, Int(availableWidth / entryWidth))
         
         return item.history.reducedToMaxSizeIncludingGaps(maxVisibleEntries)
@@ -106,7 +109,7 @@ struct CountdownView: View {
                 .help("Klicken für sofortigen Request")
             }
         } else {
-            Text("Angehalten")
+            Text("Pausiert")
                 .font(.caption)
                 .foregroundColor(.secondary.opacity(0.5))
                 .padding(.horizontal, 4)
