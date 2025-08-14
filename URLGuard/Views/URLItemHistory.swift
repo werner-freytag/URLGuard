@@ -49,7 +49,7 @@ struct URLItemHistory: View {
                     guard monitor.items.contains(where: { $0.id == item.id }) else { return }
                     monitor.unmarkAll(for: item)
                 }) {
-                    Text("\(markedCount)")
+                    Text(String(markedCount))
                         .font(.system(size: 10, weight: .bold))
                         .foregroundColor(.white)
                         .padding(.horizontal, 6)
@@ -101,7 +101,7 @@ struct CountdownView: View {
                     guard monitor.items.contains(where: { $0.id == item.id }) else { return }
                     monitor.setRemainingTime(0, for: item.id)
                 }) {
-                    Text("\(Int(monitor.getRemainingTime(for: item.id)))")
+                    Text(String((Int(monitor.getRemainingTime(for: item.id)))))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }

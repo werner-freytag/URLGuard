@@ -89,7 +89,7 @@ struct NotificationSettingsView: View {
                             }
                         )) {
                             ForEach(commonHttpCodes, id: \.self) { code in
-                                Text("\(code)").tag(code)
+                                Text(String(code)).tag(code)
                             }
                         }
                         .pickerStyle(MenuPickerStyle())
