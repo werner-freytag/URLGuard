@@ -1,15 +1,15 @@
 import SwiftUI
 
 struct EmptyStateView: View {
-    let icon: String
+    let icon: String?
     let title: String
-    let subtitle: String
+    let subtitle: String?
     let content: AnyView?
     
     init(
-        icon: String,
+        icon: String? = nil,
         title: String,
-        subtitle: String,
+        subtitle: String? = nil,
         @ViewBuilder content: () -> some View = { EmptyView() }
     ) {
         self.icon = icon
@@ -20,9 +20,11 @@ struct EmptyStateView: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            Image(systemName: icon)
-                .font(.system(size: 60))
-                .foregroundColor(.secondary)
+            if let icon {
+                Image(systemName: icon)
+                    .font(.system(size: 60))
+                    .foregroundColor(.secondary)
+            }
             
             VStack(spacing: 8) {
                 Text(title)
@@ -30,10 +32,12 @@ struct EmptyStateView: View {
                     .fontWeight(.medium)
                     .foregroundColor(.primary)
                 
-                Text(subtitle)
-                    .font(.body)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
             }
             
             if let content {

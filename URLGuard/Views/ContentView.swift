@@ -16,50 +16,52 @@ struct ContentView: View {
     }
     
     var body: some View {
-        VStack {
+        ZStack {
+            List {
+                ForEach(filteredItems) { item in
+                    URLItemCard(item: item, monitor: monitor, onEdit: {
+                        if let currentItem = monitor.items.first(where: { $0.id == item.id }) {
+                            editingItem = currentItem
+                        } else {
+                            LoggerManager.app.error("Item nicht im Monitor gefunden für Bearbeitung: \(item.id)")
+                        }
+                    })
+                    .listRowSeparator(.hidden)
+                }
+                .onMove { from, to in
+                    monitor.moveItems(from: from, to: to)
+                }
+            }
+            .listStyle(PlainListStyle())
+            .searchable(text: $searchText)
+            .disabled(monitor.items.isEmpty)
+
             if filteredItems.isEmpty {
                 if !monitor.items.isEmpty {
                     EmptyStateView(
-                        icon: "magnifyingglass",
                         title: "Keine Einträge gefunden",
-                        subtitle: "Für '\(searchText)' wurden keine Übereinstimmung gefunden"
+                        subtitle: "Leider wurden keine Übereinstimmung gefunden"
                     )
                 } else {
                     EmptyStateView(
-                        icon: "plus.circle",
                         title: "Keine Einträge vorhanden",
                         subtitle: "Erstellen Sie Ihren ersten Eintrag, um URLs zu überwachen"
                     ) {
-                        IconButton(
-                            icon: "plus",
-                            title: "Neuer Eintrag",
-                            color: .blue
-                        ) {
+                        Button {
                             editingItem = monitor.createNewItem()
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "plus.circle")
+                                Text("Neuer Eintrag")
+                            }
+                            .padding(6)
                         }
                     }
                 }
-            } else {
-                List {
-                    ForEach(filteredItems) { item in
-                        URLItemCard(item: item, monitor: monitor, onEdit: {
-                            if let currentItem = monitor.items.first(where: { $0.id == item.id }) {
-                                editingItem = currentItem
-                            } else {
-                                LoggerManager.app.error("Item nicht im Monitor gefunden für Bearbeitung: \(item.id)")
-                            }
-                        })
-                        .listRowSeparator(.hidden)
-                    }
-                    .onMove { from, to in
-                        monitor.moveItems(from: from, to: to)
-                    }
-                }
-                .listStyle(PlainListStyle())
             }
         }
+        .animation(.default, value: filteredItems.isEmpty)
         .frame(minWidth: 420, minHeight: 200)
-        .searchable(text: $searchText, prompt: "URLs durchsuchen...")
         .onChange(of: monitor.maxHistoryItems) {
             monitor.trimAllHistories(to: monitor.maxHistoryItems)
         }
