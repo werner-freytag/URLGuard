@@ -1,13 +1,6 @@
-//
-//  URLGuardUITestsLaunchTests.swift
-//  URLGuardUITests
-//
-//  Created by Freytag, Werner on 31.07.25.
-//
-
 import XCTest
 
-final class URLGuardUITestsLaunchTests: XCTestCase {
+final class URLWatchUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true

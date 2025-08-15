@@ -4,7 +4,7 @@ import SwiftData
 import SwiftUI
 
 @main
-struct URLGuardApp: App {
+struct URLWatchApp: App {
     #if os(macOS)
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @AppStorage("showStatusBarIcon") var showStatusBarIcon: Bool = true
@@ -17,7 +17,7 @@ struct URLGuardApp: App {
 
     var body: some Scene {
         #if os(macOS)
-        Window("URL Guard", id: "MainWindow") {
+        Window("URL Watch", id: "MainWindow") {
             ContentView(monitor: monitor)
                 .toolbar {
                     ToolbarItemGroup(placement: .primaryAction) {
@@ -109,7 +109,7 @@ struct URLGuardApp: App {
             }
         }
 
-        MenuBarExtra("URL Guard", image: "StatusbarIcon", isInserted: .constant(showStatusBarIcon)) {
+        MenuBarExtra("URL Watch", image: "StatusbarIcon", isInserted: .constant(showStatusBarIcon)) {
             MenuBarContentView(monitor: monitor)
         }
 
@@ -120,7 +120,7 @@ struct URLGuardApp: App {
         WindowGroup {
             NavigationStack {
                 ContentView(monitor: monitor)
-                    .navigationTitle("URL Guard")
+                    .navigationTitle("URL Watch")
                     .toolbarTitleDisplayMode(.inlineLarge)
                     .toolbar {
                         if #available(iOS 16.0, *) {

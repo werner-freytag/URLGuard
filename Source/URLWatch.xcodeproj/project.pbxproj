@@ -16,25 +16,25 @@
 			containerPortal = AD42F7C12E3B62BC005A5D21 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = AD42F7C82E3B62BD005A5D21;
-			remoteInfo = URLGuard;
+			remoteInfo = URLWatch;
 		};
 		AD42F7E52E3B62BE005A5D21 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = AD42F7C12E3B62BC005A5D21 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = AD42F7C82E3B62BD005A5D21;
-			remoteInfo = URLGuard;
+			remoteInfo = URLWatch;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		AD42F7C92E3B62BD005A5D21 /* URL Guard.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "URL Guard.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		AD42F7DA2E3B62BE005A5D21 /* URLGuardTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = URLGuardTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		AD42F7E42E3B62BE005A5D21 /* URLGuardUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = URLGuardUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AD42F7C92E3B62BD005A5D21 /* URL Watch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "URL Watch.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		AD42F7DA2E3B62BE005A5D21 /* URLWatchTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = URLWatchTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AD42F7E42E3B62BE005A5D21 /* URLWatchUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = URLWatchUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		AD42F7EC2E3B62BE005A5D21 /* Exceptions for "URLGuard" folder in "URLGuard" target */ = {
+		AD42F7EC2E3B62BE005A5D21 /* Exceptions for "URLWatch" folder in "URLWatch" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -44,27 +44,27 @@
 				Helpers/NSApp.swift = (macos, );
 				Views/MenuBarContentView.swift = (macos, );
 			};
-			target = AD42F7C82E3B62BD005A5D21 /* URLGuard */;
+			target = AD42F7C82E3B62BD005A5D21 /* URLWatch */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		AD42F7CB2E3B62BD005A5D21 /* URLGuard */ = {
+		AD42F7CB2E3B62BD005A5D21 /* URLWatch */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				AD42F7EC2E3B62BE005A5D21 /* Exceptions for "URLGuard" folder in "URLGuard" target */,
+				AD42F7EC2E3B62BE005A5D21 /* Exceptions for "URLWatch" folder in "URLWatch" target */,
 			);
-			path = URLGuard;
+			path = URLWatch;
 			sourceTree = "<group>";
 		};
-		AD42F7DD2E3B62BE005A5D21 /* URLGuardTests */ = {
+		AD42F7DD2E3B62BE005A5D21 /* URLWatchTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = URLGuardTests;
+			path = URLWatchTests;
 			sourceTree = "<group>";
 		};
-		AD42F7E72E3B62BE005A5D21 /* URLGuardUITests */ = {
+		AD42F7E72E3B62BE005A5D21 /* URLWatchUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = URLGuardUITests;
+			path = URLWatchUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -98,9 +98,9 @@
 		AD42F7C02E3B62BC005A5D21 = {
 			isa = PBXGroup;
 			children = (
-				AD42F7CB2E3B62BD005A5D21 /* URLGuard */,
-				AD42F7DD2E3B62BE005A5D21 /* URLGuardTests */,
-				AD42F7E72E3B62BE005A5D21 /* URLGuardUITests */,
+				AD42F7CB2E3B62BD005A5D21 /* URLWatch */,
+				AD42F7DD2E3B62BE005A5D21 /* URLWatchTests */,
+				AD42F7E72E3B62BE005A5D21 /* URLWatchUITests */,
 				AD42F7CA2E3B62BD005A5D21 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -108,9 +108,9 @@
 		AD42F7CA2E3B62BD005A5D21 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				AD42F7C92E3B62BD005A5D21 /* URL Guard.app */,
-				AD42F7DA2E3B62BE005A5D21 /* URLGuardTests.xctest */,
-				AD42F7E42E3B62BE005A5D21 /* URLGuardUITests.xctest */,
+				AD42F7C92E3B62BD005A5D21 /* URL Watch.app */,
+				AD42F7DA2E3B62BE005A5D21 /* URLWatchTests.xctest */,
+				AD42F7E42E3B62BE005A5D21 /* URLWatchUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -118,9 +118,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		AD42F7C82E3B62BD005A5D21 /* URLGuard */ = {
+		AD42F7C82E3B62BD005A5D21 /* URLWatch */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = AD42F7ED2E3B62BE005A5D21 /* Build configuration list for PBXNativeTarget "URLGuard" */;
+			buildConfigurationList = AD42F7ED2E3B62BE005A5D21 /* Build configuration list for PBXNativeTarget "URLWatch" */;
 			buildPhases = (
 				AD42F7C52E3B62BD005A5D21 /* Sources */,
 				AD42F7C62E3B62BD005A5D21 /* Frameworks */,
@@ -131,19 +131,19 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				AD42F7CB2E3B62BD005A5D21 /* URLGuard */,
+				AD42F7CB2E3B62BD005A5D21 /* URLWatch */,
 			);
-			name = URLGuard;
+			name = URLWatch;
 			packageProductDependencies = (
 				3694A0B92E40D7AE00D42F82 /* OrderedCollections */,
 			);
-			productName = URLGuard;
-			productReference = AD42F7C92E3B62BD005A5D21 /* URL Guard.app */;
+			productName = URLWatch;
+			productReference = AD42F7C92E3B62BD005A5D21 /* URL Watch.app */;
 			productType = "com.apple.product-type.application";
 		};
-		AD42F7D92E3B62BE005A5D21 /* URLGuardTests */ = {
+		AD42F7D92E3B62BE005A5D21 /* URLWatchTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = AD42F7F22E3B62BE005A5D21 /* Build configuration list for PBXNativeTarget "URLGuardTests" */;
+			buildConfigurationList = AD42F7F22E3B62BE005A5D21 /* Build configuration list for PBXNativeTarget "URLWatchTests" */;
 			buildPhases = (
 				AD42F7D62E3B62BE005A5D21 /* Sources */,
 				AD42F7D72E3B62BE005A5D21 /* Frameworks */,
@@ -155,18 +155,18 @@
 				AD42F7DC2E3B62BE005A5D21 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				AD42F7DD2E3B62BE005A5D21 /* URLGuardTests */,
+				AD42F7DD2E3B62BE005A5D21 /* URLWatchTests */,
 			);
-			name = URLGuardTests;
+			name = URLWatchTests;
 			packageProductDependencies = (
 			);
-			productName = URLGuardTests;
-			productReference = AD42F7DA2E3B62BE005A5D21 /* URLGuardTests.xctest */;
+			productName = URLWatchTests;
+			productReference = AD42F7DA2E3B62BE005A5D21 /* URLWatchTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		AD42F7E32E3B62BE005A5D21 /* URLGuardUITests */ = {
+		AD42F7E32E3B62BE005A5D21 /* URLWatchUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = AD42F7F52E3B62BE005A5D21 /* Build configuration list for PBXNativeTarget "URLGuardUITests" */;
+			buildConfigurationList = AD42F7F52E3B62BE005A5D21 /* Build configuration list for PBXNativeTarget "URLWatchUITests" */;
 			buildPhases = (
 				AD42F7E02E3B62BE005A5D21 /* Sources */,
 				AD42F7E12E3B62BE005A5D21 /* Frameworks */,
@@ -178,13 +178,13 @@
 				AD42F7E62E3B62BE005A5D21 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				AD42F7E72E3B62BE005A5D21 /* URLGuardUITests */,
+				AD42F7E72E3B62BE005A5D21 /* URLWatchUITests */,
 			);
-			name = URLGuardUITests;
+			name = URLWatchUITests;
 			packageProductDependencies = (
 			);
-			productName = URLGuardUITests;
-			productReference = AD42F7E42E3B62BE005A5D21 /* URLGuardUITests.xctest */;
+			productName = URLWatchUITests;
+			productReference = AD42F7E42E3B62BE005A5D21 /* URLWatchUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -210,7 +210,7 @@
 					};
 				};
 			};
-			buildConfigurationList = AD42F7C42E3B62BC005A5D21 /* Build configuration list for PBXProject "URLGuard" */;
+			buildConfigurationList = AD42F7C42E3B62BC005A5D21 /* Build configuration list for PBXProject "URLWatch" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -228,9 +228,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				AD42F7C82E3B62BD005A5D21 /* URLGuard */,
-				AD42F7D92E3B62BE005A5D21 /* URLGuardTests */,
-				AD42F7E32E3B62BE005A5D21 /* URLGuardUITests */,
+				AD42F7C82E3B62BD005A5D21 /* URLWatch */,
+				AD42F7D92E3B62BE005A5D21 /* URLWatchTests */,
+				AD42F7E32E3B62BE005A5D21 /* URLWatchUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -286,12 +286,12 @@
 /* Begin PBXTargetDependency section */
 		AD42F7DC2E3B62BE005A5D21 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = AD42F7C82E3B62BD005A5D21 /* URLGuard */;
+			target = AD42F7C82E3B62BD005A5D21 /* URLWatch */;
 			targetProxy = AD42F7DB2E3B62BE005A5D21 /* PBXContainerItemProxy */;
 		};
 		AD42F7E62E3B62BE005A5D21 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = AD42F7C82E3B62BD005A5D21 /* URLGuard */;
+			target = AD42F7C82E3B62BD005A5D21 /* URLWatch */;
 			targetProxy = AD42F7E52E3B62BE005A5D21 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -302,7 +302,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = URLGuard/URLGuard.entitlements;
+				CODE_SIGN_ENTITLEMENTS = URLWatch/URLWatch.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -310,7 +310,7 @@
 				ENABLE_HARDENED_RUNTIME = NO;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = URLGuard/Info.plist;
+				INFOPLIST_FILE = URLWatch/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -327,8 +327,8 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = io.pecora.URLGuard;
-				PRODUCT_NAME = "URL Guard";
+				PRODUCT_BUNDLE_IDENTIFIER = io.pecora.URLWatch;
+				PRODUCT_NAME = "URL Watch";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
@@ -344,7 +344,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = URLGuard/URLGuard.entitlements;
+				CODE_SIGN_ENTITLEMENTS = URLWatch/URLWatch.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -352,7 +352,7 @@
 				ENABLE_HARDENED_RUNTIME = NO;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = URLGuard/Info.plist;
+				INFOPLIST_FILE = URLWatch/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -369,8 +369,8 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = io.pecora.URLGuard;
-				PRODUCT_NAME = "URL Guard";
+				PRODUCT_BUNDLE_IDENTIFIER = io.pecora.URLWatch;
+				PRODUCT_NAME = "URL Watch";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
@@ -507,14 +507,14 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = de.wfco.URLGuardTests;
+				PRODUCT_BUNDLE_IDENTIFIER = de.wfco.URLWatchTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/URLGuard.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/URLGuard";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/URLWatch.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/URLWatch";
 				XROS_DEPLOYMENT_TARGET = 2.5;
 			};
 			name = Debug;
@@ -529,14 +529,14 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = de.wfco.URLGuardTests;
+				PRODUCT_BUNDLE_IDENTIFIER = de.wfco.URLWatchTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/URLGuard.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/URLGuard";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/URLWatch.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/URLWatch";
 				XROS_DEPLOYMENT_TARGET = 2.5;
 			};
 			name = Release;
@@ -550,14 +550,14 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = de.wfco.URLGuardUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = de.wfco.URLWatchUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_TARGET_NAME = URLGuard;
+				TEST_TARGET_NAME = URLWatch;
 				XROS_DEPLOYMENT_TARGET = 2.5;
 			};
 			name = Debug;
@@ -571,14 +571,14 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = de.wfco.URLGuardUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = de.wfco.URLWatchUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_TARGET_NAME = URLGuard;
+				TEST_TARGET_NAME = URLWatch;
 				XROS_DEPLOYMENT_TARGET = 2.5;
 			};
 			name = Release;
@@ -586,7 +586,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		AD42F7C42E3B62BC005A5D21 /* Build configuration list for PBXProject "URLGuard" */ = {
+		AD42F7C42E3B62BC005A5D21 /* Build configuration list for PBXProject "URLWatch" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AD42F7F02E3B62BE005A5D21 /* Debug */,
@@ -595,7 +595,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		AD42F7ED2E3B62BE005A5D21 /* Build configuration list for PBXNativeTarget "URLGuard" */ = {
+		AD42F7ED2E3B62BE005A5D21 /* Build configuration list for PBXNativeTarget "URLWatch" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AD42F7EE2E3B62BE005A5D21 /* Debug */,
@@ -604,7 +604,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		AD42F7F22E3B62BE005A5D21 /* Build configuration list for PBXNativeTarget "URLGuardTests" */ = {
+		AD42F7F22E3B62BE005A5D21 /* Build configuration list for PBXNativeTarget "URLWatchTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AD42F7F32E3B62BE005A5D21 /* Debug */,
@@ -613,7 +613,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		AD42F7F52E3B62BE005A5D21 /* Build configuration list for PBXNativeTarget "URLGuardUITests" */ = {
+		AD42F7F52E3B62BE005A5D21 /* Build configuration list for PBXNativeTarget "URLWatchUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AD42F7F62E3B62BE005A5D21 /* Debug */,

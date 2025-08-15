@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="824px" height="824px" viewBox="0 0 824 824" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>icon-modern</title>
+    <g id="Symbols" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="icon-modern">
+            <g id="Group" transform="translate(78, 78)">
+                <circle id="Oval" stroke="#FFFFFF" stroke-width="30" opacity="0.9" cx="334" cy="334" r="257.542169"></circle>
+                <circle id="Oval" stroke="#FFFFFF" stroke-width="25" opacity="0.8" cx="334" cy="334" r="193.156627"></circle>
+                <circle id="Oval" fill="#FFFFFF" fill-rule="nonzero" opacity="0.95" cx="334" cy="334" r="96.5783133"></circle>
+                <circle id="Oval" fill="#FFFFFF" fill-rule="nonzero" opacity="0.7" cx="293.759036" cy="293.759036" r="32.1927711"></circle>
+                <g opacity="0.7" fill="#FFFFFF" fill-rule="nonzero" id="Oval">
+                    <circle cx="12.0722892" cy="334" r="12.0722892"></circle>
+                    <circle cx="655.927711" cy="334" r="12.0722892"></circle>
+                    <circle cx="334" cy="12.0722892" r="12.0722892"></circle>
+                    <circle cx="334" cy="655.927711" r="12.0722892"></circle>
+                </g>
+                <g opacity="0.4" transform="translate(108.6506, 108.6506)" fill="#000000" fill-rule="nonzero" id="Path" stroke="#FFFFFF" stroke-linecap="round" stroke-width="8">
+                    <line x1="0" y1="0" x2="64.3855422" y2="64.3855422"></line>
+                    <line x1="450.698795" y1="0" x2="386.313253" y2="64.3855422"></line>
+                    <line x1="0" y1="450.698795" x2="64.3855422" y2="386.313253"></line>
+                    <line x1="450.698795" y1="450.698795" x2="386.313253" y2="386.313253"></line>
+                </g>
+            </g>
+            <g id="Group" opacity="0.2" transform="translate(80, 80)" fill="#FFFFFF" fill-rule="nonzero">
+                <ellipse id="Oval" cx="40.2334152" cy="40.2319902" rx="40.2334152" ry="40.2319902"></ellipse>
+                <ellipse id="Oval" cx="622.813268" cy="622.791209" rx="32.1867322" ry="32.1855922"></ellipse>
+                <ellipse id="Oval" cx="622.813268" cy="40.2319902" rx="28.1633907" ry="28.1623932"></ellipse>
+                <ellipse id="Oval" cx="40.2334152" cy="622.791209" rx="36.2100737" ry="36.2087912"></ellipse>
+            </g>
+        </g>
+    </g>
+</svg>

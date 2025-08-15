@@ -683,7 +683,7 @@
         }
       }
     },
-    "URL Guard" : {
+    "URL Watch" : {
       "shouldTranslate" : false
     },
     "When enabled, all history entries are saved when the app is closed and reloaded the next time it is started." : {

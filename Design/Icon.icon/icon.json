@@ -1,0 +1,50 @@
+{
+  "fill" : {
+    "linear-gradient" : [
+      "extended-srgb:0.68627,0.32157,0.87059,1.00000",
+      "display-p3:0.45236,0.14892,0.96611,1.00000"
+    ]
+  },
+  "groups" : [
+    {
+      "blur-material" : 0.5,
+      "hidden" : false,
+      "layers" : [
+        {
+          "fill" : "automatic",
+          "glass" : false,
+          "hidden" : false,
+          "image-name" : "icon-modern.svg",
+          "name" : "icon-modern",
+          "position" : {
+            "scale" : 1.24,
+            "translation-in-points" : [
+              8.53125,
+              2.2265625
+            ]
+          }
+        }
+      ],
+      "lighting" : "individual",
+      "position" : {
+        "scale" : 1,
+        "translation-in-points" : [
+          2.1151651738179194,
+          -4.230330347635839
+        ]
+      },
+      "shadow" : {
+        "kind" : "layer-color",
+        "opacity" : 0.5
+      },
+      "specular" : true,
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "squares" : "shared"
+  }
+}
