@@ -4,7 +4,6 @@ struct URLItemHeader: View {
     let item: URLItem
     let monitor: URLMonitor
     let onEdit: () -> Void
-    @Binding var isExpanded: Bool
     let ns: Namespace.ID
     
     var body: some View {
@@ -21,47 +20,46 @@ struct URLItemHeader: View {
             .padding(6)
             .help(item.isEnabled ? "Pause" : "Start")
 
-            VStack(alignment: .leading, spacing: isExpanded ? 4 : 8) {
-                TitleView(item: item, isExpanded: $isExpanded)
+            VStack(alignment: .leading, spacing: !monitor.isCompactViewMode ? 4 : 8) {
+                HStack {
+                    TitleView(item: item)
+                    
+                    Spacer()
+                    
+                    HStack(spacing: 8) {
+                        ActionButton(
+                            icon: "square.and.pencil",
+                            title: "Edit",
+                            color: .blue
+                        ) {
+                            onEdit()
+                        }
+                        
+                        ActionButton(
+                            icon: "plus.square.on.square",
+                            title: "Duplicate",
+                            color: .secondary
+                        ) {
+                            guard monitor.items.contains(where: { $0.id == item.id }) else { return }
+                            monitor.duplicate(item: item)
+                        }
+                        
+                        ActionButton(
+                            icon: "trash",
+                            title: "Delete",
+                            color: .red
+                        ) {
+                            guard monitor.items.contains(where: { $0.id == item.id }) else { return }
+                            monitor.remove(item: item)
+                        }
+                    }
+                }
                 
-                if isExpanded {
+                if !monitor.isCompactViewMode {
                     SublineView(item: item)
                 } else {
                     URLItemHistory(item: item, monitor: monitor, ns: ns)
                 }
-            }
-            
-            Spacer()
-            
-            if isExpanded {
-                HStack(spacing: 8) {
-                    ActionButton(
-                        icon: "square.and.pencil",
-                        title: "Edit",
-                        color: .blue
-                    ) {
-                        onEdit()
-                    }
-                    
-                    ActionButton(
-                        icon: "plus.square.on.square",
-                        title: "Duplicate",
-                        color: .secondary
-                    ) {
-                        guard monitor.items.contains(where: { $0.id == item.id }) else { return }
-                        monitor.duplicate(item: item)
-                    }
-                    
-                    ActionButton(
-                        icon: "trash",
-                        title: "Delete",
-                        color: .red
-                    ) {
-                        guard monitor.items.contains(where: { $0.id == item.id }) else { return }
-                        monitor.remove(item: item)
-                    }
-                }
-                .offset(y: -6)
             }
         }
         .padding(12)
@@ -71,7 +69,7 @@ struct URLItemHeader: View {
     }
 }
 
-private struct Title: View {
+private struct TitleView: View {
     let item: URLItem
 
     var body: some View {
@@ -113,29 +111,6 @@ private struct Title: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
                 .foregroundColor(item.isEnabled ? .primary : .secondary)
-        }
-    }
-}
-
-private struct TitleView: View {
-    let item: URLItem
-    @Binding var isExpanded: Bool
-
-    var body: some View {
-        HStack(spacing: 4) {
-            Title(item: item)
-            
-            Image(systemName: "chevron.down")
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .rotationEffect(.degrees(isExpanded ? 0 : -90))
-                .animation(.easeInOut(duration: 0.3), value: isExpanded)
-                .help(isExpanded ? "Collapse" : "Expand")
-        }
-        .onTapGesture {
-            withAnimation(.easeInOut(duration: 0.3)) {
-                isExpanded.toggle()
-            }
         }
     }
 }

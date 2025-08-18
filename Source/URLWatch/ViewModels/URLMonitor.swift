@@ -12,6 +12,7 @@ class URLMonitor: ObservableObject {
     @AppStorage("URLMonitorGlobalPause") var isGlobalPaused: Bool = false
     @AppStorage("persistHistory") var persistHistory: Bool = false
     @AppStorage("URLMonitorItemsData") private var savedItemsData: Data = Data()
+    @AppStorage("isCompactViewMode") var isCompactViewMode: Bool = false
     
     private var timer: Timer?
     
@@ -64,7 +65,7 @@ class URLMonitor: ObservableObject {
         }
         
         // Timer-Modus auf .common setzen, damit er auch bei UI-Blockaden läuft
-        RunLoop.main.add(timer!, forMode: .common)
+//        RunLoop.main.add(timer!, forMode: .common)
     }
     
     func stopTimer() {

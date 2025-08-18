@@ -138,12 +138,12 @@
         }
       }
     },
-    "Collapse" : {
+    "Compact View" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Einklappen"
+            "value" : "Kompakte Darstellung"
           }
         }
       }
@@ -289,12 +289,12 @@
         }
       }
     },
-    "Expand" : {
+    "Extended View" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aufklappen"
+            "value" : "Erweiterte Darstellung"
           }
         }
       }

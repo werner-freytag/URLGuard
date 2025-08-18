@@ -70,9 +70,8 @@ struct URLItem: Identifiable, Codable, Equatable {
     var isEnabled: Bool
     var history: [HistoryEntry]
     var enabledNotifications: Set<NotificationType>
-    var isExpanded: Bool
   
-    init(id: UUID = UUID(), url: URL = URL(string: "https://")!, title: String? = nil, interval: Double = 10, isEnabled: Bool = true, history: [HistoryEntry] = [], enabledNotifications: Set<NotificationType> = [], isExpanded: Bool = true) {
+    init(id: UUID = UUID(), url: URL = URL(string: "https://")!, title: String? = nil, interval: Double = 10, isEnabled: Bool = true, history: [HistoryEntry] = [], enabledNotifications: Set<NotificationType> = []) {
         self.id = id
         self.url = url
         self.title = title
@@ -80,7 +79,6 @@ struct URLItem: Identifiable, Codable, Equatable {
         self.isEnabled = isEnabled
         self.history = history
         self.enabledNotifications = enabledNotifications
-        self.isExpanded = isExpanded
     }
     
     // Benutzerdefinierte Decoding-Methode, die fehlende Properties auf Standardwerte setzt
@@ -93,7 +91,7 @@ struct URLItem: Identifiable, Codable, Equatable {
         // Optionale Properties mit Standardwerten
         self.id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
         self.title = try container.decodeIfPresent(String.self, forKey: .title)
-        self.isExpanded = try container.decodeIfPresent(Bool.self, forKey: .isExpanded) ?? true
+
         self.interval = try container.decodeIfPresent(Double.self, forKey: .interval) ?? 10
         self.isEnabled = try container.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? true
         self.history = try container.decodeIfPresent([HistoryEntry].self, forKey: .history) ?? []
@@ -102,7 +100,7 @@ struct URLItem: Identifiable, Codable, Equatable {
     
     // CodingKeys für die benutzerdefinierte Decoding-Methode
     private enum CodingKeys: String, CodingKey {
-        case id, url, title, interval, isEnabled, history, enabledNotifications, isExpanded
+        case id, url, title, interval, isEnabled, history, enabledNotifications
     }
     
     var orderedNotifications: [NotificationType] {
@@ -138,7 +136,6 @@ struct URLItem: Identifiable, Codable, Equatable {
             isEnabled: isEnabled,
             history: [],
             enabledNotifications: enabledNotifications,
-            isExpanded: isExpanded
         )
     }
 }

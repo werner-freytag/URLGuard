@@ -7,19 +7,11 @@ struct URLItemCard: View {
     
     @Namespace private var ns
     
-    private var isExpanded: Bool { item.isExpanded }
+    private var isExpanded: Bool { !monitor.isCompactViewMode }
 
     var body: some View {
         VStack(alignment: .leading, spacing: isExpanded ? 4 : 0) {
-            URLItemHeader(item: item, monitor: monitor, onEdit: onEdit, isExpanded: Binding(
-                get: { item.isExpanded },
-                set: { newValue in
-                    if let index = monitor.items.firstIndex(where: { $0.id == item.id }) {
-                        monitor.items[index].isExpanded = newValue
-                        monitor.save()
-                    }
-                }
-            ), ns: ns)
+            URLItemHeader(item: item, monitor: monitor, onEdit: onEdit, ns: ns)
             
             // Trennlinie nur anzeigen, wenn der Header ausgeklappt ist
             if isExpanded {
@@ -36,8 +28,8 @@ struct URLItemCard: View {
         }
         .background(backgroundView)
         .overlay(highlightOverlay)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
+        .padding(.horizontal, isExpanded ? 16 : 0)
+        .padding(.vertical, isExpanded ? 8 : 0)
         .opacity(monitor.isGlobalPaused ? 0.5 : 1.0)
         .contextMenu {
             Button(item.isEnabled ? "Pause" : "Start") {
@@ -78,10 +70,10 @@ struct URLItemCard: View {
     }
     
     private var backgroundView: some View {
-        RoundedRectangle(cornerRadius: 16)
-            .fill(item.isEnabled ? Color.white : Color.gray.opacity(0.05))
-            .stroke(.gray.opacity(0.2))
-            .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 3)
+        RoundedRectangle(cornerRadius: isExpanded ? 16 : 0)
+            .fill(item.isEnabled ? Color.white : Color(white: 0.975))
+            .stroke(true || isExpanded ? .gray.opacity(0.2) : .clear)
+            .shadow(color: isExpanded ? Color.black.opacity(0.08) : .clear, radius: 4, x: 0, y: 3)
     }
     
     private var highlightOverlay: some View {

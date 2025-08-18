@@ -93,8 +93,6 @@ struct URLWatchApp: App {
                 }
                 .keyboardShortcut("n", modifiers: .command)
             }
-            CommandGroup(replacing: .windowArrangement) {}
-            CommandGroup(replacing: .toolbar) {}
             CommandGroup(replacing: .windowSize) {
                 Button("Close Window") {
                     NSApplication.shared.keyWindow?.close()
@@ -106,6 +104,13 @@ struct URLWatchApp: App {
                     monitor.isGlobalPaused ? monitor.startGlobal() : monitor.pauseGlobal()
                 }
                 .keyboardShortcut("p", modifiers: [.command, .shift])
+            }
+            CommandGroup(after: .toolbar) {
+                Button(monitor.isCompactViewMode ? "Extended View" : "Compact View") {
+                    monitor.isCompactViewMode.toggle()
+                }
+                .keyboardShortcut("v", modifiers: [.command, .shift])
+                Divider()
             }
         }
 
