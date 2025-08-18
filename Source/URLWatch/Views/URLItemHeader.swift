@@ -81,25 +81,21 @@ private struct TitleView: View {
                 .fontWeight(.bold)
                 .lineLimit(1)
                 .truncationMode(.middle)
-                .foregroundColor(item.isEnabled ? .primary : .secondary)
         } else if let host = item.url.host {
             // URL-Komponenten anzeigen
             HStack(spacing: 4) {
                 Text(host)
                     .font(.headline)
                     .fontWeight(.bold)
-                    .foregroundColor(item.isEnabled ? .primary : .secondary)
                 
                 if !item.url.lastPathComponent.isEmpty && item.url.lastPathComponent != "/" {
                     Text(" – ")
                         .font(.headline)
                         .fontWeight(.regular)
-                        .foregroundColor(item.isEnabled ? .primary.opacity(0.6) : .secondary.opacity(0.6))
                     
                     Text(item.url.lastPathComponent)
                         .font(.headline)
                         .fontWeight(.regular)
-                        .foregroundColor(item.isEnabled ? .primary.opacity(0.6) : .secondary.opacity(0.6))
                 }
             }
             .lineLimit(1)
@@ -111,7 +107,6 @@ private struct TitleView: View {
                 .fontWeight(.bold)
                 .lineLimit(1)
                 .truncationMode(.middle)
-                .foregroundColor(item.isEnabled ? .primary : .secondary)
         }
     }
 }

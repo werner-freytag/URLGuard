@@ -32,6 +32,7 @@ struct URLItemCard: View {
         .padding(.horizontal, isExpanded ? 16 : 0)
         .padding(.vertical, isExpanded ? 8 : 0)
         .opacity(monitor.isGlobalPaused ? 0.5 : 1.0)
+        .opacity(item.isEnabled ? 1 : 0.5)
         .contextMenu {
             Button(item.isEnabled ? "Pause" : "Start") {
                 monitor.togglePause(for: item)
@@ -72,13 +73,13 @@ struct URLItemCard: View {
     
     private var backgroundView: some View {
         RoundedRectangle(cornerRadius: isExpanded ? 16 : 0)
-            .fill(item.isEnabled ? Color.white : Color(white: 0.975))
-            .stroke(true || isExpanded ? .gray.opacity(0.2) : .clear)
-            .shadow(color: isExpanded ? Color.black.opacity(0.08) : .clear, radius: 4, x: 0, y: 3)
+            .fill(.white)
+            .stroke(.gray.opacity(0.2))
     }
     
     private var highlightOverlay: some View {
-        RoundedRectangle(cornerRadius: 16)
+        RoundedRectangle(cornerRadius: isExpanded ? 16 : 0)
+            .inset(by: 1.5)
             .stroke(
                 monitor.highlightedItemID == item.id ? Color.orange : Color.clear,
                 lineWidth: 3
