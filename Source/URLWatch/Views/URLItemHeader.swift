@@ -20,7 +20,7 @@ struct URLItemHeader: View {
             .padding(6)
             .help(item.isEnabled ? "Pause" : "Start")
 
-            VStack(alignment: .leading, spacing: !monitor.isCompactViewMode ? 4 : 8) {
+            VStack(alignment: .leading, spacing: monitor.isCompactViewMode ? 2 : 4) {
                 HStack {
                     TitleView(item: item)
                     
