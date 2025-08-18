@@ -5,6 +5,7 @@ struct ContentView: View {
     @ObservedObject var monitor: URLMonitor
     @State private var searchText = ""
     @State private var editingItem: URLItem? = nil
+    @State private var itemToDuplicate: URLItem? = nil
     @State private var dropTargetID: UUID? = nil
     @State private var dropInsertBefore: Bool = true
     @State private var rowHeights: [UUID: CGFloat] = [:]
@@ -55,6 +56,9 @@ struct ContentView: View {
                                 } else {
                                     LoggerManager.app.error("Item nicht im Monitor gefunden für Bearbeitung: \(item.id)")
                                 }
+                            },
+                            onDuplicate: { itemToDuplicate in
+                                self.itemToDuplicate = itemToDuplicate
                             },
                             dropTargetID: $dropTargetID,
                             dropInsertBefore: $dropInsertBefore,
@@ -112,7 +116,6 @@ struct ContentView: View {
             monitor.trimAllHistories(to: monitor.maxHistoryItems)
         }
         .sheet(item: $editingItem) { item in
-            // Prüfe ob es ein neues Item ist (nicht in der Liste vorhanden)
             let isNewItem = !monitor.items.contains { $0.id == item.id }
             
             ModalEditorView(
@@ -120,8 +123,18 @@ struct ContentView: View {
                 monitor: monitor,
                 isNewItem: isNewItem,
                 onSave: { newItem in
-                    // Neues Item hinzufügen
                     monitor.addItem(newItem)
+                }
+            )
+        }
+        .sheet(item: $itemToDuplicate) { item in
+            let duplicatedItem = monitor.duplicate(item: item)
+            ModalEditorView(
+                item: duplicatedItem,
+                monitor: monitor,
+                isNewItem: true,
+                onSave: { newItem in
+                    monitor.addItem(newItem, after: item)
                 }
             )
         }
@@ -134,12 +147,13 @@ private struct DraggableRow: View {
     let item: URLItem
     let monitor: URLMonitor
     let onEdit: () -> Void
+    let onDuplicate: (URLItem) -> Void
     @Binding var dropTargetID: UUID?
     @Binding var dropInsertBefore: Bool
     @Binding var rowHeight: CGFloat
     
     var body: some View {
-        URLItemCard(item: item, monitor: monitor, onEdit: onEdit)
+        URLItemCard(item: item, monitor: monitor, onEdit: onEdit, onDuplicate: onDuplicate)
             .background(
                 GeometryReader { geo in
                     Color.clear

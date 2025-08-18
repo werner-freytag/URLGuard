@@ -4,6 +4,7 @@ struct URLItemCard: View {
     let item: URLItem
     let monitor: URLMonitor
     let onEdit: () -> Void
+    let onDuplicate: (URLItem) -> Void
     
     @Namespace private var ns
     
@@ -11,7 +12,7 @@ struct URLItemCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: isExpanded ? 4 : 0) {
-            URLItemHeader(item: item, monitor: monitor, onEdit: onEdit, ns: ns)
+            URLItemHeader(item: item, monitor: monitor, onEdit: onEdit, onDuplicate: onDuplicate, ns: ns)
             
             // Trennlinie nur anzeigen, wenn der Header ausgeklappt ist
             if isExpanded {
@@ -43,7 +44,7 @@ struct URLItemCard: View {
             }
             
             Button("Duplicate") {
-                monitor.duplicate(item: item)
+                onDuplicate(item)
             }
             
             Divider()
@@ -89,6 +90,6 @@ struct URLItemCard: View {
 #Preview {
     let monitor = URLMonitor()
     let item = URLItem(url: URL(string: "https://example.com")!, interval: 10, isEnabled: true)
-    return URLItemCard(item: item, monitor: monitor, onEdit: {})
+    return URLItemCard(item: item, monitor: monitor, onEdit: {}, onDuplicate: { _ in })
         .frame(width: 600)
 }

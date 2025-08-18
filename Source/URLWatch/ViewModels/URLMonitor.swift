@@ -186,20 +186,9 @@ class URLMonitor: ObservableObject {
         var duplicatedItem = item
         duplicatedItem.id = UUID()
         duplicatedItem.title = newTitle
-        duplicatedItem.isEnabled = false
         
         // Historie zurücksetzen
         duplicatedItem.history.removeAll()
-        
-        // Item zur Liste hinzufügen
-        if let index = items.firstIndex(of: item) {
-            items.insert(duplicatedItem, at: index + 1)
-        } else {
-            items.append(duplicatedItem)
-        }
-        
-        // Speichern
-        save()
         
         return duplicatedItem
     }
@@ -217,12 +206,12 @@ class URLMonitor: ObservableObject {
         return newItem
     }
     
-    func addItem(_ item: URLItem) {
-        var newItem = item
-        newItem.isEnabled = true
-        
-        // Füge das neue Item hinzu
-        items.append(newItem)
+    func addItem(_ newItem: URLItem, after otherItem: URLItem? = nil) {
+        if let otherItem, let index = items.firstIndex(of: otherItem) {
+            items.insert(newItem, at: index + 1)
+        } else {
+            items.append(newItem)
+        }
         
         // Nur starten wenn nicht global pausiert
         if !isGlobalPaused {

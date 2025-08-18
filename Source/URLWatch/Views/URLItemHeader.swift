@@ -4,6 +4,7 @@ struct URLItemHeader: View {
     let item: URLItem
     let monitor: URLMonitor
     let onEdit: () -> Void
+    let onDuplicate: (URLItem) -> Void
     let ns: Namespace.ID
     
     var body: some View {
@@ -41,7 +42,7 @@ struct URLItemHeader: View {
                             color: .secondary
                         ) {
                             guard monitor.items.contains(where: { $0.id == item.id }) else { return }
-                            monitor.duplicate(item: item)
+                            onDuplicate(item)
                         }
                         
                         ActionButton(
