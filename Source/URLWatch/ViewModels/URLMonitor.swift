@@ -21,6 +21,11 @@ class URLMonitor: ObservableObject {
     
     let requestManager = URLRequestManager()
     
+    init() {
+        load()
+        startTimer() // Timer läuft immer, pausiert nur bei isGlobalPaused
+    }
+
     // MARK: - Zustandsverwaltung
     
     func getRemainingTime(for itemID: UUID) -> Double {
@@ -54,63 +59,37 @@ class URLMonitor: ObservableObject {
     }
     
     func startTimer() {
-        stopTimer()
-        
-        guard !isGlobalPaused && items.contains(where: { $0.isEnabled }) else { return }
-        
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                self?.processCentralTimer()
-            }
-        }
-        
-        // Timer-Modus auf .common setzen, damit er auch bei UI-Blockaden läuft
-//        RunLoop.main.add(timer!, forMode: .common)
-    }
-    
-    func stopTimer() {
-        timer?.invalidate()
-        timer = nil
-    }
-    
-    private func processCentralTimer() {
-        guard !isGlobalPaused else { return }
-        
-        // UI-Updates müssen auf den Main Thread
-        DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             
-            for item in self.items where item.isEnabled {
-                let currentTime = self.getRemainingTime(for: item.id)
-                
-                if currentTime > 0 {
-                    self.setRemainingTime(currentTime - 1.0, for: item.id)
-                }
-                
-                if self.getRemainingTime(for: item.id) <= 0 {
-                    self.check(item: item)
-                    self.setRemainingTime(item.interval, for: item.id)
-                }
+            Task { @MainActor in
+                self.processTimer()
             }
         }
     }
     
-    init() {
-        load()
+    private func processTimer() {
+        guard !isGlobalPaused else {
+            return
+        }
         
-        if !isGlobalPaused {
-            startTimer()
+        for item in items where item.isEnabled {
+            let currentTime = self.getRemainingTime(for: item.id)
+            
+            self.setRemainingTime(currentTime - 1.0, for: item.id)
+            
+            if self.getRemainingTime(for: item.id) <= 0 {
+                self.check(item: item)
+            }
         }
     }
     
     func pauseGlobal() {
         isGlobalPaused = true
-        stopTimer()
     }
     
     func startGlobal() {
         isGlobalPaused = false
-        startTimer()
     }
     
     func highlightItem(_ itemID: UUID) {
@@ -124,60 +103,20 @@ class URLMonitor: ObservableObject {
         }
     }
     
-    func startTimer(for item: URLItem, resume: Bool = false) {
-        guard item.isEnabled && !isGlobalPaused else { return }
-        
-        if !resume || getRemainingTime(for: item.id) <= 0 {
-            setRemainingTime(item.interval, for: item.id)
-        }
-        
-        if timer == nil {
-            startTimer()
-        }
-    }
-    
-    func cancel(item: URLItem) {
-        setRemainingTime(0, for: item.id)
-        
-        if !items.contains(where: { $0.isEnabled }) {
-            stopTimer()
-        }
-    }
-    
     func togglePause(for item: URLItem) {
         guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
         
         items[index].isEnabled.toggle()
         save()
-        
-        if !items[index].isEnabled {
-            cancel(item: items[index])
-        } else {
-            startTimer(for: items[index], resume: true)
-        }
-        
-        if items.contains(where: { $0.isEnabled }) && !isGlobalPaused {
-            if timer == nil {
-                startTimer()
-            }
-        } else {
-            stopTimer()
-        }
     }
     
     func remove(item: URLItem) {
-        cancel(item: item)
         items.removeAll { $0.id == item.id }
         save()
-        
-        if !items.contains(where: { $0.isEnabled }) {
-            stopTimer()
-        }
     }
     
     @discardableResult
     func duplicate(item: URLItem) -> URLItem {
-        
         // Intelligente Titel-Generierung
         let existingTitles = items.map { $0.title ?? $0.url.absoluteString }
         let newTitle = (item.title ?? item.url.absoluteString).generateUniqueCopyName(existingTitles: existingTitles)
@@ -213,16 +152,11 @@ class URLMonitor: ObservableObject {
             items.append(newItem)
         }
         
-        // Nur starten wenn nicht global pausiert
-        if !isGlobalPaused {
-            startTimer(for: newItem)
-        }
         save()
     }
     
     func confirmEditingWithValues(for item: URLItem, urlString: String, title: String?, interval: Double, isEnabled: Bool, enabledNotifications: Set<URLItem.NotificationType>? = nil) {
         if let index = items.firstIndex(where: { $0.id == item.id }) {
-            
             // URL validieren und erstellen
             guard let url = URL(string: urlString) else {
                 return
@@ -246,16 +180,7 @@ class URLMonitor: ObservableObject {
             if urlChanged {
                 resetHistory(for: items[index])
             }
-            
-            if isEnabledChanged {
-                if isEnabled && !isGlobalPaused {
-                    let resume = !urlChanged && !intervalChanged
-                    startTimer(for: self.items[index], resume: resume)
-                } else {
-                    cancel(item: self.items[index])
-                }
-            }
-            
+                        
             // Force UI Update
             objectWillChange.send()
             
@@ -281,7 +206,7 @@ class URLMonitor: ObservableObject {
     func unmarkAll(for item: URLItem) {
         guard let itemIndex = items.firstIndex(where: { $0.id == item.id }) else { return }
         
-        items[itemIndex].history.enumerated().forEach { offset, element in
+        for (offset, _) in items[itemIndex].history.enumerated() {
             items[itemIndex].history[offset].unmark()
         }
         
@@ -300,33 +225,38 @@ class URLMonitor: ObservableObject {
         save()
     }
     
-    func check(item: URLItem) {
-
-        // Pending Requests Counter erhöhen
-        incrementPendingRequests(for: item.id)
+    fileprivate func appenHistoryEntry(to item: URLItem, with requestResult: RequestResult) async {
+        guard let currentIndex = items.firstIndex(where: { $0.id == item.id }) else { return }
         
+        await MainActor.run {
+            let isMarked = item.notification(for: requestResult) != nil
+            let historyEntry = HistoryEntry.requestResult(
+                requestResult: requestResult,
+                isMarked: isMarked
+            )
+            
+            self.items[currentIndex].history.append(historyEntry)
+            self.items[currentIndex].history = self.items[currentIndex].history.reducedToMaxSize(self.maxHistoryItems)
+            save()
+            
+            // Notification senden
+            NotificationManager.shared.notifyIfNeeded(for: item, result: requestResult)
+        }
+    }
+    
+    func check(item: URLItem) {
         Task {
+            // Pending Requests Counter erhöhen
+            incrementPendingRequests(for: item.id)
+        
             let requestResult = await requestManager.checkURL(for: item)
             
-            await MainActor.run {
-                guard let currentIndex = self.items.firstIndex(where: { $0.id == item.id }) else { return }
-                
-                // Pending Requests Counter verringern
-                self.decrementPendingRequests(for: item.id)
-                
-                let isMarked = self.items[currentIndex].notification(for: requestResult) != nil
-                let historyEntry = HistoryEntry.requestResult(
-                    requestResult: requestResult,
-                    isMarked: isMarked
-                )
-                
-                self.items[currentIndex].history.append(historyEntry)
-                self.items[currentIndex].history = self.items[currentIndex].history.reducedToMaxSize(self.maxHistoryItems)
-                save()
-                
-                // Notification senden
-                NotificationManager.shared.notifyIfNeeded(for: item, result: requestResult)
-            }
+            // Pending Requests Counter verringern
+            self.decrementPendingRequests(for: item.id)
+            
+            await appenHistoryEntry(to: item, with: requestResult)
+            
+            self.setRemainingTime(item.interval, for: item.id)
         }
     }
     
@@ -348,7 +278,7 @@ class URLMonitor: ObservableObject {
         }
 
         if let decoded = try? JSONDecoder().decode([URLItem].self, from: savedItemsData) {
-            self.items = decoded
+            items = decoded
         }
     }
     
@@ -361,7 +291,6 @@ class URLMonitor: ObservableObject {
     }
 }
 
-
 private extension HistoryEntry {
     mutating func toggleIsMarked(_ newValue: Bool? = nil) {
         guard case let .requestResult(id, requestResult, isMarked) = self else { return }
@@ -372,7 +301,6 @@ private extension HistoryEntry {
         toggleIsMarked(false)
     }
 }
-
 
 extension [HistoryEntry] {
     /// Reduziert die History auf die maximale Größe in einem Schritt
@@ -401,17 +329,17 @@ extension [HistoryEntry] {
         let unmarkedIndices: [Int] = indexesOfEntries(marked: false)
         
         // Entferne zuerst nicht-markierte Einträge
-        var indicesToRemove = Array<Int>(unmarkedIndices.prefix(count))
+        var indicesToRemove = [Int](unmarkedIndices.prefix(count))
         
         // Falls nicht genug nicht-markierte Einträge vorhanden, fülle mit markierten auf
         if indicesToRemove.count < count {
             let remainingCount = count - indicesToRemove.count
             let markedIndices: [Int] = indexesOfEntries(marked: true)
-            let additionalIndices = Array<Int>(markedIndices.prefix(remainingCount))
+            let additionalIndices = [Int](markedIndices.prefix(remainingCount))
             indicesToRemove = (indicesToRemove + additionalIndices).sorted()
         }
         
-        return removeEntriesAtIndices(Array<Int>(indicesToRemove))
+        return removeEntriesAtIndices([Int](indicesToRemove))
     }
     
     /// Reduziert die History auf die maximale Größe, wobei Gaps mitgezählt werden
@@ -419,7 +347,7 @@ extension [HistoryEntry] {
         var size = maxSize
         
         var result = reducedToMaxSize(maxSize)
-        if (maxSize <= 2) { return result }
+        if maxSize <= 2 { return result }
         
         while result.count > maxSize {
             size -= 1
@@ -429,13 +357,13 @@ extension [HistoryEntry] {
         return result
     }
     
-    private func indexesOfEntries(marked: Bool) -> Array<Int> {
+    private func indexesOfEntries(marked: Bool) -> [Int] {
         enumerated().compactMap { index, entry in
-           if case .requestResult(_, _, let isMarked) = entry, isMarked == marked {
-               return index
-           }
-           return nil
-       }
+            if case let .requestResult(_, _, isMarked) = entry, isMarked == marked {
+                return index
+            }
+            return nil
+        }
     }
     
     private var numberOfEntries: Int {
@@ -443,7 +371,7 @@ extension [HistoryEntry] {
     }
     
     /// Entfernt Einträge an mehreren Indizes und fügt Lücken hinzu
-    private func removeEntriesAtIndices(_ indices: Array<Int>) -> [HistoryEntry] {
+    private func removeEntriesAtIndices(_ indices: [Int]) -> [HistoryEntry] {
         guard !indices.isEmpty else { return self }
         
         return enumerated().reduce(into: [HistoryEntry]()) { result, entry in
@@ -472,4 +400,3 @@ extension [HistoryEntry] {
         return length
     }
 }
-
