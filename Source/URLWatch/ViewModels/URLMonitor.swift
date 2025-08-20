@@ -10,7 +10,7 @@ class URLMonitor: ObservableObject {
 
     @AppStorage("maxHistoryItems") var maxHistoryItems: Int = 200
     @AppStorage("URLMonitorGlobalPause") var isGlobalPaused: Bool = false
-    @AppStorage("persistHistory") var persistHistory: Bool = false
+    @AppStorage("persistHistory") var persistHistory: Bool = true
     @AppStorage("URLMonitorItemsData") private var savedItemsData: Data = Data()
     @AppStorage("isCompactViewMode") var isCompactViewMode: Bool = false
     
