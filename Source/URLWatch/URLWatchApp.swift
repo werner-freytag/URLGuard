@@ -93,18 +93,16 @@ struct URLWatchApp: App {
                     editingItem = URLItem()
                 }
                 .keyboardShortcut("n", modifiers: .command)
-            }
-            CommandGroup(replacing: .windowSize) {
-                Button("Close Window") {
-                    NSApplication.shared.keyWindow?.close()
-                }
-                .keyboardShortcut("w", modifiers: .command)
-            }
-            CommandGroup(after: .newItem) {
                 Button(monitor.isGlobalPaused ? "Start Monitoring" : "Pause Monitoring") {
                     monitor.isGlobalPaused ? monitor.startGlobal() : monitor.pauseGlobal()
                 }
                 .keyboardShortcut("p", modifiers: [.command, .shift])
+            }
+            CommandGroup(after: .windowSize) {
+                Button("Close Window") {
+                    NSApplication.shared.keyWindow?.close()
+                }
+                .keyboardShortcut("w", modifiers: .command)
             }
             CommandGroup(after: .toolbar) {
                 Button(monitor.isCompactViewMode ? "Extended View" : "Compact View") {

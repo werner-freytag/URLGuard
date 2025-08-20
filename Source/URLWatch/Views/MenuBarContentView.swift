@@ -33,7 +33,6 @@ struct MenuBarContentView: View {
                         }
                     }
                 }
-                .disabled(!item.isEnabled)
             }
         }
         Divider()
