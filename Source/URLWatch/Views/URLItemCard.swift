@@ -69,12 +69,13 @@ struct URLItemCard: View {
             }
             .foregroundColor(.red)
         }
+
     }
     
     private var backgroundView: some View {
         RoundedRectangle(cornerRadius: isExpanded ? 16 : 0)
-            .fill(.white)
-            .stroke(.gray.opacity(0.2))
+            .fill(Color(.controlBackgroundColor))
+            .stroke(Color(.separatorColor))
     }
     
     private var highlightOverlay: some View {

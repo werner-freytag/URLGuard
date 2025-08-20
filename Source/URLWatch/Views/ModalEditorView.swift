@@ -113,7 +113,7 @@ struct ModalEditorView: View {
             .background(Color.controlBackgroundColor)
         }
         .frame(minWidth: 600)
-        .background(Color.white)
+        .background(Color(.controlBackgroundColor))
         .preferredColorScheme(.light)
         .onAppear {
             // Initialisiere ViewModels mit den Item-Werten

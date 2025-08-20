@@ -81,7 +81,7 @@ struct URLWatchApp: App {
                             monitor.highlightItem(itemId)
                         }
                 }
-                .background(.white)
+                .background(Color(.controlBackgroundColor))
         }
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified)

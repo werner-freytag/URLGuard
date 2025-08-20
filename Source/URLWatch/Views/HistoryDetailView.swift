@@ -39,14 +39,14 @@ struct HistoryDetailView: View {
                             }) {
                                 Image(systemName: "circle.fill")
                                     .font(.caption)
-                                    .foregroundColor(isMarked ? .red : .gray.opacity(0.5))
+                                    .foregroundColor(isMarked ? .red : .secondary)
                             }
                             .buttonStyle(.plain)
                             .help(isMarked ? "Marked – Click to remove marking" : "Click to mark entry")
                         } else {
                             Image(systemName: "circle.fill")
                                 .font(.caption)
-                                .foregroundColor(isMarked ? .red : .gray)
+                                .foregroundColor(isMarked ? .red : .secondary)
                         }
                     }
                 }
@@ -194,7 +194,7 @@ extension RequestResult {
     var statusColor: Color {
         switch status {
         case .none:
-            return .gray
+            return .secondary
         case .some(.transferError):
             return .red
         case .some(.clientError):
@@ -339,7 +339,7 @@ struct ChangedLineView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
-        .background(.gray.opacity(0.05))
+        .background(Color(.controlBackgroundColor).opacity(0.5))
         .cornerRadius(4)
     }
     
